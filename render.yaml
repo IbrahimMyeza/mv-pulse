@@ -5,6 +5,7 @@ services:
     plan: free
     autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
+    preDeployCommand: python seed_data.py
     startCommand: gunicorn app:app
     healthCheckPath: /
     envVars:

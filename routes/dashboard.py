@@ -1,5 +1,9 @@
+from io import BytesIO
+
 import stripe
 from flask import Blueprint, render_template, send_file, redirect, url_for, session
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from models.reel import Reel
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -16,6 +20,72 @@ def _get_num(obj, name, default=0):
 def _get_text(obj, name, default=""):
     value = getattr(obj, name, default)
     return value if value else default
+
+
+def _build_export_summary(reels):
+    topic_counts = {}
+    region_counts = {}
+
+    for reel in reels:
+        topic = _get_text(reel, "topic", "general")
+        region = _get_text(reel, "region", "Durban")
+        topic_counts[topic] = topic_counts.get(topic, 0) + 1
+        region_counts[region] = region_counts.get(region, 0) + 1
+
+    hottest_region = max(region_counts, key=region_counts.get) if region_counts else "No data"
+    predicted_next_topic = max(topic_counts, key=topic_counts.get) if topic_counts else "none"
+
+    return {
+        "hottest_region": hottest_region,
+        "predicted_next_topic": predicted_next_topic,
+        "best_post_slot": "now",
+        "total_reels": len(reels),
+        "total_views": sum(_get_num(r, "views") for r in reels),
+        "top_title": _get_text(reels[0], "title", "No featured reel") if reels else "No featured reel",
+    }
+
+
+def _billing_unavailable_response():
+    return (
+        "<h1>Billing is not configured yet.</h1>"
+        "<p>Add STRIPE_SECRET_KEY in Render, then redeploy and try again.</p>"
+        f"<p><a href=\"{url_for('dashboard.dashboard')}\">Return to dashboard</a></p>",
+        503,
+    )
+
+
+def _build_creator_brief_pdf(summary):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    text = pdf.beginText(50, 750)
+    text.setFont("Helvetica-Bold", 16)
+    text.textLine("MV Pulse Creator Brief")
+    text.setFont("Helvetica", 11)
+    text.textLine("")
+
+    lines = [
+        f"Hotspot: {summary['hottest_region']}",
+        f"Topic: {summary['predicted_next_topic']}",
+        f"Best slot: {summary['best_post_slot']}",
+        f"Total reels: {summary['total_reels']}",
+        f"Total views: {summary['total_views']}",
+        f"Featured reel: {summary['top_title']}",
+        "",
+        "Recommended caption:",
+        f"{summary['hottest_region']} is talking about {summary['predicted_next_topic']} right now.",
+        "",
+        "Suggested hook:",
+        f"Why {summary['hottest_region']} cannot stop talking about {summary['predicted_next_topic']}.",
+    ]
+
+    for line in lines:
+        text.textLine(line)
+
+    pdf.drawText(text)
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+    return buffer
 
 
 def _controversy_score(reel):
@@ -42,25 +112,32 @@ def _creator_score(reel):
 
 @dashboard_bp.route("/upgrade")
 def upgrade():
-    checkout_session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "product_data": {
-                    "name": "MV Pulse Pro"
+    if not stripe.api_key:
+        return _billing_unavailable_response()
+
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": "MV Pulse Pro"
+                    },
+                    "unit_amount": 999,
+                    "recurring": {
+                        "interval": "month"
+                    }
                 },
-                "unit_amount": 999,
-                "recurring": {
-                    "interval": "month"
-                }
-            },
-            "quantity": 1
-        }],
-        mode="subscription",
-        success_url=url_for("dashboard.upgrade_success", _external=True),
-        cancel_url=url_for("dashboard.dashboard", _external=True)
-    )
+                "quantity": 1
+            }],
+            mode="subscription",
+            success_url=url_for("dashboard.upgrade_success", _external=True),
+            cancel_url=url_for("dashboard.dashboard", _external=True)
+        )
+    except stripe.StripeError:
+        return _billing_unavailable_response()
+
     return redirect(checkout_session.url)
 
 
@@ -302,9 +379,15 @@ def dashboard():
 
 @dashboard_bp.route("/download-pack")
 def download_pack():
+    reels = Reel.query.order_by(Reel.views.desc()).all()
+    summary = _build_export_summary(reels)
+    pdf_buffer = _build_creator_brief_pdf(summary)
+
     return send_file(
-        "static/exports/mv_pulse_creator_brief.pdf",
-        as_attachment=True
+        pdf_buffer,
+        as_attachment=True,
+        download_name="mv_pulse_creator_brief.pdf",
+        mimetype="application/pdf"
     )
 
 
