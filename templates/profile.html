@@ -15,23 +15,19 @@
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 16px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; font-weight: 700; border: 0; cursor: pointer; }
         .btn.ghost { background: rgba(255,255,255,0.05); color: #f5f7fa; border: 1px solid rgba(255,255,255,0.08); }
         .btn.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; }
-        .video-item { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); margin-top: 12px; }
+        .video-item, .retention-item { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); margin-top: 12px; display: grid; gap: 6px; }
         .topbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: rgba(0,0,0,0.72);
-        }
+        .modal-backdrop { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.72); }
         .modal-backdrop.active { display: flex; }
         .modal-card { width: min(420px, 100%); background: #101720; border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); padding: 20px; display: grid; gap: 12px; }
+        .tabbar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .tab-button { border-radius: 999px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); color: #f5f7fa; cursor: pointer; }
+        .tab-button.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
+        .helper { color: #9aa6b5; font-size: 0.94rem; }
     </style>
 </head>
 <body>
-    <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}">
+    <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}" data-profile-owner="{{ 'true' if profile_is_owner else 'false' }}">
         <div class="topbar">
             <a class="btn" href="/feed">Back to feed</a>
             {% if current_user and profile_user and current_user.username != profile_user.username %}
@@ -44,6 +40,7 @@
             >{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
             {% endif %}
         </div>
+
         <section class="card">
             {% if profile_user %}
             <h1>@{{ profile_user.username }}</h1>
@@ -56,6 +53,23 @@
             <p>Profile not found.</p>
             {% endif %}
         </section>
+
+        {% if profile_is_owner %}
+        <section class="card">
+            <h2>Retention Library</h2>
+            <p class="helper">Saved voice reactions, revisit loops, and creator history stay here for fast return sessions.</p>
+            <div class="tabbar">
+                <button class="tab-button active" type="button" data-tab="saved-replies">Saved Replies</button>
+                <button class="tab-button" type="button" data-tab="saved-videos">Saved Reels</button>
+                <button class="tab-button" type="button" data-tab="my-replies">My Voice Replies</button>
+                <button class="tab-button" type="button" data-tab="likes">Liked Videos</button>
+                <button class="tab-button" type="button" data-tab="activity">Activity</button>
+            </div>
+            <div class="card" data-tab-content>
+                <p class="helper">Loading your saved voice library...</p>
+            </div>
+        </section>
+        {% endif %}
 
         <section class="card">
             <h2>Posted videos</h2>
@@ -84,7 +98,18 @@
 
     <script>
         const authModal = document.querySelector('[data-auth-modal]');
-        const isAuthenticated = document.querySelector('.shell')?.dataset.authenticated === 'true';
+        const shell = document.querySelector('.shell');
+        const isAuthenticated = shell?.dataset.authenticated === 'true';
+        const isOwner = shell?.dataset.profileOwner === 'true';
+        const tabContent = document.querySelector('[data-tab-content]');
+        const tabCache = new Map();
+        const tabEndpoints = {
+            'saved-videos': '/api/me/saved/videos',
+            'saved-replies': '/api/me/saved/replies',
+            'my-replies': '/api/me/voice-replies',
+            'likes': '/api/me/likes',
+            'activity': '/api/me/activity',
+        };
 
         const setFollowButtonState = (button, following) => {
             button.dataset.following = following ? 'true' : 'false';
@@ -95,6 +120,59 @@
         const openAuthModal = () => {
             if (authModal) {
                 authModal.classList.add('active');
+            }
+        };
+
+        const renderItems = (items, emptyText) => {
+            if (!items.length) {
+                tabContent.innerHTML = `<p class="helper">${emptyText}</p>`;
+                return;
+            }
+
+            tabContent.innerHTML = items.map((item) => `
+                <a class="retention-item" href="${item.target_url}">
+                    <strong>${item.title || item.video_title || 'Open item'}</strong>
+                    <p>${item.caption || item.transcript || item.kind || ''}</p>
+                    <p>${item.created_at || item.saved_at || ''}</p>
+                </a>
+            `).join('');
+        };
+
+        const loadTab = async (tabName) => {
+            if (!tabContent || !tabEndpoints[tabName]) {
+                return;
+            }
+
+            document.querySelectorAll('[data-tab]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.tab === tabName);
+            });
+
+            if (tabCache.has(tabName)) {
+                renderItems(tabCache.get(tabName), 'Nothing here yet.');
+                return;
+            }
+
+            tabContent.innerHTML = '<p class="helper">Loading...</p>';
+            try {
+                const response = await fetch(tabEndpoints[tabName], {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch' },
+                });
+                if (response.status === 401) {
+                    openAuthModal();
+                    throw new Error('auth');
+                }
+                if (!response.ok) {
+                    throw new Error('request');
+                }
+                const payload = await response.json();
+                const items = payload.items || [];
+                tabCache.set(tabName, items);
+                renderItems(items, 'Nothing here yet.');
+            } catch (error) {
+                if (error.message !== 'auth') {
+                    tabContent.innerHTML = '<p class="helper">Could not load this tab right now.</p>';
+                    console.error(error);
+                }
             }
         };
 
@@ -138,6 +216,14 @@
                 }
             });
         });
+
+        document.querySelectorAll('[data-tab]').forEach((button) => {
+            button.addEventListener('click', () => loadTab(button.dataset.tab));
+        });
+
+        if (isOwner) {
+            loadTab('saved-replies');
+        }
     </script>
 </body>
 </html>

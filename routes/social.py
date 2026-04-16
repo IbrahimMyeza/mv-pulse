@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
+from database import db
 from models.follow import Follow
 from models.user import User
 from models.video import Video
@@ -9,8 +10,17 @@ from services.social_engagement import (
     toggle_follow,
     toggle_video_like,
     toggle_video_save,
+    toggle_voice_reply_save,
     toggle_voice_reply_like,
     track_video_share,
+)
+from services.social_retention import (
+    load_activity,
+    load_liked_videos,
+    load_my_voice_replies,
+    load_saved_replies,
+    load_saved_videos,
+    mark_notifications_read,
 )
 from routes.social_utils import (
     current_user,
@@ -57,7 +67,59 @@ def api_feed():
         "videos": context["feed_videos"],
         "featured_video": context["featured_video"],
         "locale_options": context["locale_options"],
+        "notifications_unread_count": context["notifications_unread_count"],
     })
+
+
+@social_bp.route("/api/me/saved/videos")
+def api_me_saved_videos():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to see saved videos.")
+    return jsonify({"items": load_saved_videos(user)})
+
+
+@social_bp.route("/api/me/saved/replies")
+def api_me_saved_replies():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to see saved replies.")
+    return jsonify({"items": load_saved_replies(user)})
+
+
+@social_bp.route("/api/me/voice-replies")
+def api_me_voice_replies():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to see your voice replies.")
+    return jsonify({"items": load_my_voice_replies(user)})
+
+
+@social_bp.route("/api/me/activity")
+def api_me_activity():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to see your activity.")
+    return jsonify({"items": load_activity(user)})
+
+
+@social_bp.route("/api/me/likes")
+def api_me_likes():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to see liked videos.")
+    return jsonify({"items": load_liked_videos(user)})
+
+
+@social_bp.route("/api/notifications/read", methods=["POST"])
+def api_notifications_read():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to manage notifications.")
+
+    payload = request.get_json(silent=True) or {}
+    unread_count = mark_notifications_read(user, notification_ids=payload.get("notification_ids"))
+    return jsonify({"unread_count": unread_count})
 
 
 @social_bp.route("/api/follow/<int:user_id>", methods=["POST", "DELETE"])
@@ -194,6 +256,16 @@ def api_voice_replies_like(id):
     return jsonify(toggle_voice_reply_like(viewer, voice_reply))
 
 
+@social_bp.route("/api/voice-replies/<int:id>/save", methods=["POST"])
+def api_voice_replies_save(id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to save voice replies.")
+
+    voice_reply = VoiceReply.query.get_or_404(id)
+    return jsonify(toggle_voice_reply_save(viewer, voice_reply))
+
+
 @social_bp.route("/profile/<username>")
 def profile(username):
     profile_user = User.query.filter_by(username=username).first_or_404()
@@ -224,7 +296,4 @@ def notifications():
     user, error = _auth_required_redirect()
     if error:
         return error
-
-    user.notifications.update({"is_read": True})
-    db.session.commit()
-    return render_template("notifications.html", **social_context(active_tab="notifications", profile_user=user))
+    return render_template("dashboard.html", **social_context(active_tab="notifications", profile_user=user))

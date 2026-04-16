@@ -1,4 +1,4 @@
-<div class="reply-card">
+<div class="reply-card" id="reply-{{ reply.id }}">
     <strong>@{{ reply.username }}</strong>
     <p>{{ reply.transcript or 'Voice note with no transcript yet.' }}</p>
     <div class="waveform"></div>
@@ -7,6 +7,7 @@
         <button class="ghost speed-button" type="button" data-rate="1">1x</button>
         <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
         <button class="ghost {% if reply.is_liked %}active{% endif %}" type="button" data-reply-like-button data-reply-id="{{ reply.id }}" data-liked="{{ 'true' if reply.is_liked else 'false' }}">❤️ <span data-reply-like-count>{{ reply.likes_count }}</span></button>
+        <button class="ghost {% if reply.is_saved %}active{% endif %}" type="button" data-reply-save-button data-reply-id="{{ reply.id }}" data-saved="{{ 'true' if reply.is_saved else 'false' }}">🔖 <span data-reply-save-count>{{ reply.saves_count }}</span></button>
         <span class="ghost">{{ reply.language_code|upper }}</span>
         <button class="ghost" type="button" data-open-recorder data-parent-reply-id="{{ reply.id }}">Reply</button>
     </div>

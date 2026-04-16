@@ -117,6 +117,21 @@ def toggle_video_save(viewer, video):
     return {"saved": True, "saves_count": saves_count}
 
 
+def toggle_voice_reply_save(viewer, voice_reply):
+    save = Save.query.filter_by(user_id=viewer.id, voice_reply_id=voice_reply.id).first()
+    if save:
+        db.session.delete(save)
+        db.session.commit()
+        saves_count = Save.query.filter_by(voice_reply_id=voice_reply.id).count()
+        return {"saved": False, "saves_count": saves_count}
+
+    save = Save(user_id=viewer.id, voice_reply_id=voice_reply.id)
+    db.session.add(save)
+    db.session.commit()
+    saves_count = Save.query.filter_by(voice_reply_id=voice_reply.id).count()
+    return {"saved": True, "saves_count": saves_count}
+
+
 def track_video_share(video):
     video.shares_count = (video.shares_count or 0) + 1
     db.session.commit()

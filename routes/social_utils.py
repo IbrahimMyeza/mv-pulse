@@ -19,6 +19,7 @@ from models.user import User
 from models.user_social_profile import UserSocialProfile
 from models.video import Video
 from models.voice_reply import VoiceReply
+from services.social_retention import group_notifications, retention_rank_videos, unread_notification_count
 
 SUPPORTED_LANGUAGES = {
     "en": "English",
@@ -128,7 +129,8 @@ def serialize_user(user):
 
 
 def serialize_video(video):
-    creator = video.creator.username if video.creator else "Umbono Wami"
+    creator_username = video.creator.username if video.creator else None
+    creator = creator_username or "Umbono Wami"
     return {
         "id": video.id,
         "title": video.title,
@@ -142,7 +144,7 @@ def serialize_video(video):
         "language_code": video.language_code,
         "language_label": SUPPORTED_LANGUAGES.get(video.language_code, video.language_code),
         "creator": creator,
-        "creator_username": creator,
+        "creator_username": creator_username,
         "creator_id": video.creator_id,
         "likes": video.likes,
         "views": video.views,
@@ -157,19 +159,14 @@ def serialize_video(video):
         "creator_is_followed": getattr(video, "creator_is_followed", False),
         "can_follow_creator": getattr(video, "can_follow_creator", False),
         "creator_followers_count": getattr(video, "creator_followers_count", 0),
+        "retention_score": getattr(video, "retention_score", 0),
     }
 
 
 def serialize_notification(item):
-    return {
-        "id": item.id,
-        "kind": item.kind,
-        "message": item.message,
-        "is_read": item.is_read,
-        "created_at": item.created_at.isoformat() if item.created_at else None,
-        "actor": item.actor.username if item.actor else None,
-        "video_id": item.video_id,
-    }
+    from services.social_retention import serialize_notification_timeline_item
+
+    return serialize_notification_timeline_item(item)
 
 
 def serialize_voice_reply(reply):
@@ -189,7 +186,9 @@ def serialize_voice_reply(reply):
         "parent_reply_id": reply.parent_reply_id,
         "created_at": reply.created_at.isoformat() if reply.created_at else None,
         "is_liked": getattr(reply, "is_liked", False),
+        "is_saved": getattr(reply, "is_saved", False),
         "can_reply": getattr(reply, "can_reply", False),
+        "target_url": f"/video/{reply.video_id}#reply-{reply.id}",
         "children": [serialize_voice_reply(child) for child in sorted(reply.child_replies, key=lambda item: item.created_at or 0)],
     }
 
@@ -228,6 +227,13 @@ def _liked_reply_ids(user, reply_ids):
     if not user or not reply_ids:
         return set()
     rows = Like.query.filter(Like.user_id == user.id, Like.voice_reply_id.in_(reply_ids)).with_entities(Like.voice_reply_id).all()
+    return {reply_id for (reply_id,) in rows}
+
+
+def _saved_reply_ids(user, reply_ids):
+    if not user or not reply_ids:
+        return set()
+    rows = Save.query.filter(Save.user_id == user.id, Save.voice_reply_id.in_(reply_ids)).with_entities(Save.voice_reply_id).all()
     return {reply_id for (reply_id,) in rows}
 
 
@@ -275,11 +281,13 @@ def _hydrate_replies(replies, viewer=None):
     collect(replies)
     saved_counts = _save_counts_for_replies(reply_ids)
     liked_ids = _liked_reply_ids(viewer, reply_ids)
+    saved_ids = _saved_reply_ids(viewer, reply_ids)
 
     def apply_state(items):
         for item in items:
             item.saves_count = saved_counts.get(item.id, 0)
             item.is_liked = item.id in liked_ids
+            item.is_saved = item.id in saved_ids
             item.can_reply = viewer is not None
             apply_state(item.child_replies)
 
@@ -340,10 +348,11 @@ def follow_state(viewer, profile_user):
     return Follow.query.filter_by(follower_id=viewer.id, followed_id=profile_user.id).first() is not None
 
 
-def ranked_feed(preferred_topic=None, preferred_region=None):
+def ranked_feed(preferred_topic=None, preferred_region=None, viewer=None):
     ensure_social_seed()
     videos = Video.query.filter_by(is_public=True).order_by(Video.created_at.desc()).all()
-    return rank_reels(videos, preferred_topic=preferred_topic, preferred_region=preferred_region)
+    baseline = rank_reels(videos, preferred_topic=preferred_topic, preferred_region=preferred_region)
+    return retention_rank_videos(baseline, viewer=viewer)
 
 
 def preferred_topic_for(user):
@@ -375,7 +384,7 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
         ensure_social_profile(profile_user)
     topic = preferred_topic_for(user)
     region = preferred_region_for(user)
-    videos = ranked_feed(preferred_topic=topic, preferred_region=region)
+    videos = ranked_feed(preferred_topic=topic, preferred_region=region, viewer=user)
     hydrate_videos(videos, viewer=user)
     featured_video = selected_video or (videos[0] if videos else None)
     profile_owner = profile_user or user
@@ -386,7 +395,9 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
 
     notifications = []
     if user:
-        notifications = Notification.query.filter_by(recipient_user_id=user.id).order_by(Notification.created_at.desc()).limit(12).all()
+        notification_limit = 50 if active_tab == "notifications" else 12
+        notifications = Notification.query.filter_by(recipient_user_id=user.id).order_by(Notification.created_at.desc()).limit(notification_limit).all()
+    notification_groups = group_notifications(notifications)
 
     recent_replies = VoiceReply.query.order_by(VoiceReply.created_at.desc()).limit(10).all()
     recent_replies_serialized = [serialize_voice_reply(reply) for reply in recent_replies]
@@ -403,8 +414,11 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
         "featured_video": serialize_video(featured_video) if featured_video else None,
         "selected_reply_threads": build_reply_tree(featured_video.id, viewer=user) if featured_video else [],
         "notifications": [serialize_notification(item) for item in notifications],
+        "notification_groups": notification_groups,
+        "notifications_unread_count": unread_notification_count(user),
         "recent_voice_threads": recent_replies_serialized,
         "profile_user": profile_owner,
+        "profile_is_owner": bool(user and profile_owner and user.id == profile_owner.id),
         "profile_stats": {
             "followers": follower_count,
             "following": following_count,

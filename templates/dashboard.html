@@ -249,6 +249,24 @@
         }
         .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
         .assist-text { color: var(--muted); font-size: 0.95rem; }
+        .badge {
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #09121a;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .tab-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
 
         .tabbar {
             position: fixed;
@@ -339,7 +357,11 @@
                                     </div>
                                     <p>{{ video.caption }}</p>
                                     <div class="video-stats">
+                                        {% if video.creator_username %}
                                         <span><a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a></span>
+                                        {% else %}
+                                        <span>@{{ video.creator }}</span>
+                                        {% endif %}
                                         <span>{{ video.region }}</span>
                                         <span>{{ video.topic }}</span>
                                         <span>{{ video.language_label }}</span>
@@ -446,19 +468,31 @@
             <section class="screen {% if active_tab == 'notifications' %}active{% endif %}" data-screen="notifications">
                 <div class="section-title">
                     <div>
-                        <h2>Notifications</h2>
+                        <h2>Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</h2>
                         <p>Follow events, voice replies, and thread activity.</p>
                     </div>
                 </div>
                 <div class="notification-list">
-                    {% for item in notifications %}
-                    <article class="notification-item">
-                        <strong>{{ item.message }}</strong>
-                        <p>{{ item.kind }} · {{ item.created_at }}</p>
-                    </article>
-                    {% else %}
-                    <article class="card"><p>No notifications yet.</p></article>
+                    {% set group_labels = {'today': 'Today', 'this_week': 'This week', 'older': 'Older'} %}
+                    {% for group_key, label in group_labels.items() %}
+                        {% set items = notification_groups[group_key] %}
+                        {% if items %}
+                        <article class="card">
+                            <h3>{{ label }}</h3>
+                            <div class="notification-list">
+                                {% for item in items %}
+                                <a class="notification-item" href="{{ item.target_url }}">
+                                    <strong>{{ item.message }}</strong>
+                                    <p>{{ item.kind }} · {{ item.created_at }}</p>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </article>
+                        {% endif %}
                     {% endfor %}
+                    {% if not notification_groups.today and not notification_groups.this_week and not notification_groups.older %}
+                    <article class="card"><p>No notifications yet.</p></article>
+                    {% endif %}
                 </div>
             </section>
 
@@ -511,7 +545,7 @@
             <a href="/feed" class="{% if active_tab == 'home' %}active{% endif %}">Home</a>
             <a href="/upload" class="{% if active_tab == 'upload' %}active{% endif %}">Upload</a>
             <a href="/feed#replies" class="{% if active_tab == 'replies' %}active{% endif %}">Replies</a>
-            <a href="/notifications" class="{% if active_tab == 'notifications' %}active{% endif %}">Notifications</a>
+            <a href="/notifications" class="{% if active_tab == 'notifications' %}active{% endif %}"><span class="tab-pill">Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</span></a>
             {% if current_user %}
             <a href="/profile/{{ current_user.username }}" class="{% if active_tab == 'profile' %}active{% endif %}">Profile</a>
             {% else %}
@@ -536,6 +570,7 @@
         const isAuthenticated = appShell?.dataset.authenticated === 'true';
         const loginUrl = appShell?.dataset.loginUrl || '/';
         const authModal = document.querySelector('[data-auth-modal]');
+        const unreadBadges = document.querySelectorAll('[data-unread-badge]');
 
         const preserveScroll = () => {
             const currentTop = window.scrollY;
@@ -599,6 +634,17 @@
             if (element) {
                 element.textContent = value;
             }
+        };
+
+        const updateUnreadBadges = (value) => {
+            unreadBadges.forEach((badge) => {
+                if (value > 0) {
+                    badge.textContent = value;
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
         };
 
         const setActiveState = (button, active, activeLabel, idleLabel) => {
@@ -752,6 +798,17 @@
             if (repliesScreen) {
                 repliesScreen.classList.add('active');
             }
+        }
+
+        const activeNotificationsScreen = document.querySelector('[data-screen="notifications"].active');
+        if (activeNotificationsScreen) {
+            requestJson('/api/notifications/read', { method: 'POST' })
+                .then((payload) => updateUnreadBadges(payload.unread_count))
+                .catch((error) => {
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                });
         }
     </script>
 </body>

@@ -305,6 +305,31 @@
             });
         });
 
+        document.querySelectorAll('[data-reply-save-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const countNode = button.querySelector('[data-reply-save-count]');
+                const replyId = button.dataset.replyId;
+                const previous = button.dataset.saved === 'true';
+                const previousCount = Number(countNode?.textContent || '0');
+                button.dataset.saved = previous ? 'false' : 'true';
+                button.classList.toggle('active', !previous);
+                countNode.textContent = previous ? Math.max(previousCount - 1, 0) : previousCount + 1;
+                try {
+                    const payload = await requestJson(`/api/voice-replies/${replyId}/save`, { method: 'POST' });
+                    button.dataset.saved = payload.saved ? 'true' : 'false';
+                    button.classList.toggle('active', payload.saved);
+                    countNode.textContent = payload.saves_count;
+                } catch (error) {
+                    button.dataset.saved = previous ? 'true' : 'false';
+                    button.classList.toggle('active', previous);
+                    countNode.textContent = previousCount;
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
         const assignRecordedFile = (file) => {
             recordedFile = file;
             if (!recordedFile) {
