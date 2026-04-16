@@ -31,6 +31,7 @@ from routes.social_utils import (
     hydrate_videos,
     save_video_file,
 )
+from services.thread_heat import record_reply_listen
 
 social_bp = Blueprint("social", __name__)
 VIDEO_FOLDER = "static/uploads/videos"
@@ -65,6 +66,8 @@ def api_feed():
     context = social_context(active_tab="home")
     return jsonify({
         "videos": context["feed_videos"],
+        "feed_items": context["feed_items"],
+        "hot_threads": context["hot_threads"],
         "featured_video": context["featured_video"],
         "locale_options": context["locale_options"],
         "notifications_unread_count": context["notifications_unread_count"],
@@ -192,6 +195,7 @@ def video_detail(id):
     ensure_social_seed()
     video = Video.query.get_or_404(id)
     viewer = current_user()
+    focused_reply_id = request.args.get("focus_reply_id", type=int)
     hydrate_videos([video], viewer=viewer)
     context = social_context(active_tab="home", selected_video=video)
     return render_template(
@@ -201,6 +205,7 @@ def video_detail(id):
         replies=build_reply_tree(video.id, viewer=viewer),
         current_user=viewer,
         locale_options=context["locale_options"],
+        focused_reply_id=focused_reply_id,
     )
 
 
@@ -254,6 +259,12 @@ def api_voice_replies_like(id):
 
     voice_reply = VoiceReply.query.get_or_404(id)
     return jsonify(toggle_voice_reply_like(viewer, voice_reply))
+
+
+@social_bp.route("/api/voice-replies/<int:id>/listen", methods=["POST"])
+def api_voice_replies_listen(id):
+    VoiceReply.query.get_or_404(id)
+    return jsonify({"replay_listens": record_reply_listen(id)})
 
 
 @social_bp.route("/api/voice-replies/<int:id>/save", methods=["POST"])

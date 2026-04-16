@@ -265,6 +265,7 @@ def retention_rank_videos(videos, viewer=None):
             + (voice_reply_weight * 5)
             + (depth_weight * 2)
             + freshness_decay
+            + (getattr(video, "thread_heat_score", 0) * 1.5)
         )
         video.retention_score = round(retention_score, 2)
         scored.append((retention_score, video.created_at or now, video))

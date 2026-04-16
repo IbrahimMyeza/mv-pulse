@@ -1,8 +1,8 @@
-<div class="reply-card" id="reply-{{ reply.id }}">
+<div class="reply-card" id="reply-{{ reply.id }}" data-reply-card data-reply-id="{{ reply.id }}">
     <strong>@{{ reply.username }}</strong>
     <p>{{ reply.transcript or 'Voice note with no transcript yet.' }}</p>
     <div class="waveform"></div>
-    <audio controls preload="metadata" src="{{ reply.audio_url }}"></audio>
+    <audio class="reply-audio" controls preload="metadata" src="{{ reply.audio_url }}" data-reply-audio data-reply-id="{{ reply.id }}"></audio>
     <div class="actions">
         <button class="ghost speed-button" type="button" data-rate="1">1x</button>
         <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>

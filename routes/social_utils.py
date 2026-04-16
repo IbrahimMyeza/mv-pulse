@@ -20,6 +20,7 @@ from models.user_social_profile import UserSocialProfile
 from models.video import Video
 from models.voice_reply import VoiceReply
 from services.social_retention import group_notifications, retention_rank_videos, unread_notification_count
+from services.thread_heat import compute_hot_threads, inject_hot_thread_cards, notify_hot_thread_participants
 
 SUPPORTED_LANGUAGES = {
     "en": "English",
@@ -132,6 +133,7 @@ def serialize_video(video):
     creator_username = video.creator.username if video.creator else None
     creator = creator_username or "Umbono Wami"
     return {
+        "kind": "video",
         "id": video.id,
         "title": video.title,
         "caption": video.caption or "",
@@ -160,6 +162,26 @@ def serialize_video(video):
         "can_follow_creator": getattr(video, "can_follow_creator", False),
         "creator_followers_count": getattr(video, "creator_followers_count", 0),
         "retention_score": getattr(video, "retention_score", 0),
+        "thread_heat_score": getattr(video, "thread_heat_score", 0),
+    }
+
+
+def serialize_hot_thread_card(card):
+    return {
+        "kind": "hot_thread",
+        "reel_id": card["reel_id"],
+        "video_id": card["video_id"],
+        "highlighted_reply_id": card["highlighted_reply_id"],
+        "heat_score": card["heat_score"],
+        "top_participants": card["top_participants"],
+        "reply_count": card["reply_count"],
+        "last_reply_at": card["last_reply_at"],
+        "cta_text": card["cta_text"],
+        "target_url": card["target_url"],
+        "title": card["title"],
+        "caption": card["caption"],
+        "creator": card["creator"],
+        "reply_depth": card["reply_depth"],
     }
 
 
@@ -352,7 +374,10 @@ def ranked_feed(preferred_topic=None, preferred_region=None, viewer=None):
     ensure_social_seed()
     videos = Video.query.filter_by(is_public=True).order_by(Video.created_at.desc()).all()
     baseline = rank_reels(videos, preferred_topic=preferred_topic, preferred_region=preferred_region)
-    return retention_rank_videos(baseline, viewer=viewer)
+    hot_threads, _ = compute_hot_threads(baseline, viewer=viewer)
+    notify_hot_thread_participants(hot_threads)
+    ranked_videos = retention_rank_videos(baseline, viewer=viewer)
+    return ranked_videos, hot_threads
 
 
 def preferred_topic_for(user):
@@ -384,8 +409,9 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
         ensure_social_profile(profile_user)
     topic = preferred_topic_for(user)
     region = preferred_region_for(user)
-    videos = ranked_feed(preferred_topic=topic, preferred_region=region, viewer=user)
+    videos, hot_threads = ranked_feed(preferred_topic=topic, preferred_region=region, viewer=user)
     hydrate_videos(videos, viewer=user)
+    feed_items = inject_hot_thread_cards(videos, hot_threads)
     featured_video = selected_video or (videos[0] if videos else None)
     profile_owner = profile_user or user
 
@@ -411,6 +437,8 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
         "current_user": user,
         "current_user_payload": serialize_user(user),
         "feed_videos": [serialize_video(video) for video in videos],
+        "feed_items": [serialize_video(item["payload"]) if item["kind"] == "video" else serialize_hot_thread_card(item["payload"]) for item in feed_items],
+        "hot_threads": [serialize_hot_thread_card(card) for card in hot_threads],
         "featured_video": serialize_video(featured_video) if featured_video else None,
         "selected_reply_threads": build_reply_tree(featured_video.id, viewer=user) if featured_video else [],
         "notifications": [serialize_notification(item) for item in notifications],

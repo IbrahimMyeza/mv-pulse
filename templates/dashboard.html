@@ -267,6 +267,56 @@
             align-items: center;
             gap: 8px;
         }
+        .thread-card {
+            padding: 18px;
+            display: grid;
+            gap: 16px;
+            background:
+                radial-gradient(circle at top left, rgba(27, 209, 165, 0.18), transparent 26%),
+                radial-gradient(circle at bottom right, rgba(255, 143, 90, 0.18), transparent 28%),
+                rgba(17, 24, 32, 0.96);
+        }
+        .thread-card-header { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+        .thread-glow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(27, 209, 165, 0.12);
+            border: 1px solid rgba(27, 209, 165, 0.26);
+            color: #b9fff2;
+            font-weight: 700;
+        }
+        .thread-pulse {
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 0 rgba(27, 209, 165, 0.45);
+            animation: thread-pulse 1.6s infinite;
+        }
+        .thread-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+        .participant-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .participant-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .thread-card h3 { margin: 0; font-size: 1.28rem; }
+        .thread-card p { margin: 0; }
+        @keyframes thread-pulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(27, 209, 165, 0.45); }
+            70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(27, 209, 165, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(27, 209, 165, 0); }
+        }
 
         .tabbar {
             position: fixed;
@@ -336,7 +386,35 @@
                     </div>
                 </div>
                 <div class="feed-stack">
-                    {% for video in feed_videos %}
+                    {% for item in feed_items %}
+                    {% if item.kind == 'hot_thread' %}
+                    <article class="feed-card thread-card" id="thread-card-{{ item.highlighted_reply_id or item.reel_id }}">
+                        <div class="thread-card-header">
+                            <div>
+                                <div class="thread-glow"><span class="thread-pulse"></span> People are talking about this right now 🎙️</div>
+                                <h3><a href="{{ item.target_url }}">{{ item.title }}</a></h3>
+                                <p>{{ item.cta_text }}</p>
+                            </div>
+                            <div class="thread-meta">
+                                <span class="pill">heat {{ item.heat_score }}</span>
+                                <span class="pill">{{ item.reply_count }} replies</span>
+                                <span class="pill">depth {{ item.reply_depth }}</span>
+                            </div>
+                        </div>
+                        <p>{{ item.caption }}</p>
+                        <div class="participant-row">
+                            {% for participant in item.top_participants %}
+                            <span class="participant-avatar" title="@{{ participant.username }}">{{ participant.initials }}</span>
+                            {% endfor %}
+                            <span class="pill">@{{ item.creator }}</span>
+                        </div>
+                        <div class="inline-actions">
+                            <a class="action primary" href="{{ item.target_url }}">Jump into hot subtree</a>
+                            <a class="action" href="/video/{{ item.video_id }}">Open full reel</a>
+                        </div>
+                    </article>
+                    {% else %}
+                    {% set video = item %}
                     <article class="feed-card" id="video-{{ video.id }}">
                         <div class="video-shell">
                             <video class="autoplay-video" src="{{ video.video_url }}" muted loop playsinline controls preload="metadata"></video>
@@ -392,6 +470,7 @@
                             </div>
                         </div>
                     </article>
+                    {% endif %}
                     {% else %}
                     <article class="card"><p>No videos yet. Upload the first Umbono Wami clip.</p></article>
                     {% endfor %}
