@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }}</title>
+    <style>
+        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #0d1117; color: #f5f7fa; padding: 18px; }
+        .shell { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+        .card { background: rgba(17,24,32,0.94); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 18px; }
+        video { width: 100%; max-height: 72vh; border-radius: 20px; background: #080c12; }
+        .meta, p { color: #9aa6b5; line-height: 1.5; }
+        .thread { margin-top: 12px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px; }
+        .waveform { height: 48px; border-radius: 16px; background: linear-gradient(90deg, rgba(27,209,165,0.18), rgba(27,209,165,0.45), rgba(255,143,90,0.24), rgba(27,209,165,0.42)); position: relative; overflow: hidden; }
+        .waveform::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.08) 10px, rgba(255,255,255,0.08) 12px); }
+        form { display: grid; gap: 12px; }
+        input, select, button { font: inherit; }
+        input, select { width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.06); color: #f5f7fa; }
+        button, .btn { border: 0; border-radius: 16px; padding: 12px 16px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .reply-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.04); margin-top: 12px; }
+        audio { width: 100%; margin-top: 10px; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .ghost { border-radius: 999px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #f5f7fa; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <a class="btn" href="/feed">Back to feed</a>
+        <section class="card">
+            <video src="{{ video_payload.video_url }}" controls autoplay muted playsinline></video>
+            <h1>{{ video.title }}</h1>
+            <p>{{ video.caption }}</p>
+            <p class="meta">@{{ video_payload.creator }} · {{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</p>
+            <p class="meta">{{ video.views }} views · {{ video.voice_replies }} voice replies · creator score {{ '%.2f'|format(video.creator_score) }}</p>
+        </section>
+
+        <section class="card">
+            <h2>Reply with a voice note</h2>
+            {% if current_user %}
+            <form action="/voice/reply" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="video_id" value="{{ video.id }}">
+                <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
+                <select name="language_code">
+                    {% for code, label in locale_options.items() %}
+                    <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <input type="file" name="voice" accept="audio/*" required>
+                <button type="submit">Post voice reply</button>
+            </form>
+            {% else %}
+            <p>Sign in to reply with your voice.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Threaded voice discussion</h2>
+            {% for reply in replies %}
+                {% include 'voice_reply_tree.html' %}
+            {% else %}
+            <p>No voice replies yet. Be the first voice in the thread.</p>
+            {% endfor %}
+        </section>
+    </div>
+    <script>
+        document.querySelectorAll('.speed-button').forEach((button) => {
+            button.addEventListener('click', () => {
+                const audio = button.closest('.reply-card').querySelector('audio');
+                if (audio) {
+                    audio.playbackRate = Number(button.dataset.rate || 1);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

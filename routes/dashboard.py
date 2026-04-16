@@ -564,10 +564,10 @@ def upgrade_success():
 
 @dashboard_bp.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html", **_build_dashboard_context())
+    return redirect(url_for("social.feed"))
 
 
-@dashboard_bp.route("/api/feed")
+@dashboard_bp.route("/api/creator/feed")
 def api_feed():
     context = _build_dashboard_context()
     return jsonify({
@@ -580,7 +580,7 @@ def api_feed():
     })
 
 
-@dashboard_bp.route("/api/analytics")
+@dashboard_bp.route("/api/creator/analytics")
 def api_analytics():
     context = _build_dashboard_context()
     return jsonify({
@@ -598,7 +598,7 @@ def api_analytics():
     })
 
 
-@dashboard_bp.route("/api/create/caption", methods=["GET", "POST"])
+@dashboard_bp.route("/api/creator/caption", methods=["GET", "POST"])
 def api_create_caption():
     payload = request.get_json(silent=True) or request.values
     context = _build_dashboard_context()
@@ -638,13 +638,13 @@ def api_projects():
     return jsonify({"project": _serialize_project(project)}), 201
 
 
-@dashboard_bp.route("/api/schedule")
+@dashboard_bp.route("/api/creator/schedule")
 def api_schedule():
     context = _build_dashboard_context()
     return jsonify(context["schedule_plan"])
 
 
-@dashboard_bp.route("/api/profile")
+@dashboard_bp.route("/api/creator/profile")
 def api_profile():
     context = _build_dashboard_context()
     return jsonify({

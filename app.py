@@ -6,10 +6,15 @@ from database import db
 from models.user import User
 from models.reel import Reel
 from models.export_project import ExportProject
+from models.follow import Follow
+from models.notification import Notification
+from models.video import Video
+from models.voice_reply import VoiceReply
 
 from routes.voice import voice_bp
 from routes.auth import auth_bp
 from routes.reels import reels_bp
+from routes.social import social_bp
 from routes.analytics import analytics_bp
 from routes.leaderboard import leaderboard_bp
 from routes.predict import predict_bp
@@ -37,6 +42,7 @@ db.init_app(app)
 app.register_blueprint(voice_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(reels_bp)
+app.register_blueprint(social_bp)
 app.register_blueprint(analytics_bp)
 app.register_blueprint(leaderboard_bp)
 app.register_blueprint(predict_bp)

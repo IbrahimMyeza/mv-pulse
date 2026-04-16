@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if profile_user %}@{{ profile_user.username }}{% else %}Profile{% endif %}</title>
+    <style>
+        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #0d1117; color: #f5f7fa; padding: 18px; }
+        .shell { max-width: 980px; margin: 0 auto; display: grid; gap: 16px; }
+        .card { background: rgba(17,24,32,0.94); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 18px; }
+        .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .stat { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); }
+        p { color: #9aa6b5; line-height: 1.5; }
+        a, button { color: inherit; text-decoration: none; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 16px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; font-weight: 700; border: 0; cursor: pointer; }
+        .video-item { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <a class="btn" href="/feed">Back to feed</a>
+        <section class="card">
+            {% if profile_user %}
+            <h1>@{{ profile_user.username }}</h1>
+            <p>{{ profile_stats.followers }} followers · {{ profile_stats.following }} following · {{ profile_stats.replies }} voice replies</p>
+            <div class="stats">
+                <div class="stat"><strong>{{ profile_stats.videos }}</strong><p>videos</p></div>
+                <div class="stat"><strong>{{ profile_stats.creator_score }}</strong><p>creator score</p></div>
+            </div>
+            {% if current_user and current_user.username != profile_user.username %}
+            <form action="/api/profile/{{ profile_user.username }}/follow" method="post" style="margin-top: 14px;">
+                <button class="btn" type="submit">{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
+            </form>
+            {% endif %}
+            {% else %}
+            <p>Profile not found.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Posted videos</h2>
+            {% for video in profile_videos %}
+            <div class="video-item">
+                <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
+                <p>{{ video.caption }}</p>
+                <p>{{ video.voice_replies }} voice replies · {{ video.likes }} likes · {{ video.region }}</p>
+            </div>
+            {% else %}
+            <p>No videos yet.</p>
+            {% endfor %}
+        </section>
+    </div>
+</body>
+</html>
