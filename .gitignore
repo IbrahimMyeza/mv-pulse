@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+instance/
+*.db
+*.sqlite3
+.env
+static/exports/
+static/uploads/
+static/voices/

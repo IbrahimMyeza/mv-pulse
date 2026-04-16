@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MV Pulse Dashboard</title>
+
+    {% if request.path == "/tv" %}
+    <meta http-equiv="refresh" content="30">
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1100px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        body.tv-mode {
+            font-size: 22px;
+            max-width: 1400px;
+            background: #f7f7f7;
+        }
+
+        body.tv-mode .card {
+            min-height: 220px;
+        }
+
+        body.tv-mode h1,
+        body.tv-mode h2,
+        body.tv-mode p,
+        body.tv-mode button,
+        body.tv-mode a {
+            font-size: 1.05em;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        canvas {
+            margin-top: 20px;
+            max-height: 400px;
+        }
+        
+        .error-message {
+            color: red;
+            padding: 10px;
+            background: #ffeeee;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        marquee {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="{% if request.path == '/tv' %}tv-mode{% endif %}">
+    <h1>📊 MV Pulse Admin Dashboard</h1>
+
+    <div class="card" style="width:100%; font-size:22px;">
+        <h1>🛰️ MV Pulse Command Center</h1>
+        <p>🌍 Hotspot: <b>{{ command_center.region }}</b></p>
+        <p>📈 Topic: <b>{{ command_center.topic }}</b></p>
+        <p>⏰ Best Slot: <b>{{ command_center.slot }}</b></p>
+        <p>💎 Workspace Plan: <b>{{ command_center.plan }}</b></p>
+    </div>
+
+    <div class="card">
+        <h2>🤖 Autonomous AI Producer</h2>
+        <p>🟢 Status: <b>{{ autonomous_status.state|default('IDLE') }}</b></p>
+        <p>⚡ Last action: <b>{{ autonomous_status.last_action|default('No action yet') }}</b></p>
+    </div>
+
+    <!-- Live ticker -->
+    <div class="card" style="overflow: hidden; white-space: nowrap;">
+        <marquee behavior="scroll" direction="left">
+            {% if ticker_alerts %}
+                {% for alert in ticker_alerts %}
+                    {{ alert }} &nbsp;&nbsp;&nbsp;
+                {% endfor %}
+            {% else %}
+                No recent alerts &nbsp;&nbsp;&nbsp;
+            {% endif %}
+        </marquee>
+    </div>
+
+    <!-- Totals -->
+    <div class="card">
+        <h2>Platform Totals</h2>
+        <p>Total Reels: {{ total_reels|default(0) }}</p>
+        <p>Total Views: {{ total_views|default(0) }}</p>
+        <p>Total Likes: {{ total_likes|default(0) }}</p>
+    </div>
+
+    <!-- Controversial -->
+    <div class="card">
+        <h2>🌡️ Top Controversial Reels</h2>
+        {% if top_controversial %}
+            {% for reel in top_controversial %}
+                <p>
+                    {{ reel.title }} —
+                    Score: {{ reel.disagree_count - reel.agree_count }}
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>No controversial reels yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Hotspot alert -->
+    <div class="card">
+        <h2>🚨 Live Hotspot Alert</h2>
+        <p>
+            🔥 <b>{{ hottest_region|default('No data') }}</b>
+            is trending with
+            <b>{{ hottest_value|default(0) }}</b> active reels
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>🤖 AI Breakout Detection</h2>
+        {% if breakout_reel %}
+        <p>
+            🚨 Possible viral breakout:
+            <b>{{ breakout_reel.title }}</b>
+            with
+            <b>{{ breakout_views|default(0) }}</b> views
+        </p>
+        {% else %}
+        <p>No breakout detected yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>🧠 Next Topic AI</h2>
+        <p>
+            🔮 Predicted next dominant Durban topic:
+            <b>{{ predicted_next_topic|default('Unknown') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>📈 Forecast Engine</h2>
+        {% if forecast_labels and forecast_values %}
+        <p>
+            Momentum outlook across forecast windows:
+            <b>{{ forecast_labels|length }}</b>
+            intervals tracked
+        </p>
+        <canvas id="forecastChart"></canvas>
+        {% else %}
+        <p>No forecast data available yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>⏰ Posting AI</h2>
+        <p>
+            🚀 Best predicted posting window:
+            <b>{{ best_post_slot|default('now') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>📬 Content Copilot</h2>
+        <p>
+            🤖 Recommended move:
+            <b>{{ content_copilot|default('No recommendation yet') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>✍️ Caption AI</h2>
+        <p>
+            📝 Suggested caption:
+            <b>{{ ai_caption|default('No caption yet') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>🎥 Hook AI</h2>
+        <p>
+            🎬 Suggested opening hook:
+            <b>{{ ai_hook|default('No hook yet') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>📝 Script AI</h2>
+        <p>
+            🎬 30-second reel script:
+            <b>{{ ai_script|default('No script yet') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>🎙️ Voiceover AI</h2>
+        <p>
+            🎤 Narration script:
+            <b>{{ ai_voiceover|default('No voiceover yet') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>🎞️ Shotlist AI</h2>
+        {% for shot in ai_shotlist|default([], true) %}
+            <p>🎬 {{ shot }}</p>
+        {% else %}
+            <p>No shotlist available yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h2>🖼️ Thumbnail AI</h2>
+        <p>
+            🎯 Suggested cover text:
+            <b>{{ ai_thumbnail|default('No thumbnail text yet') }}</b>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>📦 Export Studio Pack</h2>
+        <p>📬 {{ export_pack.copilot|default('No copilot recommendation') }}</p>
+        <p>✍️ {{ export_pack.caption|default('No caption') }}</p>
+        <p>🎥 {{ export_pack.hook|default('No hook') }}</p>
+        <p>📝 {{ export_pack.script|default('No script') }}</p>
+        <p>🎙️ {{ export_pack.voiceover|default('No voiceover') }}</p>
+        <p>🖼️ {{ export_pack.thumbnail|default('No thumbnail') }}</p>
+
+        {% for shot in export_pack.shotlist|default([], true) %}
+            <p>🎞️ {{ shot }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h2>📄 Download Creator Brief</h2>
+        <a href="/download-pack">
+            <button>⬇️ Download PDF Pack</button>
+        </a>
+    </div>
+
+    <div class="card">
+        <h2>💳 Premium Export Tier</h2>
+
+        {% if is_pro_user %}
+            <p>💎 Pro unlocked: sponsor branding + watermark-free exports</p>
+            <button>✨ Export Agency Pack</button>
+        {% else %}
+            <p>🔒 Upgrade to Pro for sponsor-ready exports</p>
+            <a href="/upgrade">
+                <button>💵 Upgrade to Pro</button>
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>👥 Team Workspace</h2>
+        <p>🏢 Team: <b>{{ workspace.name }}</b></p>
+        <p>👤 Members: <b>{{ workspace.members }}</b></p>
+        <p>💎 Plan: <b>{{ workspace.plan }}</b></p>
+    </div>
+
+    <div class="card">
+        <h2>💬 Live Team Comments</h2>
+        {% for comment in team_comments|default([], true) %}
+            <p>🗨️ {{ comment }}</p>
+        {% else %}
+            <p>No team comments yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h2>🔔 Real-Time Team Alerts</h2>
+        {% for alert in live_alerts|default([], true) %}
+            <p>🚨 {{ alert }}</p>
+        {% else %}
+            <p>No live alerts yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h2>🚀 Virality AI</h2>
+        {% if top_viral_reel %}
+        <p>
+            🔥 Highest breakout probability:
+            <b>{{ top_viral_reel.title }}</b>
+            with AI score
+            <b>{{ top_viral_score|default(0) }}</b>
+        </p>
+        {% else %}
+        <p>No virality signal yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>🏆 AI Ranked Reels</h2>
+        {% if ranked_reels %}
+            {% for reel in ranked_reels %}
+                <p>
+                    🎯 {{ reel.title }}
+                    — Score:
+                    {{ 
+                        (
+                            (reel.likes * 2) 
+                            + (reel.comments * 3) 
+                            + (reel.disagree_count - reel.agree_count) 
+                            + (reel.views / 100)
+                        )|round(2) 
+                    }}
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>No ranked reels available.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>👤 Creator AI Leaderboard</h2>
+        {% if creator_leaderboard %}
+            {% for reel in creator_leaderboard %}
+                <p>
+                    ⭐ {{ reel.title }}
+                    — Creator Impact:
+                    {{ 
+                        (
+                            reel.creator_score 
+                            + reel.likes 
+                            + reel.comments 
+                            + (reel.views / 100)
+                        )|round(2) 
+                    }}
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>No creator data available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Charts -->
+    <div class="card">
+        <h2>📈 Likes by Reel</h2>
+        <canvas id="likesChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>🌡️ Controversy by Reel</h2>
+        <canvas id="controversyChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>📍 Topic Distribution</h2>
+        <canvas id="topicChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>🌍 Durban Region Heatmap</h2>
+        <canvas id="regionChart"></canvas>
+    </div>
+
+    <!-- Map -->
+    <div class="card">
+        <h2>🗺️ Durban Activity Map</h2>
+        <div id="map" style="height: 400px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>🌍 Creator Influence by Region</h2>
+        <canvas id="creatorRegionChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>🕸️ Topic-Region Network Graph</h2>
+        <canvas id="networkChart"></canvas>
+    </div>
+
+    <p><a href="/feed">← Back to Feed</a></p>
+
+    <script>
+        // Safe data loading with error handling
+        (function() {
+            console.log("Dashboard initializing...");
+            
+            // Helper function to safely get JSON data
+            function safeJsonData(data, defaultValue = []) {
+                if (!data || data === 'None' || data === 'null') {
+                    return defaultValue;
+                }
+                try {
+                    return typeof data === 'string' ? JSON.parse(data) : data;
+                } catch(e) {
+                    console.error("Error parsing data:", e);
+                    return defaultValue;
+                }
+            }
+            
+            // Get data with safe defaults
+            const labels = safeJsonData({{ chart_labels|tojson|default('[]') }});
+            const likes = safeJsonData({{ chart_likes|tojson|default('[]') }});
+            const controversy = safeJsonData({{ chart_controversy|tojson|default('[]') }});
+            const topicLabels = safeJsonData({{ topic_labels|tojson|default('[]') }});
+            const topicValues = safeJsonData({{ topic_values|tojson|default('[]') }});
+            const regionLabels = safeJsonData({{ region_labels|tojson|default('[]') }});
+            const regionValues = safeJsonData({{ region_values|tojson|default('[]') }});
+            const creatorRegionLabels = safeJsonData({{ creator_region_labels|tojson|default('[]') }});
+            const creatorRegionValues = safeJsonData({{ creator_region_values|tojson|default('[]') }});
+            const networkNodes = safeJsonData({{ network_nodes|tojson|default('[]') }});
+            const forecastLabels = safeJsonData({{ forecast_labels|tojson|default('[]') }});
+            const forecastValues = safeJsonData({{ forecast_values|tojson|default('[]') }});
+            
+            console.log("Data loaded:", {labels, likes, topicLabels});
+            
+            // Only create charts if we have data
+            try {
+                // Likes Chart
+                if (labels.length && likes.length) {
+                    new Chart(document.getElementById("likesChart"), {
+                        type: "bar",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Likes",
+                                data: likes,
+                                backgroundColor: "rgba(75, 192, 192, 0.6)"
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true
+                        }
+                    });
+                } else {
+                    document.getElementById("likesChart").parentElement.innerHTML += '<div class="error-message">No likes data available</div>';
+                }
+            } catch(e) {
+                console.error("Error creating likes chart:", e);
+            }
+            
+            try {
+                // Controversy Chart
+                if (labels.length && controversy.length) {
+                    new Chart(document.getElementById("controversyChart"), {
+                        type: "bar",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Controversy",
+                                data: controversy,
+                                backgroundColor: "rgba(255, 99, 132, 0.6)"
+                            }]
+                        }
+                    });
+                } else {
+                    document.getElementById("controversyChart").parentElement.innerHTML += '<div class="error-message">No controversy data available</div>';
+                }
+            } catch(e) {
+                console.error("Error creating controversy chart:", e);
+            }
+            
+            try {
+                // Forecast Chart
+                if (forecastLabels.length && forecastValues.length) {
+                    new Chart(document.getElementById("forecastChart"), {
+                        type: "line",
+                        data: {
+                            labels: forecastLabels,
+                            datasets: [{
+                                label: "Predicted Momentum",
+                                data: forecastValues,
+                                borderColor: "rgba(255, 159, 64, 1)",
+                                backgroundColor: "rgba(255, 159, 64, 0.2)",
+                                tension: 0.35,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true
+                        }
+                    });
+                }
+            } catch(e) {
+                console.error("Error creating forecast chart:", e);
+            }
+
+            try {
+                // Topic Chart
+                if (topicLabels.length && topicValues.length) {
+                    new Chart(document.getElementById("topicChart"), {
+                        type: "pie",
+                        data: {
+                            labels: topicLabels,
+                            datasets: [{
+                                label: "Topics",
+                                data: topicValues,
+                                backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"]
+                            }]
+                        }
+                    });
+                } else {
+                    document.getElementById("topicChart").parentElement.innerHTML += '<div class="error-message">No topic data available</div>';
+                }
+            } catch(e) {
+                console.error("Error creating topic chart:", e);
+            }
+            
+            try {
+                // Region Chart
+                if (regionLabels.length && regionValues.length) {
+                    new Chart(document.getElementById("regionChart"), {
+                        type: "bar",
+                        data: {
+                            labels: regionLabels,
+                            datasets: [{
+                                label: "Regional Activity",
+                                data: regionValues,
+                                backgroundColor: "rgba(54, 162, 235, 0.6)"
+                            }]
+                        }
+                    });
+                } else {
+                    document.getElementById("regionChart").parentElement.innerHTML += '<div class="error-message">No region data available</div>';
+                }
+            } catch(e) {
+                console.error("Error creating region chart:", e);
+            }
+            
+            try {
+                // Creator Region Chart
+                if (creatorRegionLabels.length && creatorRegionValues.length) {
+                    new Chart(document.getElementById("creatorRegionChart"), {
+                        type: "bar",
+                        data: {
+                            labels: creatorRegionLabels,
+                            datasets: [{
+                                label: "Creator Influence",
+                                data: creatorRegionValues,
+                                backgroundColor: "rgba(153, 102, 255, 0.6)"
+                            }]
+                        }
+                    });
+                } else {
+                    document.getElementById("creatorRegionChart").parentElement.innerHTML += '<div class="error-message">No creator region data available</div>';
+                }
+            } catch(e) {
+                console.error("Error creating creator region chart:", e);
+            }
+            
+            try {
+                // Network Chart
+                if (networkNodes.length) {
+                    new Chart(document.getElementById("networkChart"), {
+                        type: "scatter",
+                        data: {
+                            datasets: [{
+                                label: "Influence Nodes",
+                                data: networkNodes,
+                                backgroundColor: "#ff6384",
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: "Reel Index"
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: "Influence Strength"
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById("networkChart").parentElement.innerHTML += '<div class="error-message">No network data available</div>';
+                }
+            } catch(e) {
+                console.error("Error creating network chart:", e);
+            }
+            
+            // Initialize Map
+            try {
+                if (typeof L !== 'undefined') {
+                    const map = L.map("map").setView([-29.8587, 31.0218], 11);
+                    
+                    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                        attribution: "© OpenStreetMap contributors"
+                    }).addTo(map);
+                    
+                    const durbanPoints = {
+                        "Durban": [-29.8587, 31.0218],
+                        "Westville": [-29.8294, 30.9375],
+                        "Umlazi": [-29.9689, 30.8750],
+                        "Pinetown": [-29.8167, 30.8500]
+                    };
+                    
+                    if (regionLabels.length && regionValues.length) {
+                        regionLabels.forEach((region, index) => {
+                            const coords = durbanPoints[region] || [-29.8587, 31.0218];
+                            const radius = Math.min(30, 8 + (regionValues[index] || 0) * 2);
+                            
+                            L.circleMarker(coords, {
+                                radius: radius,
+                                fillColor: "#ff7800",
+                                color: "#000",
+                                weight: 1,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            })
+                            .addTo(map)
+                            .bindPopup(`${region}: ${regionValues[index] || 0} active reels`);
+                        });
+                    } else {
+                        // Add default marker
+                        L.marker([-29.8587, 31.0218]).addTo(map)
+                            .bindPopup("Durban - No activity data");
+                    }
+                } else {
+                    console.error("Leaflet not loaded");
+                    document.getElementById("map").innerHTML = '<div class="error-message">Map library failed to load</div>';
+                }
+            } catch(e) {
+                console.error("Error creating map:", e);
+                document.getElementById("map").innerHTML = '<div class="error-message">Error loading map: ' + e.message + '</div>';
+            }
+            
+            const demoMode = false;
+
+            if (demoMode) {
+                setTimeout(() => {
+                    fetch("/simulate")
+                        .then(() => window.location.reload())
+                        .catch(err => console.error("Auto-refresh failed:", err));
+                }, 10000);
+            }
+            
+            console.log("Dashboard initialization complete");
+        })();
+    </script>
+</body>
+</html>

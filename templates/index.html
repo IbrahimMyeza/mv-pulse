@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MV Pulse</title>
+</head>
+<body>
+    <h1>Welcome to MV Pulse 🎤📱</h1>
+
+    <h2>Signup</h2>
+    <form action="/signup" method="post">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Create Account</button>
+    </form>
+    
+    <h2>Login</h2>
+<form action="/login" method="post">
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+</form>
+
+    <h2>Voice Upload</h2>
+    <form action="/upload_voice" method="post" enctype="multipart/form-data">
+        <input type="file" name="voice">
+        <button type="submit">Upload Voice</button>
+    </form>
+</body>
+</html>

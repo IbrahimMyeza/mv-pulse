@@ -1,0 +1,11 @@
+id,title,likes,views,watch_time,comments,category
+1,Reel 1,120,1000,45.2,18,general
+2,Reel 2,80,900,33.1,12,general
+3,Reel 3,250,3000,60.0,40,general
+4,Reel 4,70,850,25.4,9,general
+5,Reel 5,300,5000,75.0,60,general
+6,Reel 6,150,2000,50.5,20,general
+7,Reel 7,90,1100,35.2,15,general
+8,Reel 8,400,8000,90.3,80,general
+9,Reel 9,60,700,20.0,5,general
+10,Reel 10,220,2800,55.1,30,general
