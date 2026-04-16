@@ -12,6 +12,10 @@ voice_bp = Blueprint("voice", __name__)
 VOICE_FOLDER = "static/voices/replies"
 
 
+def _wants_json_response():
+    return request.is_json or request.accept_mimetypes.best == "application/json" or request.headers.get("X-Requested-With") == "fetch"
+
+
 @voice_bp.route("/api/voice/transcribe", methods=["POST"])
 def api_voice_transcribe():
     audio = request.files.get("voice") or request.files.get("audio")
@@ -36,6 +40,8 @@ def api_voice_transcribe():
 def voice_reply():
     user = current_user()
     if not user:
+        if _wants_json_response():
+            return jsonify({"error": "authentication required", "login_url": url_for("home")}), 401
         session["auth_message"] = "Sign in to post voice replies."
         return redirect(url_for("home"))
 
@@ -96,6 +102,13 @@ def voice_reply():
                 kind="thread_reply",
                 message=f"{user.username} replied to your voice note",
             )
+
+    if _wants_json_response():
+        return jsonify({
+            "reply_id": reply.id,
+            "video_id": video.id,
+            "redirect_url": url_for("social.video_detail", id=video.id),
+        })
 
     return redirect(url_for("social.video_detail", id=video.id))
 

@@ -6,18 +6,10 @@
     <div class="actions">
         <button class="ghost speed-button" type="button" data-rate="1">1x</button>
         <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
-        <span class="ghost">{{ reply.likes_count }} likes</span>
+        <button class="ghost {% if reply.is_liked %}active{% endif %}" type="button" data-reply-like-button data-reply-id="{{ reply.id }}" data-liked="{{ 'true' if reply.is_liked else 'false' }}">❤️ <span data-reply-like-count>{{ reply.likes_count }}</span></button>
         <span class="ghost">{{ reply.language_code|upper }}</span>
+        <button class="ghost" type="button" data-open-recorder data-parent-reply-id="{{ reply.id }}">Reply</button>
     </div>
-    {% if current_user %}
-    <form action="/voice/reply" method="post" enctype="multipart/form-data" style="margin-top: 12px;">
-        <input type="hidden" name="video_id" value="{{ reply.video_id }}">
-        <input type="hidden" name="parent_reply_id" value="{{ reply.id }}">
-        <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
-        <input type="file" name="voice" accept="audio/*" required>
-        <button type="submit">Reply to this voice note</button>
-    </form>
-    {% endif %}
     {% if reply.children %}
     <div class="thread">
         {% for reply in reply.children %}

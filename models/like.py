@@ -22,6 +22,6 @@ class Like(db.Model):
     )
 
     user = db.relationship("User", back_populates="likes")
-    video = db.relationship("Video", back_populates="likes")
-    reel = db.relationship("Reel", back_populates="likes")
-    voice_reply = db.relationship("VoiceReply", back_populates="likes")
+    video = db.relationship("Video", back_populates="like_records")
+    reel = db.relationship("Reel", back_populates="like_records")
+    voice_reply = db.relationship("VoiceReply", back_populates="like_records")

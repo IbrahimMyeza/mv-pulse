@@ -22,6 +22,6 @@ class Save(db.Model):
     )
 
     user = db.relationship("User", back_populates="saves")
-    video = db.relationship("Video", back_populates="saves")
-    reel = db.relationship("Reel", back_populates="saves")
-    voice_reply = db.relationship("VoiceReply", back_populates="saves")
+    video = db.relationship("Video", back_populates="save_records")
+    reel = db.relationship("Reel", back_populates="save_records")
+    voice_reply = db.relationship("VoiceReply", back_populates="save_records")

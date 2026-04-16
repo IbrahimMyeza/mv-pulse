@@ -2,6 +2,7 @@ import os
 from collections import Counter
 
 from flask import session
+from sqlalchemy import func
 from werkzeug.utils import secure_filename
 
 from database import db
@@ -128,8 +129,6 @@ def serialize_user(user):
 
 def serialize_video(video):
     creator = video.creator.username if video.creator else "Umbono Wami"
-    likes_count = video.likes.count() if hasattr(video, "likes") else video.likes
-    saves_count = video.saves.count() if hasattr(video, "saves") else 0
     return {
         "id": video.id,
         "title": video.title,
@@ -143,15 +142,21 @@ def serialize_video(video):
         "language_code": video.language_code,
         "language_label": SUPPORTED_LANGUAGES.get(video.language_code, video.language_code),
         "creator": creator,
+        "creator_username": creator,
         "creator_id": video.creator_id,
-        "likes": likes_count,
+        "likes": video.likes,
         "views": video.views,
         "voice_replies": video.voice_replies,
-        "saves_count": saves_count,
+        "saves_count": getattr(video, "saves_count", 0),
         "shares_count": video.shares_count,
         "debate_score": round(video.debate_score, 2),
         "creator_score": round(video.creator_score, 2),
         "for_you_score": round(rank_reels([video])[0] and (video.likes * 2 + video.views + video.voice_replies * 10), 2) if video else 0,
+        "is_liked": getattr(video, "is_liked", False),
+        "is_saved": getattr(video, "is_saved", False),
+        "creator_is_followed": getattr(video, "creator_is_followed", False),
+        "can_follow_creator": getattr(video, "can_follow_creator", False),
+        "creator_followers_count": getattr(video, "creator_followers_count", 0),
     }
 
 
@@ -178,18 +183,114 @@ def serialize_voice_reply(reply):
         "transcript": reply.transcript or "",
         "language_code": reply.language_code,
         "likes_count": reply.likes_count,
-        "saves_count": reply.saves.count() if hasattr(reply, "saves") else 0,
+        "saves_count": getattr(reply, "saves_count", 0),
         "sentiment_score": round(reply.sentiment_score, 2),
         "controversy_score": round(reply.controversy_score, 2),
         "parent_reply_id": reply.parent_reply_id,
         "created_at": reply.created_at.isoformat() if reply.created_at else None,
+        "is_liked": getattr(reply, "is_liked", False),
+        "can_reply": getattr(reply, "can_reply", False),
         "children": [serialize_voice_reply(child) for child in sorted(reply.child_replies, key=lambda item: item.created_at or 0)],
     }
 
 
-def build_reply_tree(video_id):
+def _save_counts_for_videos(video_ids):
+    if not video_ids:
+        return {}
+
+    rows = db.session.query(Save.video_id, func.count(Save.id)).filter(Save.video_id.in_(video_ids)).group_by(Save.video_id).all()
+    return {video_id: count for video_id, count in rows}
+
+
+def _save_counts_for_replies(reply_ids):
+    if not reply_ids:
+        return {}
+
+    rows = db.session.query(Save.voice_reply_id, func.count(Save.id)).filter(Save.voice_reply_id.in_(reply_ids)).group_by(Save.voice_reply_id).all()
+    return {reply_id: count for reply_id, count in rows}
+
+
+def _liked_video_ids(user, video_ids):
+    if not user or not video_ids:
+        return set()
+    rows = Like.query.filter(Like.user_id == user.id, Like.video_id.in_(video_ids)).with_entities(Like.video_id).all()
+    return {video_id for (video_id,) in rows}
+
+
+def _saved_video_ids(user, video_ids):
+    if not user or not video_ids:
+        return set()
+    rows = Save.query.filter(Save.user_id == user.id, Save.video_id.in_(video_ids)).with_entities(Save.video_id).all()
+    return {video_id for (video_id,) in rows}
+
+
+def _liked_reply_ids(user, reply_ids):
+    if not user or not reply_ids:
+        return set()
+    rows = Like.query.filter(Like.user_id == user.id, Like.voice_reply_id.in_(reply_ids)).with_entities(Like.voice_reply_id).all()
+    return {reply_id for (reply_id,) in rows}
+
+
+def _followed_user_ids(user, creator_ids):
+    if not user or not creator_ids:
+        return set()
+    rows = Follow.query.filter(Follow.follower_id == user.id, Follow.followed_id.in_(creator_ids)).with_entities(Follow.followed_id).all()
+    return {followed_id for (followed_id,) in rows}
+
+
+def _follower_counts(creator_ids):
+    if not creator_ids:
+        return {}
+    rows = db.session.query(Follow.followed_id, func.count(Follow.id)).filter(Follow.followed_id.in_(creator_ids)).group_by(Follow.followed_id).all()
+    return {creator_id: count for creator_id, count in rows}
+
+
+def hydrate_videos(videos, viewer=None):
+    video_ids = [video.id for video in videos]
+    creator_ids = [video.creator_id for video in videos if video.creator_id]
+    saved_counts = _save_counts_for_videos(video_ids)
+    liked_ids = _liked_video_ids(viewer, video_ids)
+    saved_ids = _saved_video_ids(viewer, video_ids)
+    followed_ids = _followed_user_ids(viewer, creator_ids)
+    follower_counts = _follower_counts(creator_ids)
+
+    for video in videos:
+        video.saves_count = saved_counts.get(video.id, 0)
+        video.is_liked = video.id in liked_ids
+        video.is_saved = video.id in saved_ids
+        video.creator_is_followed = bool(viewer and video.creator_id and video.creator_id in followed_ids and viewer.id != video.creator_id)
+        video.can_follow_creator = bool(video.creator_id and (not viewer or viewer.id != video.creator_id))
+        video.creator_followers_count = follower_counts.get(video.creator_id, 0)
+    return videos
+
+
+def _hydrate_replies(replies, viewer=None):
+    reply_ids = []
+
+    def collect(items):
+        for item in items:
+            reply_ids.append(item.id)
+            collect(item.child_replies)
+
+    collect(replies)
+    saved_counts = _save_counts_for_replies(reply_ids)
+    liked_ids = _liked_reply_ids(viewer, reply_ids)
+
+    def apply_state(items):
+        for item in items:
+            item.saves_count = saved_counts.get(item.id, 0)
+            item.is_liked = item.id in liked_ids
+            item.can_reply = viewer is not None
+            apply_state(item.child_replies)
+
+    apply_state(replies)
+    return replies
+
+
+def build_reply_tree(video_id, viewer=None):
     replies = VoiceReply.query.filter_by(video_id=video_id).order_by(VoiceReply.created_at.asc()).all()
     top_level = [reply for reply in replies if reply.parent_reply_id is None]
+    _hydrate_replies(top_level, viewer=viewer)
     return [serialize_voice_reply(reply) for reply in top_level]
 
 
@@ -268,9 +369,14 @@ def preferred_region_for(user):
 def social_context(active_tab="home", profile_user=None, selected_video=None):
     ensure_social_seed()
     user = current_user()
+    if user:
+        ensure_social_profile(user)
+    if profile_user:
+        ensure_social_profile(profile_user)
     topic = preferred_topic_for(user)
     region = preferred_region_for(user)
     videos = ranked_feed(preferred_topic=topic, preferred_region=region)
+    hydrate_videos(videos, viewer=user)
     featured_video = selected_video or (videos[0] if videos else None)
     profile_owner = profile_user or user
 
@@ -292,9 +398,10 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
     return {
         "active_tab": active_tab,
         "current_user": user,
+        "current_user_payload": serialize_user(user),
         "feed_videos": [serialize_video(video) for video in videos],
         "featured_video": serialize_video(featured_video) if featured_video else None,
-        "selected_reply_threads": build_reply_tree(featured_video.id) if featured_video else [],
+        "selected_reply_threads": build_reply_tree(featured_video.id, viewer=user) if featured_video else [],
         "notifications": [serialize_notification(item) for item in notifications],
         "recent_voice_threads": recent_replies_serialized,
         "profile_user": profile_owner,

@@ -22,13 +22,13 @@ class Reel(db.Model):
     agree_count = db.Column(db.Integer, default=0)
     disagree_count = db.Column(db.Integer, default=0)
 
-    likes = db.relationship(
+    like_records = db.relationship(
         "Like",
         back_populates="reel",
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
-    saves = db.relationship(
+    save_records = db.relationship(
         "Save",
         back_populates="reel",
         lazy="dynamic",

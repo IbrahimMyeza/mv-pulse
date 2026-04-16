@@ -145,6 +145,15 @@
             cursor: pointer;
         }
 
+        .icon-button.active,
+        .ghost.active,
+        .submit.alt {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #09121a;
+            border-color: transparent;
+            font-weight: 700;
+        }
+
         .video-footer {
             padding: 16px 18px 18px;
             display: grid;
@@ -215,6 +224,31 @@
 
         .nested { margin-left: 18px; border-left: 1px solid var(--line); padding-left: 12px; }
         .notification-item, .project-item, .profile-video-item { padding: 14px; border-radius: 18px; background: rgba(255, 255, 255, 0.04); }
+        .creator-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .follow-button { min-width: 110px; }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 30;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal-card {
+            width: min(460px, 100%);
+            border-radius: 24px;
+            background: #101720;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            display: grid;
+            gap: 12px;
+        }
+        .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .assist-text { color: var(--muted); font-size: 0.95rem; }
 
         .tabbar {
             position: fixed;
@@ -249,7 +283,7 @@
     </style>
 </head>
 <body>
-    <div class="app">
+    <div class="app" data-authenticated="{{ 'true' if current_user else 'false' }}" data-login-url="/" data-current-user-id="{{ current_user.id if current_user else '' }}">
         <header class="hero">
             <div class="hero-top">
                 <div>
@@ -290,19 +324,32 @@
                             <video class="autoplay-video" src="{{ video.video_url }}" muted loop playsinline controls preload="metadata"></video>
                             <div class="video-overlay">
                                 <div class="video-meta">
-                                    <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
+                                    <div class="creator-row">
+                                        <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
+                                        {% if video.can_follow_creator %}
+                                        <button
+                                            class="ghost follow-button {% if video.creator_is_followed %}active{% endif %}"
+                                            type="button"
+                                            data-follow-button
+                                            data-target-user-id="{{ video.creator_id }}"
+                                            data-target-username="{{ video.creator_username }}"
+                                            data-following="{{ 'true' if video.creator_is_followed else 'false' }}"
+                                        >{% if video.creator_is_followed %}Following{% else %}Follow{% endif %}</button>
+                                        {% endif %}
+                                    </div>
                                     <p>{{ video.caption }}</p>
                                     <div class="video-stats">
-                                        <span>@{{ video.creator }}</span>
+                                        <span><a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a></span>
                                         <span>{{ video.region }}</span>
                                         <span>{{ video.topic }}</span>
                                         <span>{{ video.language_label }}</span>
                                     </div>
                                 </div>
                                 <div class="side-actions">
-                                    <button class="icon-button like-button" data-video-id="{{ video.id }}">❤️<br><small>{{ video.likes }}</small></button>
-                                    <button class="icon-button share-button" data-video-id="{{ video.id }}">↗️<br><small>{{ video.shares_count }}</small></button>
-                                    <a class="icon-button" href="/video/{{ video.id }}">🎙️<br><small>{{ video.voice_replies }}</small></a>
+                                    <button class="icon-button like-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">❤️<br><small data-video-like-count>{{ video.likes }}</small></button>
+                                    <button class="icon-button save-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">🔖<br><small data-video-save-count>{{ video.saves_count }}</small></button>
+                                    <button class="icon-button share-button" type="button" data-video-share-button data-video-id="{{ video.id }}">↗️<br><small data-video-share-count>{{ video.shares_count }}</small></button>
+                                    <button class="icon-button" type="button" data-open-voice-entry data-video-id="{{ video.id }}">🎙️<br><small>{{ video.voice_replies }}</small></button>
                                 </div>
                             </div>
                         </div>
@@ -311,6 +358,9 @@
                                 <span class="pill">{{ video.views }} views</span>
                                 <span class="pill">{{ video.voice_replies }} voice replies</span>
                                 <span class="pill">debate {{ video.debate_score }}</span>
+                                {% if video.creator_id %}
+                                <span class="pill" data-followers-for="{{ video.creator_id }}">{{ video.creator_followers_count }} followers</span>
+                                {% endif %}
                             </div>
                             <div class="inline-actions">
                                 <a class="action" href="/video/{{ video.id }}">Open threaded voice discussion</a>
@@ -427,9 +477,14 @@
                         <p>{{ profile_stats.videos }} videos · {{ profile_stats.replies }} voice replies</p>
                         <p>Creator score {{ profile_stats.creator_score }}</p>
                         {% if current_user and profile_user and current_user.username != profile_user.username %}
-                        <form action="/api/profile/{{ profile_user.username }}/follow" method="post">
-                            <button class="submit" type="submit">{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
-                        </form>
+                        <button
+                            class="submit alt follow-button {% if is_following_profile %}active{% endif %}"
+                            type="button"
+                            data-follow-button
+                            data-target-user-id="{{ profile_user.id }}"
+                            data-target-username="{{ profile_user.username }}"
+                            data-following="{{ 'true' if is_following_profile else 'false' }}"
+                        >{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
                         {% endif %}
                         {% else %}
                         <p>Sign in to unlock your creator profile.</p>
@@ -465,7 +520,94 @@
         </nav>
     </div>
 
+    <div class="modal-backdrop" data-auth-modal>
+        <div class="modal-card">
+            <h3>Sign in to keep your voice in the thread</h3>
+            <p class="assist-text">Follow creators, like videos, save clips, and record voice replies after signing in.</p>
+            <div class="modal-actions">
+                <a class="action primary" href="/">Sign in or create account</a>
+                <button class="ghost" type="button" data-close-modal>Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const appShell = document.querySelector('.app');
+        const isAuthenticated = appShell?.dataset.authenticated === 'true';
+        const loginUrl = appShell?.dataset.loginUrl || '/';
+        const authModal = document.querySelector('[data-auth-modal]');
+
+        const preserveScroll = () => {
+            const currentTop = window.scrollY;
+            requestAnimationFrame(() => window.scrollTo({ top: currentTop }));
+        };
+
+        const openAuthModal = () => {
+            if (authModal) {
+                authModal.classList.add('active');
+            }
+        };
+
+        const closeAuthModal = () => {
+            if (authModal) {
+                authModal.classList.remove('active');
+            }
+        };
+
+        document.querySelectorAll('[data-close-modal]').forEach((button) => {
+            button.addEventListener('click', closeAuthModal);
+        });
+
+        if (authModal) {
+            authModal.addEventListener('click', (event) => {
+                if (event.target === authModal) {
+                    closeAuthModal();
+                }
+            });
+        }
+
+        const handleAuthError = async (response) => {
+            if (response.status !== 401) {
+                return false;
+            }
+            openAuthModal();
+            return true;
+        };
+
+        const requestJson = async (url, options = {}) => {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'fetch',
+                    ...(options.headers || {}),
+                },
+            });
+
+            if (await handleAuthError(response)) {
+                throw new Error('auth');
+            }
+
+            if (!response.ok) {
+                throw new Error('request');
+            }
+
+            return response.json();
+        };
+
+        const setCount = (element, value) => {
+            if (element) {
+                element.textContent = value;
+            }
+        };
+
+        const setActiveState = (button, active, activeLabel, idleLabel) => {
+            button.classList.toggle('active', active);
+            if (typeof activeLabel === 'string' && typeof idleLabel === 'string') {
+                button.textContent = active ? activeLabel : idleLabel;
+            }
+        };
+
         document.querySelectorAll('.autoplay-video').forEach((video) => {
             video.muted = true;
             const observer = new IntersectionObserver((entries) => {
@@ -492,23 +634,115 @@
 
         document.querySelectorAll('.like-button').forEach((button) => {
             button.addEventListener('click', async () => {
-                const response = await fetch(`/api/video/${button.dataset.videoId}/like`, { method: 'POST' });
-                if (!response.ok) {
-                    return;
+                const countNode = button.querySelector('[data-video-like-count]');
+                const previousLiked = button.dataset.liked === 'true';
+                const previousCount = Number(countNode?.textContent || '0');
+                button.dataset.liked = previousLiked ? 'false' : 'true';
+                button.classList.toggle('active', !previousLiked);
+                setCount(countNode, previousLiked ? previousCount - 1 : previousCount + 1);
+                preserveScroll();
+
+                try {
+                    const data = await requestJson(`/api/videos/${button.dataset.videoId}/like`, { method: 'POST' });
+                    button.dataset.liked = data.liked ? 'true' : 'false';
+                    button.classList.toggle('active', data.liked);
+                    setCount(countNode, data.likes);
+                } catch (error) {
+                    button.dataset.liked = previousLiked ? 'true' : 'false';
+                    button.classList.toggle('active', previousLiked);
+                    setCount(countNode, previousCount);
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
                 }
-                const data = await response.json();
-                button.innerHTML = `❤️<br><small>${data.likes}</small>`;
+            });
+        });
+
+        document.querySelectorAll('[data-video-save-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const countNode = button.querySelector('[data-video-save-count]');
+                const previousSaved = button.dataset.saved === 'true';
+                const previousCount = Number(countNode?.textContent || '0');
+                button.dataset.saved = previousSaved ? 'false' : 'true';
+                button.classList.toggle('active', !previousSaved);
+                setCount(countNode, previousSaved ? Math.max(previousCount - 1, 0) : previousCount + 1);
+                preserveScroll();
+
+                try {
+                    const data = await requestJson(`/api/videos/${button.dataset.videoId}/save`, { method: 'POST' });
+                    button.dataset.saved = data.saved ? 'true' : 'false';
+                    button.classList.toggle('active', data.saved);
+                    setCount(countNode, data.saves_count);
+                } catch (error) {
+                    button.dataset.saved = previousSaved ? 'true' : 'false';
+                    button.classList.toggle('active', previousSaved);
+                    setCount(countNode, previousCount);
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
             });
         });
 
         document.querySelectorAll('.share-button').forEach((button) => {
             button.addEventListener('click', async () => {
-                const response = await fetch(`/api/video/${button.dataset.videoId}/share`, { method: 'POST' });
-                if (!response.ok) {
+                const countNode = button.querySelector('[data-video-share-count]');
+                const previousCount = Number(countNode?.textContent || '0');
+                setCount(countNode, previousCount + 1);
+                preserveScroll();
+
+                try {
+                    const shareUrl = `${window.location.origin}/video/${button.dataset.videoId}`;
+                    if (navigator.share) {
+                        navigator.share({ url: shareUrl }).catch(() => {});
+                    } else if (navigator.clipboard) {
+                        navigator.clipboard.writeText(shareUrl).catch(() => {});
+                    }
+                    const data = await requestJson(`/api/videos/${button.dataset.videoId}/share`, { method: 'POST' });
+                    setCount(countNode, data.shares_count);
+                } catch (error) {
+                    setCount(countNode, previousCount);
+                    console.error(error);
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-follow-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const targetUserId = button.dataset.targetUserId;
+                const currentlyFollowing = button.dataset.following === 'true';
+                button.dataset.following = currentlyFollowing ? 'false' : 'true';
+                setActiveState(button, !currentlyFollowing, 'Following', 'Follow');
+                preserveScroll();
+
+                const updateFollowers = (payload) => {
+                    document.querySelectorAll(`[data-followers-for="${targetUserId}"]`).forEach((node) => {
+                        node.textContent = `${payload.followers} followers`;
+                    });
+                };
+
+                try {
+                    const data = await requestJson(`/api/follow/${targetUserId}`, { method: currentlyFollowing ? 'DELETE' : 'POST' });
+                    button.dataset.following = data.following ? 'true' : 'false';
+                    setActiveState(button, data.following, 'Following', 'Follow');
+                    updateFollowers(data);
+                } catch (error) {
+                    button.dataset.following = currentlyFollowing ? 'true' : 'false';
+                    setActiveState(button, currentlyFollowing, 'Following', 'Follow');
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-open-voice-entry]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (!isAuthenticated) {
+                    openAuthModal();
                     return;
                 }
-                const data = await response.json();
-                button.innerHTML = `↗️<br><small>${data.shares_count}</small>`;
+                window.location.href = `/video/${button.dataset.videoId}#record`;
             });
         });
 

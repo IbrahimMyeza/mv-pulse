@@ -1,18 +1,24 @@
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
-from database import db
 from models.follow import Follow
 from models.user import User
 from models.video import Video
 from models.voice_reply import VoiceReply
+from services.social_engagement import (
+    follow_payload,
+    toggle_follow,
+    toggle_video_like,
+    toggle_video_save,
+    toggle_voice_reply_like,
+    track_video_share,
+)
 from routes.social_utils import (
-    create_notification,
     current_user,
     ensure_social_seed,
-    follow_state,
     serialize_video,
     social_context,
     build_reply_tree,
+    hydrate_videos,
     save_video_file,
 )
 
@@ -35,6 +41,10 @@ def _auth_required_redirect():
     return None, redirect(url_for("home"))
 
 
+def _auth_response(message):
+    return jsonify({"error": message, "login_url": url_for("home")}), 401
+
+
 @social_bp.route("/feed")
 def feed():
     return render_template("dashboard.html", **social_context(active_tab="home"))
@@ -48,6 +58,31 @@ def api_feed():
         "featured_video": context["featured_video"],
         "locale_options": context["locale_options"],
     })
+
+
+@social_bp.route("/api/follow/<int:user_id>", methods=["POST", "DELETE"])
+def api_follow_user(user_id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to follow creators.")
+
+    target_user = User.query.get_or_404(user_id)
+    if viewer.id == target_user.id:
+        return jsonify({"error": "cannot follow yourself"}), 400
+
+    relation_exists = Follow.query.filter_by(follower_id=viewer.id, followed_id=target_user.id).first() is not None
+    if request.method == "POST" and not relation_exists:
+        state = toggle_follow(viewer, target_user)
+    elif request.method == "DELETE" and relation_exists:
+        state = toggle_follow(viewer, target_user)
+    else:
+        state = {
+            "following": relation_exists,
+            "followers": target_user.followers.count(),
+            "following_count": viewer.following.count(),
+        }
+
+    return jsonify(follow_payload(viewer, target_user, state))
 
 
 @social_bp.route("/upload", methods=["GET", "POST"])
@@ -94,13 +129,15 @@ def upload():
 def video_detail(id):
     ensure_social_seed()
     video = Video.query.get_or_404(id)
+    viewer = current_user()
+    hydrate_videos([video], viewer=viewer)
     context = social_context(active_tab="home", selected_video=video)
     return render_template(
         "video.html",
         video=video,
         video_payload=serialize_video(video),
-        replies=build_reply_tree(video.id),
-        current_user=current_user(),
+        replies=build_reply_tree(video.id, viewer=viewer),
+        current_user=viewer,
         locale_options=context["locale_options"],
     )
 
@@ -108,23 +145,53 @@ def video_detail(id):
 @social_bp.route("/api/video/<int:id>/replies")
 def api_video_replies(id):
     Video.query.get_or_404(id)
-    return jsonify({"replies": build_reply_tree(id)})
+    return jsonify({"replies": build_reply_tree(id, viewer=current_user())})
+
+
+@social_bp.route("/api/videos/<int:id>/like", methods=["POST"])
+def api_videos_like(id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to like videos.")
+
+    video = Video.query.get_or_404(id)
+    return jsonify(toggle_video_like(viewer, video))
 
 
 @social_bp.route("/api/video/<int:id>/like", methods=["POST"])
 def api_like_video(id):
+    return api_videos_like(id)
+
+
+@social_bp.route("/api/videos/<int:id>/save", methods=["POST"])
+def api_videos_save(id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to save videos.")
+
     video = Video.query.get_or_404(id)
-    video.likes += 1
-    db.session.commit()
-    return jsonify({"likes": video.likes})
+    return jsonify(toggle_video_save(viewer, video))
+
+
+@social_bp.route("/api/videos/<int:id>/share", methods=["POST"])
+def api_videos_share(id):
+    video = Video.query.get_or_404(id)
+    return jsonify(track_video_share(video))
 
 
 @social_bp.route("/api/video/<int:id>/share", methods=["POST"])
 def api_share_video(id):
-    video = Video.query.get_or_404(id)
-    video.shares_count += 1
-    db.session.commit()
-    return jsonify({"shares_count": video.shares_count})
+    return api_videos_share(id)
+
+
+@social_bp.route("/api/voice-replies/<int:id>/like", methods=["POST"])
+def api_voice_replies_like(id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to like voice replies.")
+
+    voice_reply = VoiceReply.query.get_or_404(id)
+    return jsonify(toggle_voice_reply_like(viewer, voice_reply))
 
 
 @social_bp.route("/profile/<username>")
@@ -146,25 +213,9 @@ def follow_profile(username):
     if viewer.id == profile_user.id:
         return jsonify({"error": "cannot follow yourself"}), 400
 
-    relation = Follow.query.filter_by(follower_id=viewer.id, followed_id=profile_user.id).first()
-    if relation:
-        db.session.delete(relation)
-        db.session.commit()
-        if request.is_json:
-            return jsonify({"following": False, "followers": profile_user.followers.count()})
-        return redirect(url_for("social.profile", username=profile_user.username))
-
-    relation = Follow(follower_id=viewer.id, followed_id=profile_user.id)
-    db.session.add(relation)
-    db.session.commit()
-    create_notification(
-        recipient_id=profile_user.id,
-        actor_id=viewer.id,
-        kind="follow",
-        message=f"{viewer.username} followed you",
-    )
+    state = toggle_follow(viewer, profile_user)
     if request.is_json:
-        return jsonify({"following": True, "followers": profile_user.followers.count()})
+        return jsonify(follow_payload(viewer, profile_user, state))
     return redirect(url_for("social.profile", username=profile_user.username))
 
 

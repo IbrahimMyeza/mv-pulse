@@ -13,6 +13,7 @@
         .thread { margin-top: 12px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px; }
         .waveform { height: 48px; border-radius: 16px; background: linear-gradient(90deg, rgba(27,209,165,0.18), rgba(27,209,165,0.45), rgba(255,143,90,0.24), rgba(27,209,165,0.42)); position: relative; overflow: hidden; }
         .waveform::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.08) 10px, rgba(255,255,255,0.08) 12px); }
+        .waveform.recording::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(27,209,165,0.12), rgba(255,143,90,0.22), rgba(27,209,165,0.12)); animation: pulse-wave 1.2s linear infinite; }
         form { display: grid; gap: 12px; }
         input, select, button { font: inherit; }
         input, select { width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.06); color: #f5f7fa; }
@@ -21,10 +22,39 @@
         audio { width: 100%; margin-top: 10px; }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .ghost { border-radius: 999px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #f5f7fa; cursor: pointer; }
+        .ghost.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+        .stack { display: grid; gap: 12px; }
+        .helper { font-size: 0.94rem; color: #9aa6b5; }
+        .fallback { display: grid; gap: 10px; margin-top: 12px; }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.78);
+            z-index: 40;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal-card {
+            width: min(520px, 100%);
+            border-radius: 24px;
+            background: #101720;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 20px;
+            display: grid;
+            gap: 12px;
+        }
+        @keyframes pulse-wave {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
     </style>
 </head>
 <body>
-    <div class="shell">
+    <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}" data-video-id="{{ video.id }}">
         <a class="btn" href="/feed">Back to feed</a>
         <section class="card">
             <video src="{{ video_payload.video_url }}" controls autoplay muted playsinline></video>
@@ -32,28 +62,39 @@
             <p>{{ video.caption }}</p>
             <p class="meta">@{{ video_payload.creator }} · {{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</p>
             <p class="meta">{{ video.views }} views · {{ video.voice_replies }} voice replies · creator score {{ '%.2f'|format(video.creator_score) }}</p>
+            <div class="actions">
+                <button class="ghost {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">❤️ <span data-video-like-count>{{ video_payload.likes }}</span></button>
+                <button class="ghost {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">🔖 <span data-video-save-count>{{ video_payload.saves_count }}</span></button>
+                <button class="ghost" type="button" data-video-share-button>↗️ <span data-video-share-count>{{ video_payload.shares_count }}</span></button>
+                {% if video_payload.can_follow_creator %}
+                <button class="ghost {% if video_payload.creator_is_followed %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ video_payload.creator_id }}" data-following="{{ 'true' if video_payload.creator_is_followed else 'false' }}">{% if video_payload.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
+                {% endif %}
+            </div>
         </section>
 
         <section class="card">
             <h2>Reply with a voice note</h2>
-            {% if current_user %}
-            <form action="/voice/reply" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="video_id" value="{{ video.id }}">
-                <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
-                <select name="language_code">
-                    {% for code, label in locale_options.items() %}
-                    <option value="{{ code }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-                <input type="file" name="voice" accept="audio/*" required>
-                <button type="submit">Post voice reply</button>
-            </form>
-            {% else %}
-            <p>Sign in to reply with your voice.</p>
-            {% endif %}
+            <div class="stack">
+                <div class="waveform" data-recorder-wave></div>
+                <div class="row">
+                    <p class="helper">Record in-browser for fast mobile replies. If recording is unavailable, upload an audio file instead.</p>
+                    <button class="btn" type="button" data-open-recorder data-parent-reply-id="">{% if current_user %}Record voice reply{% else %}Sign in to record{% endif %}</button>
+                </div>
+                <form action="/voice/reply" method="post" enctype="multipart/form-data" class="fallback">
+                    <input type="hidden" name="video_id" value="{{ video.id }}">
+                    <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
+                    <select name="language_code">
+                        {% for code, label in locale_options.items() %}
+                        <option value="{{ code }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %}>
+                    <button type="submit">Upload voice reply</button>
+                </form>
+            </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="thread">
             <h2>Threaded voice discussion</h2>
             {% for reply in replies %}
                 {% include 'voice_reply_tree.html' %}
@@ -62,7 +103,320 @@
             {% endfor %}
         </section>
     </div>
+
+    <div class="modal-backdrop" data-auth-modal>
+        <div class="modal-card">
+            <h3>Sign in before recording</h3>
+            <p class="helper">Voice replies, likes, saves, and follows persist once you are signed in.</p>
+            <div class="actions">
+                <a class="btn" href="/">Sign in</a>
+                <button class="ghost" type="button" data-close-modal>Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" data-recorder-modal>
+        <div class="modal-card">
+            <h3>Record your voice reply</h3>
+            <p class="helper" data-recorder-status>Tap start, speak, then post your reply into the thread.</p>
+            <select data-recorder-language>
+                {% for code, label in locale_options.items() %}
+                <option value="{{ code }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+            <div class="waveform" data-modal-wave></div>
+            <audio controls preload="metadata" data-recording-preview hidden></audio>
+            <input type="file" accept="audio/*" data-recording-file>
+            <div class="actions">
+                <button type="button" data-start-recording>Start recording</button>
+                <button class="ghost" type="button" data-stop-recording>Stop</button>
+                <button type="button" data-submit-recording>Post reply</button>
+                <button class="ghost" type="button" data-close-modal>Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const shell = document.querySelector('.shell');
+        const isAuthenticated = shell?.dataset.authenticated === 'true';
+        const videoId = shell?.dataset.videoId;
+        const authModal = document.querySelector('[data-auth-modal]');
+        const recorderModal = document.querySelector('[data-recorder-modal]');
+        const recorderStatus = document.querySelector('[data-recorder-status]');
+        const modalWave = document.querySelector('[data-modal-wave]');
+        const preview = document.querySelector('[data-recording-preview]');
+        const fileInput = document.querySelector('[data-recording-file]');
+        const languageInput = document.querySelector('[data-recorder-language]');
+        let recorder = null;
+        let recorderStream = null;
+        let recorderChunks = [];
+        let recordedFile = null;
+        let currentParentReplyId = '';
+
+        const requestJson = async (url, options = {}) => {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'fetch',
+                    ...(options.headers || {}),
+                },
+            });
+            if (response.status === 401) {
+                authModal?.classList.add('active');
+                throw new Error('auth');
+            }
+            if (!response.ok) {
+                throw new Error('request');
+            }
+            return response.json();
+        };
+
+        const setToggleButton = (button, active, activeLabel, idleLabel) => {
+            button.classList.toggle('active', active);
+            button.dataset.state = active ? 'true' : 'false';
+            button.textContent = active ? activeLabel : idleLabel;
+        };
+
+        const closeModals = () => {
+            authModal?.classList.remove('active');
+            recorderModal?.classList.remove('active');
+        };
+
+        document.querySelectorAll('[data-close-modal]').forEach((button) => {
+            button.addEventListener('click', closeModals);
+        });
+
+        [authModal, recorderModal].forEach((modal) => {
+            modal?.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModals();
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-video-like-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const countNode = button.querySelector('[data-video-like-count]');
+                const previous = button.classList.contains('active');
+                const previousCount = Number(countNode?.textContent || '0');
+                button.classList.toggle('active', !previous);
+                countNode.textContent = previous ? Math.max(previousCount - 1, 0) : previousCount + 1;
+                try {
+                    const payload = await requestJson(`/api/videos/${videoId}/like`, { method: 'POST' });
+                    button.classList.toggle('active', payload.liked);
+                    countNode.textContent = payload.likes;
+                } catch (error) {
+                    button.classList.toggle('active', previous);
+                    countNode.textContent = previousCount;
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-video-save-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const countNode = button.querySelector('[data-video-save-count]');
+                const previous = button.classList.contains('active');
+                const previousCount = Number(countNode?.textContent || '0');
+                button.classList.toggle('active', !previous);
+                countNode.textContent = previous ? Math.max(previousCount - 1, 0) : previousCount + 1;
+                try {
+                    const payload = await requestJson(`/api/videos/${videoId}/save`, { method: 'POST' });
+                    button.classList.toggle('active', payload.saved);
+                    countNode.textContent = payload.saves_count;
+                } catch (error) {
+                    button.classList.toggle('active', previous);
+                    countNode.textContent = previousCount;
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-video-share-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const countNode = button.querySelector('[data-video-share-count]');
+                const previousCount = Number(countNode?.textContent || '0');
+                countNode.textContent = previousCount + 1;
+                try {
+                    const shareUrl = window.location.href;
+                    if (navigator.share) {
+                        navigator.share({ url: shareUrl }).catch(() => {});
+                    } else if (navigator.clipboard) {
+                        navigator.clipboard.writeText(shareUrl).catch(() => {});
+                    }
+                    const payload = await requestJson(`/api/videos/${videoId}/share`, { method: 'POST' });
+                    countNode.textContent = payload.shares_count;
+                } catch (error) {
+                    countNode.textContent = previousCount;
+                    console.error(error);
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-follow-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const targetUserId = button.dataset.targetUserId;
+                const previouslyFollowing = button.dataset.following === 'true';
+                button.dataset.following = previouslyFollowing ? 'false' : 'true';
+                setToggleButton(button, !previouslyFollowing, 'Following', 'Follow creator');
+                try {
+                    const payload = await requestJson(`/api/follow/${targetUserId}`, {
+                        method: previouslyFollowing ? 'DELETE' : 'POST',
+                    });
+                    button.dataset.following = payload.following ? 'true' : 'false';
+                    setToggleButton(button, payload.following, 'Following', 'Follow creator');
+                } catch (error) {
+                    button.dataset.following = previouslyFollowing ? 'true' : 'false';
+                    setToggleButton(button, previouslyFollowing, 'Following', 'Follow creator');
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-reply-like-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const countNode = button.querySelector('[data-reply-like-count]');
+                const replyId = button.dataset.replyId;
+                const previous = button.dataset.liked === 'true';
+                const previousCount = Number(countNode?.textContent || '0');
+                button.dataset.liked = previous ? 'false' : 'true';
+                button.classList.toggle('active', !previous);
+                countNode.textContent = previous ? Math.max(previousCount - 1, 0) : previousCount + 1;
+                try {
+                    const payload = await requestJson(`/api/voice-replies/${replyId}/like`, { method: 'POST' });
+                    button.dataset.liked = payload.liked ? 'true' : 'false';
+                    button.classList.toggle('active', payload.liked);
+                    countNode.textContent = payload.likes_count;
+                } catch (error) {
+                    button.dataset.liked = previous ? 'true' : 'false';
+                    button.classList.toggle('active', previous);
+                    countNode.textContent = previousCount;
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        const assignRecordedFile = (file) => {
+            recordedFile = file;
+            if (!recordedFile) {
+                preview.hidden = true;
+                preview.removeAttribute('src');
+                return;
+            }
+            preview.src = URL.createObjectURL(recordedFile);
+            preview.hidden = false;
+        };
+
+        fileInput?.addEventListener('change', () => {
+            const [file] = fileInput.files || [];
+            if (file) {
+                assignRecordedFile(file);
+                recorderStatus.textContent = 'Audio file ready to post.';
+            }
+        });
+
+        document.querySelectorAll('[data-open-recorder]').forEach((button) => {
+            button.addEventListener('click', () => {
+                currentParentReplyId = button.dataset.parentReplyId || '';
+                if (!isAuthenticated) {
+                    authModal?.classList.add('active');
+                    return;
+                }
+                recorderModal?.classList.add('active');
+            });
+        });
+
+        if (window.location.hash === '#record' && isAuthenticated) {
+            recorderModal?.classList.add('active');
+        }
+
+        document.querySelector('[data-start-recording]')?.addEventListener('click', async () => {
+            if (!navigator.mediaDevices || !window.MediaRecorder) {
+                recorderStatus.textContent = 'This browser cannot record audio. Upload a file instead.';
+                return;
+            }
+
+            try {
+                recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorderChunks = [];
+                recorder = new MediaRecorder(recorderStream);
+                recorder.addEventListener('dataavailable', (event) => {
+                    if (event.data.size > 0) {
+                        recorderChunks.push(event.data);
+                    }
+                });
+                recorder.addEventListener('stop', () => {
+                    const blob = new Blob(recorderChunks, { type: recorder?.mimeType || 'audio/webm' });
+                    assignRecordedFile(new File([blob], 'voice-reply.webm', { type: blob.type }));
+                    recorderStatus.textContent = 'Recording captured. Review and post when ready.';
+                    modalWave?.classList.remove('recording');
+                    recorderStream?.getTracks().forEach((track) => track.stop());
+                });
+                recorder.start();
+                modalWave?.classList.add('recording');
+                recorderStatus.textContent = 'Recording... tap stop when finished.';
+            } catch (error) {
+                recorderStatus.textContent = 'Microphone access failed. Upload a file instead.';
+            }
+        });
+
+        document.querySelector('[data-stop-recording]')?.addEventListener('click', () => {
+            if (recorder && recorder.state !== 'inactive') {
+                recorder.stop();
+            }
+        });
+
+        document.querySelector('[data-submit-recording]')?.addEventListener('click', async () => {
+            if (!recordedFile) {
+                recorderStatus.textContent = 'Record or choose an audio file before posting.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video_id', videoId);
+            formData.append('language_code', languageInput?.value || 'en');
+            formData.append('duration', '0');
+            if (currentParentReplyId) {
+                formData.append('parent_reply_id', currentParentReplyId);
+            }
+            formData.append('voice', recordedFile);
+
+            recorderStatus.textContent = 'Posting voice reply...';
+            try {
+                const response = await fetch('/voice/reply', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'fetch',
+                    },
+                });
+                if (response.status === 401) {
+                    authModal?.classList.add('active');
+                    throw new Error('auth');
+                }
+                if (!response.ok) {
+                    throw new Error('request');
+                }
+                const payload = await response.json();
+                window.location.href = `${payload.redirect_url}#thread`;
+            } catch (error) {
+                recorderStatus.textContent = 'Posting failed. Try again or upload the file manually.';
+                if (error.message !== 'auth') {
+                    console.error(error);
+                }
+            }
+        });
+
         document.querySelectorAll('.speed-button').forEach((button) => {
             button.addEventListener('click', () => {
                 const audio = button.closest('.reply-card').querySelector('audio');
