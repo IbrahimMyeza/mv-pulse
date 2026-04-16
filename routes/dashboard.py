@@ -1,7 +1,7 @@
 from io import BytesIO
 
 import stripe
-from flask import Blueprint, render_template, send_file, redirect, url_for, session
+from flask import Blueprint, jsonify, render_template, request, send_file, redirect, url_for, session
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from models.reel import Reel
@@ -20,6 +20,26 @@ def _get_num(obj, name, default=0):
 def _get_text(obj, name, default=""):
     value = getattr(obj, name, default)
     return value if value else default
+
+
+def _safe_round(value, digits=2):
+    return round(value, digits) if value is not None else 0
+
+
+def _serialize_reel(reel):
+    return {
+        "id": reel.id,
+        "title": _get_text(reel, "title", "Untitled Reel"),
+        "region": _get_text(reel, "region", "Durban"),
+        "topic": _get_text(reel, "topic", "general"),
+        "views": _get_num(reel, "views"),
+        "likes": _get_num(reel, "likes"),
+        "comments": _get_num(reel, "comments"),
+        "creator_score": _safe_round(_get_num(reel, "creator_score")),
+        "debate_score": _safe_round(_get_num(reel, "debate_score")),
+        "controversy_score": _safe_round(_controversy_score(reel)),
+        "viral_score": _safe_round(_viral_score(reel)),
+    }
 
 
 def _build_export_summary(reels):
@@ -110,50 +130,40 @@ def _creator_score(reel):
     )
 
 
-@dashboard_bp.route("/upgrade")
-def upgrade():
-    if not stripe.api_key:
-        return _billing_unavailable_response()
+def _build_mobile_composer(topic, region, title=None, cta=None):
+    active_topic = title or topic or "Durban trend"
+    active_region = region or "Durban"
+    active_cta = cta or "Drop your take below"
 
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {
-                        "name": "MV Pulse Pro"
-                    },
-                    "unit_amount": 999,
-                    "recurring": {
-                        "interval": "month"
-                    }
-                },
-                "quantity": 1
-            }],
-            mode="subscription",
-            success_url=url_for("dashboard.upgrade_success", _external=True),
-            cancel_url=url_for("dashboard.dashboard", _external=True)
-        )
-    except stripe.StripeError:
-        return _billing_unavailable_response()
-
-    return redirect(checkout_session.url)
+    return {
+        "title": active_topic,
+        "caption": (
+            f"{active_region} is already reacting to {active_topic}. "
+            f"Here is the fast breakdown creators should post on right now. {active_cta}."
+        ),
+        "hook": f"Why {active_region} creators cannot ignore {active_topic} tonight.",
+        "cta": active_cta,
+        "voiceover": (
+            f"Quick pulse check: {active_region} is heating up around {active_topic}. "
+            f"Use this angle, move fast, and {active_cta.lower()}."
+        ),
+        "hashtags": [
+            f"#{active_region.replace(' ', '')}",
+            f"#{str(active_topic).replace(' ', '')}",
+            "#MVPulse",
+            "#CreatorIntel",
+            "#TrendWatch",
+        ],
+    }
 
 
-@dashboard_bp.route("/upgrade/success")
-def upgrade_success():
-    session["is_pro_user"] = True
-    return redirect(url_for("dashboard.dashboard"))
-
-
-@dashboard_bp.route("/dashboard")
-def dashboard():
+def _build_dashboard_context():
     reels = Reel.query.all()
 
     total_reels = len(reels)
     total_views = sum(_get_num(r, "views") for r in reels)
     total_likes = sum(_get_num(r, "likes") for r in reels)
+    total_comments = sum(_get_num(r, "comments") for r in reels)
 
     chart_labels = [_get_text(r, "title", "Untitled Reel") for r in reels]
     chart_likes = [_get_num(r, "likes") for r in reels]
@@ -236,10 +246,10 @@ def dashboard():
         best_post_slot = forecast_labels[best_index]
 
     ticker_alerts = [
-        f"🚨 {hottest_region} hotspot rising",
-        f"🌡️ Top controversy: {_get_text(top_controversial[0], 'title', 'none') if top_controversial else 'none'}",
-        f"🔥 Total platform views: {total_views}",
-        f"📍 Dominant topic: {predicted_next_topic}",
+        f"Hotspot rising in {hottest_region}",
+        f"Top controversy: {_get_text(top_controversial[0], 'title', 'none') if top_controversial else 'none'}",
+        f"Total platform views: {total_views}",
+        f"Dominant topic: {predicted_next_topic}",
     ]
 
     content_copilot = (
@@ -248,13 +258,13 @@ def dashboard():
     )
 
     ai_caption = (
-        f"🔥 {hottest_region} is talking about "
-        f"{predicted_next_topic} right now — what’s your take?"
+        f"{hottest_region} is talking about "
+        f"{predicted_next_topic} right now. What's your take?"
     )
 
     ai_hook = (
-        f"🎥 {hottest_region} can't stop talking about "
-        f"{predicted_next_topic} — here's why."
+        f"{hottest_region} can't stop talking about "
+        f"{predicted_next_topic}. Here's why."
     )
 
     ai_script = (
@@ -318,10 +328,10 @@ def dashboard():
     ]
 
     live_alerts = [
-        "🔥 Sports momentum spike detected in Durban",
-        "💬 New team comment added to export pack",
-        "⏰ Posting window F4 is approaching",
-        "📈 Debate score crossed high-risk threshold"
+        "Sports momentum spike detected in Durban",
+        "New team comment added to export pack",
+        "Posting window F4 is approaching",
+        "Debate score crossed high-risk threshold"
     ]
 
     autonomous_status = {
@@ -329,52 +339,230 @@ def dashboard():
         "last_action": f"Generated full pack for {predicted_next_topic} in {hottest_region}"
     }
 
-    return render_template(
-        "dashboard.html",
-        total_reels=total_reels,
-        total_views=total_views,
-        total_likes=total_likes,
-        top_controversial=top_controversial,
-        hottest_region=hottest_region,
-        hottest_value=hottest_value,
-        breakout_reel=breakout_reel,
-        breakout_views=breakout_views,
-        predicted_next_topic=predicted_next_topic,
-        top_viral_reel=top_viral_reel,
-        top_viral_score=round(top_viral_score, 2),
-        ranked_reels=ranked_reels[:5],
-        creator_leaderboard=creator_leaderboard[:5],
-        chart_labels=chart_labels,
-        chart_likes=chart_likes,
-        chart_controversy=chart_controversy,
-        topic_labels=list(topic_counts.keys()),
-        topic_values=list(topic_counts.values()),
-        region_labels=list(region_counts.keys()),
-        region_values=list(region_counts.values()),
-        creator_region_labels=list(creator_region_scores.keys()),
-        creator_region_values=list(creator_region_scores.values()),
-        network_nodes=network_nodes,
-        forecast_labels=forecast_labels,
-        forecast_values=forecast_values,
-        best_post_slot=best_post_slot,
-        flow_timeline_labels=flow_timeline_labels,
-        flow_timeline_values=flow_timeline_values,
-        ticker_alerts=ticker_alerts,
-        content_copilot=content_copilot,
-        ai_caption=ai_caption,
-        ai_hook=ai_hook,
-        ai_script=ai_script,
-        ai_voiceover=ai_voiceover,
-        ai_shotlist=ai_shotlist,
-        ai_thumbnail=ai_thumbnail,
-        export_pack=export_pack,
-        is_pro_user=is_pro_user,
-        workspace=workspace,
-        command_center=command_center,
-        team_comments=team_comments,
-        live_alerts=live_alerts,
-        autonomous_status=autonomous_status
+    avg_creator_score = (
+        sum(_creator_score(reel) for reel in reels) / total_reels if total_reels else 0
     )
+    engagement_velocity = total_likes + total_comments + (total_views / 25 if total_views else 0)
+    viral_probability = min(99, int(top_viral_score * 5) + 24) if top_viral_score else 18
+    brand_score = min(99, int(avg_creator_score * 8) + 32) if avg_creator_score else 41
+    creator_growth_streak = max(3, min(21, total_reels + len(topic_counts))) if total_reels else 3
+
+    mobile_home_kpis = [
+        {"label": "Viral probability", "value": f"{viral_probability}%", "tone": "accent"},
+        {"label": "Hot region", "value": hottest_region, "tone": "warm"},
+        {"label": "Views velocity", "value": str(int(engagement_velocity)), "tone": "cool"},
+        {"label": "Creator streak", "value": f"{creator_growth_streak}d", "tone": "accent"},
+    ]
+
+    home_trends = [
+        {
+            "title": _get_text(reel, "title", "Untitled Reel"),
+            "meta": f"{_get_text(reel, 'topic', 'general')} in {_get_text(reel, 'region', 'Durban')}",
+            "score": f"{_safe_round(_viral_score(reel))} pulse",
+        }
+        for reel in ranked_reels[:4]
+    ]
+
+    controversy_watch = [
+        {
+            "title": _get_text(reel, "title", "Untitled Reel"),
+            "score": _safe_round(_controversy_score(reel)),
+            "warning": "High debate pressure" if _controversy_score(reel) > 0 else "Conversation stable",
+        }
+        for reel in top_controversial[:3]
+    ]
+
+    analytics_cards = [
+        {"label": "24h views", "value": total_views},
+        {"label": "Engagement velocity", "value": int(engagement_velocity)},
+        {"label": "Viral score", "value": _safe_round(top_viral_score)},
+        {"label": "Brand score", "value": brand_score},
+    ]
+
+    schedule_plan = {
+        "best_post_slot": best_post_slot,
+        "timezone": "Africa/Johannesburg",
+        "next_reminder": f"15 minutes before {best_post_slot}",
+        "queue": [
+            {"name": "Trend alert breakdown", "time": best_post_slot, "status": "Ready"},
+            {"name": "Voiceover remix", "time": "Tonight 19:30", "status": "Draft"},
+            {"name": "Comment reply clip", "time": "Tomorrow 08:00", "status": "Needs assets"},
+        ],
+    }
+
+    profile_summary = {
+        "brand_score": brand_score,
+        "saved_exports": max(3, total_reels),
+        "workspace_team": workspace["members"],
+        "subscription_tier": "Pro" if is_pro_user else "Free",
+        "daily_generation_limit": "Unlimited" if is_pro_user else "3/day",
+    }
+
+    composer_defaults = _build_mobile_composer(
+        predicted_next_topic,
+        hottest_region,
+        title=breakout_reel.title if breakout_reel else predicted_next_topic,
+        cta="Comment your strategy below",
+    )
+
+    return {
+        "total_reels": total_reels,
+        "total_views": total_views,
+        "total_likes": total_likes,
+        "top_controversial": top_controversial,
+        "hottest_region": hottest_region,
+        "hottest_value": hottest_value,
+        "breakout_reel": breakout_reel,
+        "breakout_views": breakout_views,
+        "predicted_next_topic": predicted_next_topic,
+        "top_viral_reel": top_viral_reel,
+        "top_viral_score": _safe_round(top_viral_score),
+        "ranked_reels": ranked_reels[:5],
+        "creator_leaderboard": creator_leaderboard[:5],
+        "chart_labels": chart_labels,
+        "chart_likes": chart_likes,
+        "chart_controversy": chart_controversy,
+        "topic_labels": list(topic_counts.keys()),
+        "topic_values": list(topic_counts.values()),
+        "region_labels": list(region_counts.keys()),
+        "region_values": list(region_counts.values()),
+        "creator_region_labels": list(creator_region_scores.keys()),
+        "creator_region_values": list(creator_region_scores.values()),
+        "network_nodes": network_nodes,
+        "forecast_labels": forecast_labels,
+        "forecast_values": forecast_values,
+        "best_post_slot": best_post_slot,
+        "flow_timeline_labels": flow_timeline_labels,
+        "flow_timeline_values": flow_timeline_values,
+        "ticker_alerts": ticker_alerts,
+        "content_copilot": content_copilot,
+        "ai_caption": ai_caption,
+        "ai_hook": ai_hook,
+        "ai_script": ai_script,
+        "ai_voiceover": ai_voiceover,
+        "ai_shotlist": ai_shotlist,
+        "ai_thumbnail": ai_thumbnail,
+        "export_pack": export_pack,
+        "is_pro_user": is_pro_user,
+        "workspace": workspace,
+        "command_center": command_center,
+        "team_comments": team_comments,
+        "live_alerts": live_alerts,
+        "autonomous_status": autonomous_status,
+        "mobile_home_kpis": mobile_home_kpis,
+        "home_trends": home_trends,
+        "controversy_watch": controversy_watch,
+        "analytics_cards": analytics_cards,
+        "schedule_plan": schedule_plan,
+        "profile_summary": profile_summary,
+        "composer_defaults": composer_defaults,
+        "viral_probability": viral_probability,
+        "engagement_velocity": int(engagement_velocity),
+        "brand_score": brand_score,
+        "creator_growth_streak": creator_growth_streak,
+    }
+
+
+@dashboard_bp.route("/upgrade")
+def upgrade():
+    if not stripe.api_key:
+        return _billing_unavailable_response()
+
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": "MV Pulse Pro"
+                    },
+                    "unit_amount": 999,
+                    "recurring": {
+                        "interval": "month"
+                    }
+                },
+                "quantity": 1
+            }],
+            mode="subscription",
+            success_url=url_for("dashboard.upgrade_success", _external=True),
+            cancel_url=url_for("dashboard.dashboard", _external=True)
+        )
+    except stripe.StripeError:
+        return _billing_unavailable_response()
+
+    return redirect(checkout_session.url)
+
+
+@dashboard_bp.route("/upgrade/success")
+def upgrade_success():
+    session["is_pro_user"] = True
+    return redirect(url_for("dashboard.dashboard"))
+
+
+@dashboard_bp.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html", **_build_dashboard_context())
+
+
+@dashboard_bp.route("/api/feed")
+def api_feed():
+    context = _build_dashboard_context()
+    return jsonify({
+        "command_center": context["command_center"],
+        "ticker_alerts": context["ticker_alerts"],
+        "live_alerts": context["live_alerts"],
+        "kpis": context["mobile_home_kpis"],
+        "trends": context["home_trends"],
+        "controversy_watch": context["controversy_watch"],
+    })
+
+
+@dashboard_bp.route("/api/analytics")
+def api_analytics():
+    context = _build_dashboard_context()
+    return jsonify({
+        "cards": context["analytics_cards"],
+        "views_chart": {
+            "labels": context["flow_timeline_labels"],
+            "values": context["flow_timeline_values"],
+        },
+        "controversy_chart": {
+            "labels": context["chart_labels"],
+            "values": context["chart_controversy"],
+        },
+        "creator_leaderboard": [_serialize_reel(reel) for reel in context["creator_leaderboard"]],
+        "viral_probability": context["viral_probability"],
+    })
+
+
+@dashboard_bp.route("/api/create/caption", methods=["GET", "POST"])
+def api_create_caption():
+    payload = request.get_json(silent=True) or request.values
+    context = _build_dashboard_context()
+    title = payload.get("title") or context["composer_defaults"]["title"]
+    topic = payload.get("topic") or context["predicted_next_topic"]
+    region = payload.get("region") or context["hottest_region"]
+    cta = payload.get("cta") or "Drop your take below"
+
+    return jsonify(_build_mobile_composer(topic, region, title=title, cta=cta))
+
+
+@dashboard_bp.route("/api/schedule")
+def api_schedule():
+    context = _build_dashboard_context()
+    return jsonify(context["schedule_plan"])
+
+
+@dashboard_bp.route("/api/profile")
+def api_profile():
+    context = _build_dashboard_context()
+    return jsonify({
+        "profile": context["profile_summary"],
+        "workspace": context["workspace"],
+        "team_comments": context["team_comments"],
+        "export_pack": context["export_pack"],
+    })
 
 
 @dashboard_bp.route("/download-pack")
