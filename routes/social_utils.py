@@ -10,9 +10,12 @@ from ml.ranker import rank_reels
 from ml.reputation import get_creator_score, update_creator_score
 from models.export_project import ExportProject
 from models.follow import Follow
+from models.like import Like
 from models.notification import Notification
 from models.reel import Reel
+from models.save import Save
 from models.user import User
+from models.user_social_profile import UserSocialProfile
 from models.video import Video
 from models.voice_reply import VoiceReply
 
@@ -76,18 +79,57 @@ def save_video_file(file_storage, target_folder):
     return "/" + file_path.replace("\\", "/")
 
 
+def ensure_social_profile(user):
+    if not user:
+        return None
+
+    profile = user.social_profile
+    if profile:
+        return profile
+
+    profile = UserSocialProfile(
+        user_id=user.id,
+        display_name=user.username,
+        bio="Umbono Wami creator profile",
+    )
+    db.session.add(profile)
+    db.session.commit()
+    return profile
+
+
+def serialize_social_profile(profile):
+    if not profile:
+        return None
+
+    return {
+        "display_name": profile.display_name,
+        "headline": profile.headline,
+        "bio": profile.bio or "",
+        "avatar_url": profile.avatar_url,
+        "region": profile.region,
+        "primary_language_code": profile.primary_language_code,
+        "secondary_language_code": profile.secondary_language_code,
+        "voice_style": profile.voice_style,
+    }
+
+
 def serialize_user(user):
     if not user:
         return None
+
+    profile = user.social_profile
     return {
         "id": user.id,
         "username": user.username,
         "email": user.email,
+        "social_profile": serialize_social_profile(profile),
     }
 
 
 def serialize_video(video):
     creator = video.creator.username if video.creator else "Umbono Wami"
+    likes_count = video.likes.count() if hasattr(video, "likes") else video.likes
+    saves_count = video.saves.count() if hasattr(video, "saves") else 0
     return {
         "id": video.id,
         "title": video.title,
@@ -102,9 +144,10 @@ def serialize_video(video):
         "language_label": SUPPORTED_LANGUAGES.get(video.language_code, video.language_code),
         "creator": creator,
         "creator_id": video.creator_id,
-        "likes": video.likes,
+        "likes": likes_count,
         "views": video.views,
         "voice_replies": video.voice_replies,
+        "saves_count": saves_count,
         "shares_count": video.shares_count,
         "debate_score": round(video.debate_score, 2),
         "creator_score": round(video.creator_score, 2),
@@ -135,6 +178,7 @@ def serialize_voice_reply(reply):
         "transcript": reply.transcript or "",
         "language_code": reply.language_code,
         "likes_count": reply.likes_count,
+        "saves_count": reply.saves.count() if hasattr(reply, "saves") else 0,
         "sentiment_score": round(reply.sentiment_score, 2),
         "controversy_score": round(reply.controversy_score, 2),
         "parent_reply_id": reply.parent_reply_id,
@@ -164,6 +208,29 @@ def create_notification(recipient_id, kind, message, actor_id=None, video_id=Non
     db.session.add(notification)
     db.session.commit()
     return notification
+
+
+def interaction_snapshot(user, video=None, voice_reply=None, reel=None):
+    if not user:
+        return {"liked": False, "saved": False}
+
+    like_query = Like.query.filter_by(user_id=user.id)
+    save_query = Save.query.filter_by(user_id=user.id)
+
+    if video:
+        like_query = like_query.filter_by(video_id=video.id)
+        save_query = save_query.filter_by(video_id=video.id)
+    elif voice_reply:
+        like_query = like_query.filter_by(voice_reply_id=voice_reply.id)
+        save_query = save_query.filter_by(voice_reply_id=voice_reply.id)
+    elif reel:
+        like_query = like_query.filter_by(reel_id=reel.id)
+        save_query = save_query.filter_by(reel_id=reel.id)
+
+    return {
+        "liked": like_query.first() is not None,
+        "saved": save_query.first() is not None,
+    }
 
 
 def follow_state(viewer, profile_user):

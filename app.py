@@ -7,8 +7,11 @@ from models.user import User
 from models.reel import Reel
 from models.export_project import ExportProject
 from models.follow import Follow
+from models.like import Like
 from models.notification import Notification
 from models.video import Video
+from models.save import Save
+from models.user_social_profile import UserSocialProfile
 from models.voice_reply import VoiceReply
 
 from routes.voice import voice_bp

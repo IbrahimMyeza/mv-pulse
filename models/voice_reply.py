@@ -20,3 +20,15 @@ class VoiceReply(db.Model):
     video = db.relationship("Video", back_populates="replies")
     creator = db.relationship("User", back_populates="voice_replies")
     parent_reply = db.relationship("VoiceReply", remote_side=[id], backref=db.backref("child_replies", lazy="joined"))
+    likes = db.relationship(
+        "Like",
+        back_populates="voice_reply",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    saves = db.relationship(
+        "Save",
+        back_populates="voice_reply",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )

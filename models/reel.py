@@ -1,5 +1,6 @@
 from database import db
 
+
 class Reel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -20,3 +21,16 @@ class Reel(db.Model):
     region = db.Column(db.String(100), default="Durban")
     agree_count = db.Column(db.Integer, default=0)
     disagree_count = db.Column(db.Integer, default=0)
+
+    likes = db.relationship(
+        "Like",
+        back_populates="reel",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    saves = db.relationship(
+        "Save",
+        back_populates="reel",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
