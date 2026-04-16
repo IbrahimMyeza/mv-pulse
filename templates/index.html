@@ -74,6 +74,29 @@
             margin-top: 16px;
         }
 
+        .auth-message {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(241, 124, 69, 0.14);
+            color: #9b4520;
+            font-weight: 600;
+        }
+
+        .password-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .password-toggle {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(23, 33, 38, 0.08);
+            color: var(--ink);
+            white-space: nowrap;
+        }
+
         .chip,
         button {
             border-radius: 999px;
@@ -128,6 +151,10 @@
             </div>
         </section>
 
+        {% if auth_message %}
+        <section class="auth-message">{{ auth_message }}</section>
+        {% endif %}
+
         {% if current_user %}
         <section class="panel current-user">
             <h2>Signed In</h2>
@@ -144,7 +171,14 @@
                 <form action="/signup" method="post">
                     <input type="text" name="username" placeholder="Username" required>
                     <input type="email" name="email" placeholder="Email" required>
-                    <input type="password" name="password" placeholder="Password" required>
+                    <div class="password-row">
+                        <input type="password" name="password" placeholder="Password" required minlength="8" data-password-input>
+                        <button class="password-toggle" type="button" data-toggle-password>Show</button>
+                    </div>
+                    <div class="password-row">
+                        <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" data-password-input>
+                        <button class="password-toggle" type="button" data-toggle-password>Show</button>
+                    </div>
                     <button type="submit">Create Account</button>
                 </form>
             </div>
@@ -153,7 +187,10 @@
                 <h2>Login</h2>
                 <form action="/login" method="post">
                     <input type="email" name="email" placeholder="Email" required>
-                    <input type="password" name="password" placeholder="Password" required>
+                    <div class="password-row">
+                        <input type="password" name="password" placeholder="Password" required data-password-input>
+                        <button class="password-toggle" type="button" data-toggle-password>Show</button>
+                    </div>
                     <button type="submit">Login</button>
                 </form>
             </div>
@@ -168,5 +205,20 @@
             </form>
         </section>
     </div>
+
+    <script>
+        document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const input = button.parentElement.querySelector('[data-password-input]');
+                if (!input) {
+                    return;
+                }
+
+                const showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                button.textContent = showing ? 'Show' : 'Hide';
+            });
+        });
+    </script>
 </body>
 </html>

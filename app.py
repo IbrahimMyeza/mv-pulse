@@ -51,7 +51,9 @@ def home():
     if user_id:
         current_user = db.session.get(User, user_id)
 
-    return render_template("index.html", current_user=current_user)
+    auth_message = session.pop("auth_message", None)
+
+    return render_template("index.html", current_user=current_user, auth_message=auth_message)
 
 with app.app_context():
     db.create_all()

@@ -517,6 +517,29 @@
             gap: 12px;
         }
 
+        .cta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .cta-card {
+            padding: 16px;
+            border-radius: 20px;
+            background: rgba(23, 33, 38, 0.06);
+        }
+
+        .cta-card strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .full-width {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+
         .library-item {
             padding: 14px;
             border-radius: 18px;
@@ -682,6 +705,22 @@
                         {% endfor %}
                     </ul>
                 </article>
+
+                <article class="card highlight">
+                    <h3>Quick creator actions</h3>
+                    <div class="cta-grid">
+                        <div class="cta-card">
+                            <strong>Download creator brief</strong>
+                            <p>Export your latest AI pack as a PDF directly from mobile.</p>
+                            <a class="action-link full-width" href="/download-pack">Download PDF</a>
+                        </div>
+                        <div class="cta-card">
+                            <strong>Upgrade with Stripe</strong>
+                            <p>Unlock unlimited generations, export history, and premium creator workspace features.</p>
+                            <a class="action-link full-width" href="/upgrade">Upgrade to Pro</a>
+                        </div>
+                    </div>
+                </article>
             </section>
 
             <section class="screen" data-screen="create">
@@ -734,6 +773,14 @@
                                 {% for tag in composer_defaults.hashtags %}
                                 <span class="hashtag">{{ tag }}</span>
                                 {% endfor %}
+                            </div>
+                        </article>
+                        <article class="card highlight">
+                            <h3>Mobile export</h3>
+                            <p>Turn this draft into a portable PDF brief and keep a saved export in your creator library.</p>
+                            <div class="action-row">
+                                <a class="action-link full-width" href="/download-pack">Download now</a>
+                                <a class="action-link full-width" href="/upgrade">Unlock Pro exports</a>
                             </div>
                         </article>
                     </div>
@@ -867,6 +914,10 @@
                         <p><strong>{{ profile_summary.subscription_tier }}</strong> tier</p>
                         <p class="meta">{{ profile_summary.workspace_team }} team seats and {{ creator_growth_streak }} day creator streak.</p>
                         <div class="stat-chip">Usage limit: {{ profile_summary.daily_generation_limit }}</div>
+                        <div class="action-row" style="margin-top: 14px;">
+                            <a class="action-link full-width" href="/upgrade">Upgrade with Stripe</a>
+                            <a class="action-link full-width" href="/download-pack">Download latest brief</a>
+                        </div>
                     </article>
                 </div>
 

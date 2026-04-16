@@ -34,6 +34,7 @@ def _auth_error_response(message, status_code):
     if _wants_json_response():
         return jsonify({"error": message}), status_code
 
+    session["auth_message"] = message
     return redirect(url_for("home"))
 
 @auth_bp.route("/signup", methods=["POST"])
@@ -42,9 +43,16 @@ def signup():
     username = (payload.get("username") or "").strip()
     email = (payload.get("email") or "").strip().lower()
     password = payload.get("password") or ""
+    password_confirmation = payload.get("password_confirmation") or payload.get("confirm_password") or ""
 
     if not username or not email or not password:
         return _auth_error_response("username, email, and password are required", 400)
+
+    if len(password) < 8:
+        return _auth_error_response("password must be at least 8 characters", 400)
+
+    if password != password_confirmation:
+        return _auth_error_response("passwords do not match", 400)
 
     if User.query.filter((User.username == username) | (User.email == email)).first():
         return _auth_error_response("account already exists", 409)
