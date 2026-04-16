@@ -1,10 +1,11 @@
 import os
 import stripe
 
-from flask import Flask, render_template
+from flask import Flask, render_template, session
 from database import db
 from models.user import User
 from models.reel import Reel
+from models.export_project import ExportProject
 
 from routes.voice import voice_bp
 from routes.auth import auth_bp
@@ -45,7 +46,12 @@ app.register_blueprint(simulate_bp)
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    current_user = None
+    user_id = session.get("user_id")
+    if user_id:
+        current_user = db.session.get(User, user_id)
+
+    return render_template("index.html", current_user=current_user)
 
 with app.app_context():
     db.create_all()

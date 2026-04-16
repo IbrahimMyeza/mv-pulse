@@ -501,6 +501,35 @@
             gap: 8px;
         }
 
+        .save-status,
+        .auth-note {
+            min-height: 1.2rem;
+            font-size: 0.9rem;
+            color: rgba(250, 244, 236, 0.76);
+        }
+
+        .auth-note {
+            color: var(--muted);
+        }
+
+        .library-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .library-item {
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(23, 33, 38, 0.05);
+        }
+
+        .library-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
         .hashtag {
             padding: 8px 12px;
             border-radius: 999px;
@@ -542,6 +571,12 @@
                     </p>
                 </div>
                 <div class="hero-actions">
+                    {% if current_user %}
+                    <span class="hero-chip">{{ current_user.username }}</span>
+                    <a class="hero-chip" href="/logout">Log out</a>
+                    {% else %}
+                    <a class="hero-chip" href="/">Sign in</a>
+                    {% endif %}
                     <a class="hero-chip" href="/download-pack">Download pack</a>
                     <a class="hero-chip" href="/upgrade">Upgrade</a>
                     <a class="hero-chip" href="/tv">TV mode</a>
@@ -670,9 +705,14 @@
                             <button class="primary-button" type="submit">Generate mobile pack</button>
                         </form>
                         <div class="action-row">
+                            <button class="secondary-button" id="saveDraftButton" type="button">Save draft</button>
                             <a class="action-link" href="/download-pack">Export creator brief</a>
                             <a class="action-link" href="/feed">Open feed</a>
                         </div>
+                        <div class="save-status" id="saveDraftStatus"></div>
+                        {% if not profile_summary.authenticated %}
+                        <div class="auth-note">Sign in from the home page to save drafts and build your export library.</div>
+                        {% endif %}
                     </article>
 
                     <div class="grid">
@@ -796,6 +836,10 @@
 
                 <div class="profile-grid">
                     <article class="profile-cell">
+                        <div class="label">Creator</div>
+                        <div class="big-number">{{ profile_summary.username }}</div>
+                    </article>
+                    <article class="profile-cell">
                         <div class="label">Brand score</div>
                         <div class="big-number">{{ profile_summary.brand_score }}</div>
                     </article>
@@ -804,12 +848,8 @@
                         <div class="big-number">{{ profile_summary.saved_exports }}</div>
                     </article>
                     <article class="profile-cell">
-                        <div class="label">Team members</div>
-                        <div class="big-number">{{ profile_summary.workspace_team }}</div>
-                    </article>
-                    <article class="profile-cell">
-                        <div class="label">Tier</div>
-                        <div class="big-number">{{ profile_summary.subscription_tier }}</div>
+                        <div class="label">Saved drafts</div>
+                        <div class="big-number">{{ profile_summary.saved_drafts }}</div>
                     </article>
                 </div>
 
@@ -819,18 +859,38 @@
                         <p><strong>{{ workspace.name }}</strong></p>
                         <p class="meta">{{ workspace.members }} members · {{ workspace.plan }}</p>
                         <p class="meta">Daily AI allowance: {{ profile_summary.daily_generation_limit }}</p>
+                        <p class="meta">Email: {{ profile_summary.email }}</p>
                     </article>
 
                     <article class="card">
-                        <h3>Saved export pack</h3>
-                        <p>{{ export_pack.caption }}</p>
-                        <div class="chip-stack">
-                            {% for shot in export_pack.shotlist %}
-                            <span class="hashtag">{{ shot }}</span>
-                            {% endfor %}
-                        </div>
+                        <h3>Membership</h3>
+                        <p><strong>{{ profile_summary.subscription_tier }}</strong> tier</p>
+                        <p class="meta">{{ profile_summary.workspace_team }} team seats and {{ creator_growth_streak }} day creator streak.</p>
+                        <div class="stat-chip">Usage limit: {{ profile_summary.daily_generation_limit }}</div>
                     </article>
                 </div>
+
+                <article class="card">
+                    <h3>Saved project library</h3>
+                    <div class="library-list" id="projectLibrary">
+                        {% for project in saved_projects %}
+                        <div class="library-item">
+                            <div class="trend-header">
+                                <strong>{{ project.title }}</strong>
+                                <span class="trend-score">{{ project.kind }}</span>
+                            </div>
+                            <div class="meta">{{ project.payload.caption or project.payload.hook or project.payload.topic }}</div>
+                            <div class="library-meta">
+                                <span class="hashtag">{{ project.status }}</span>
+                                {% if project.payload.region %}<span class="hashtag">{{ project.payload.region }}</span>{% endif %}
+                                {% if project.payload.topic %}<span class="hashtag">{{ project.payload.topic }}</span>{% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="library-item">No saved drafts or exports yet. Generate a pack and save it to start your library.</div>
+                        {% endfor %}
+                    </div>
+                </article>
 
                 <article class="card">
                     <h3>Team comments</h3>
@@ -930,16 +990,56 @@
         }
 
         const composerForm = document.getElementById("composerForm");
+        const saveDraftButton = document.getElementById("saveDraftButton");
+        const saveDraftStatus = document.getElementById("saveDraftStatus");
+        const projectLibrary = document.getElementById("projectLibrary");
+
+        function currentComposerPayload() {
+            return {
+                title: document.getElementById("composerTitle").value,
+                topic: document.getElementById("composerTopic").value,
+                region: document.getElementById("composerRegion").value,
+                cta: document.getElementById("composerCta").value,
+                caption: document.getElementById("captionOutput").textContent,
+                hook: document.getElementById("hookOutput").textContent,
+                voiceover: document.getElementById("voiceoverOutput").textContent,
+                hashtags: Array.from(document.querySelectorAll("#hashtagOutput .hashtag")).map((item) => item.textContent),
+            };
+        }
+
+        function prependProject(project) {
+            if (!projectLibrary) {
+                return;
+            }
+
+            const emptyState = projectLibrary.querySelector(".library-item") && projectLibrary.children.length === 1 && projectLibrary.textContent.includes("No saved drafts or exports yet");
+            if (emptyState) {
+                projectLibrary.innerHTML = "";
+            }
+
+            const item = document.createElement("div");
+            item.className = "library-item";
+            const summary = project.payload.caption || project.payload.hook || project.payload.topic || "Saved project";
+            item.innerHTML = `
+                <div class="trend-header">
+                    <strong>${project.title}</strong>
+                    <span class="trend-score">${project.kind}</span>
+                </div>
+                <div class="meta">${summary}</div>
+                <div class="library-meta">
+                    <span class="hashtag">${project.status}</span>
+                    ${project.payload.region ? `<span class="hashtag">${project.payload.region}</span>` : ""}
+                    ${project.payload.topic ? `<span class="hashtag">${project.payload.topic}</span>` : ""}
+                </div>
+            `;
+            projectLibrary.prepend(item);
+        }
+
         if (composerForm) {
             composerForm.addEventListener("submit", async (event) => {
                 event.preventDefault();
 
-                const payload = {
-                    title: document.getElementById("composerTitle").value,
-                    topic: document.getElementById("composerTopic").value,
-                    region: document.getElementById("composerRegion").value,
-                    cta: document.getElementById("composerCta").value,
-                };
+                const payload = currentComposerPayload();
 
                 const response = await fetch("/api/create/caption", {
                     method: "POST",
@@ -964,126 +1064,53 @@
                     chip.textContent = tag;
                     hashtagOutput.appendChild(chip);
                 });
+
+                if (saveDraftStatus) {
+                    saveDraftStatus.textContent = "Fresh pack generated. Save it as a draft when ready.";
+                }
+            });
+        }
+
+        if (saveDraftButton) {
+            saveDraftButton.addEventListener("click", async () => {
+                if (saveDraftStatus) {
+                    saveDraftStatus.textContent = "Saving draft...";
+                }
+
+                const response = await fetch("/api/projects", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        ...currentComposerPayload(),
+                        kind: "draft",
+                        status: "saved"
+                    })
+                });
+
+                if (response.status === 401) {
+                    if (saveDraftStatus) {
+                        saveDraftStatus.textContent = "Sign in first to save drafts.";
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    if (saveDraftStatus) {
+                        saveDraftStatus.textContent = "Draft save failed. Try again.";
+                    }
+                    return;
+                }
+
+                const data = await response.json();
+                prependProject(data.project);
+                if (saveDraftStatus) {
+                    saveDraftStatus.textContent = "Draft saved to your export library.";
+                }
             });
         }
     </script>
 </body>
 </html>
-
-    <div class="card">
-        <h2>📄 Download Creator Brief</h2>
-        <a href="/download-pack">
-            <button>⬇️ Download PDF Pack</button>
-        </a>
-    </div>
-
-    <div class="card">
-        <h2>💳 Premium Export Tier</h2>
-
-        {% if is_pro_user %}
-            <p>💎 Pro unlocked: sponsor branding + watermark-free exports</p>
-            <button>✨ Export Agency Pack</button>
-        {% else %}
-            <p>🔒 Upgrade to Pro for sponsor-ready exports</p>
-            <a href="/upgrade">
-                <button>💵 Upgrade to Pro</button>
-            </a>
-        {% endif %}
-    </div>
-
-    <div class="card">
-        <h2>👥 Team Workspace</h2>
-        <p>🏢 Team: <b>{{ workspace.name }}</b></p>
-        <p>👤 Members: <b>{{ workspace.members }}</b></p>
-        <p>💎 Plan: <b>{{ workspace.plan }}</b></p>
-    </div>
-
-    <div class="card">
-        <h2>💬 Live Team Comments</h2>
-        {% for comment in team_comments|default([], true) %}
-            <p>🗨️ {{ comment }}</p>
-        {% else %}
-            <p>No team comments yet.</p>
-        {% endfor %}
-    </div>
-
-    <div class="card">
-        <h2>🔔 Real-Time Team Alerts</h2>
-        {% for alert in live_alerts|default([], true) %}
-            <p>🚨 {{ alert }}</p>
-        {% else %}
-            <p>No live alerts yet.</p>
-        {% endfor %}
-    </div>
-
-    <div class="card">
-        <h2>🚀 Virality AI</h2>
-        {% if top_viral_reel %}
-        <p>
-            🔥 Highest breakout probability:
-            <b>{{ top_viral_reel.title }}</b>
-            with AI score
-            <b>{{ top_viral_score|default(0) }}</b>
-        </p>
-        {% else %}
-        <p>No virality signal yet.</p>
-        {% endif %}
-    </div>
-
-    <div class="card">
-        <h2>🏆 AI Ranked Reels</h2>
-        {% if ranked_reels %}
-            {% for reel in ranked_reels %}
-                <p>
-                    🎯 {{ reel.title }}
-                    — Score:
-                    {{ 
-                        (
-                            (reel.likes * 2) 
-                            + (reel.comments * 3) 
-                            + (reel.disagree_count - reel.agree_count) 
-                            + (reel.views / 100)
-                        )|round(2) 
-                    }}
-                </p>
-            {% endfor %}
-        {% else %}
-            <p>No ranked reels available.</p>
-        {% endif %}
-    </div>
-
-    <div class="card">
-        <h2>👤 Creator AI Leaderboard</h2>
-        {% if creator_leaderboard %}
-            {% for reel in creator_leaderboard %}
-                <p>
-                    ⭐ {{ reel.title }}
-                    — Creator Impact:
-                    {{ 
-                        (
-                            reel.creator_score 
-                            + reel.likes 
-                            + reel.comments 
-                            + (reel.views / 100)
-                        )|round(2) 
-                    }}
-                </p>
-            {% endfor %}
-        {% else %}
-            <p>No creator data available.</p>
-        {% endif %}
-    </div>
-
-    <!-- Charts -->
-    <div class="card">
-        <h2>📈 Likes by Reel</h2>
-        <canvas id="likesChart"></canvas>
-    </div>
-
-    <div class="card">
-        <h2>🌡️ Controversy by Reel</h2>
-        <canvas id="controversyChart"></canvas>
-    </div>
 
     <div class="card">
         <h2>📍 Topic Distribution</h2>

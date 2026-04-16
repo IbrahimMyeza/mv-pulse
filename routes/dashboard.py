@@ -1,10 +1,14 @@
+import json
 from io import BytesIO
 
 import stripe
 from flask import Blueprint, jsonify, render_template, request, send_file, redirect, url_for, session
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from database import db
+from models.export_project import ExportProject
 from models.reel import Reel
+from models.user import User
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -24,6 +28,54 @@ def _get_text(obj, name, default=""):
 
 def _safe_round(value, digits=2):
     return round(value, digits) if value is not None else 0
+
+
+def _current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    return db.session.get(User, user_id)
+
+
+def _serialize_project(project):
+    payload = {}
+    if project.payload:
+        try:
+            payload = json.loads(project.payload)
+        except json.JSONDecodeError:
+            payload = {}
+
+    created_at = project.created_at.isoformat() if project.created_at else None
+
+    return {
+        "id": project.id,
+        "title": project.title,
+        "kind": project.kind,
+        "status": project.status,
+        "created_at": created_at,
+        "payload": payload,
+    }
+
+
+def _save_project(user, payload, kind="draft", status="saved"):
+    title = (payload.get("title") or payload.get("topic") or "Untitled Project").strip()
+    project = ExportProject(
+        user_id=user.id,
+        title=title,
+        kind=kind,
+        status=status,
+        payload=json.dumps(payload),
+    )
+    db.session.add(project)
+    db.session.commit()
+    return project
+
+
+def _require_user_json():
+    user = _current_user()
+    if user:
+        return user, None
+    return None, (jsonify({"error": "authentication required"}), 401)
 
 
 def _serialize_reel(reel):
@@ -158,7 +210,11 @@ def _build_mobile_composer(topic, region, title=None, cta=None):
 
 
 def _build_dashboard_context():
+    user = _current_user()
     reels = Reel.query.all()
+    saved_projects = []
+    if user:
+        saved_projects = ExportProject.query.filter_by(user_id=user.id).order_by(ExportProject.created_at.desc()).limit(8).all()
 
     total_reels = len(reels)
     total_views = sum(_get_num(r, "views") for r in reels)
@@ -345,7 +401,7 @@ def _build_dashboard_context():
     engagement_velocity = total_likes + total_comments + (total_views / 25 if total_views else 0)
     viral_probability = min(99, int(top_viral_score * 5) + 24) if top_viral_score else 18
     brand_score = min(99, int(avg_creator_score * 8) + 32) if avg_creator_score else 41
-    creator_growth_streak = max(3, min(21, total_reels + len(topic_counts))) if total_reels else 3
+    creator_growth_streak = max(3, min(21, len(saved_projects) + total_reels + len(topic_counts))) if (total_reels or saved_projects) else 3
 
     mobile_home_kpis = [
         {"label": "Viral probability", "value": f"{viral_probability}%", "tone": "accent"},
@@ -391,11 +447,15 @@ def _build_dashboard_context():
     }
 
     profile_summary = {
+        "username": user.username if user else "Guest Creator",
+        "email": user.email if user else "Sign in to unlock project history",
         "brand_score": brand_score,
-        "saved_exports": max(3, total_reels),
+        "saved_exports": len([project for project in saved_projects if project.kind == "export"]),
+        "saved_drafts": len([project for project in saved_projects if project.kind == "draft"]),
         "workspace_team": workspace["members"],
         "subscription_tier": "Pro" if is_pro_user else "Free",
         "daily_generation_limit": "Unlimited" if is_pro_user else "3/day",
+        "authenticated": bool(user),
     }
 
     composer_defaults = _build_mobile_composer(
@@ -406,6 +466,7 @@ def _build_dashboard_context():
     )
 
     return {
+        "current_user": user,
         "total_reels": total_reels,
         "total_views": total_views,
         "total_likes": total_likes,
@@ -460,6 +521,7 @@ def _build_dashboard_context():
         "engagement_velocity": int(engagement_velocity),
         "brand_score": brand_score,
         "creator_growth_streak": creator_growth_streak,
+        "saved_projects": [_serialize_project(project) for project in saved_projects],
     }
 
 
@@ -548,6 +610,34 @@ def api_create_caption():
     return jsonify(_build_mobile_composer(topic, region, title=title, cta=cta))
 
 
+@dashboard_bp.route("/api/projects", methods=["GET", "POST"])
+def api_projects():
+    user, error_response = _require_user_json()
+    if error_response:
+        return error_response
+
+    if request.method == "GET":
+        projects = ExportProject.query.filter_by(user_id=user.id).order_by(ExportProject.created_at.desc()).all()
+        return jsonify({"projects": [_serialize_project(project) for project in projects]})
+
+    payload = request.get_json(silent=True) or {}
+    kind = (payload.get("kind") or "draft").strip().lower()
+    status = (payload.get("status") or "saved").strip().lower()
+    project_payload = {
+        "title": payload.get("title") or "Untitled Project",
+        "topic": payload.get("topic") or "general",
+        "region": payload.get("region") or "Durban",
+        "cta": payload.get("cta") or "Drop your take below",
+        "caption": payload.get("caption") or "",
+        "hook": payload.get("hook") or "",
+        "voiceover": payload.get("voiceover") or "",
+        "hashtags": payload.get("hashtags") or [],
+    }
+    project = _save_project(user, project_payload, kind=kind, status=status)
+
+    return jsonify({"project": _serialize_project(project)}), 201
+
+
 @dashboard_bp.route("/api/schedule")
 def api_schedule():
     context = _build_dashboard_context()
@@ -558,10 +648,16 @@ def api_schedule():
 def api_profile():
     context = _build_dashboard_context()
     return jsonify({
+        "authenticated": context["profile_summary"]["authenticated"],
+        "user": {
+            "username": context["profile_summary"]["username"],
+            "email": context["profile_summary"]["email"],
+        },
         "profile": context["profile_summary"],
         "workspace": context["workspace"],
         "team_comments": context["team_comments"],
         "export_pack": context["export_pack"],
+        "saved_projects": context["saved_projects"],
     })
 
 
@@ -570,6 +666,20 @@ def download_pack():
     reels = Reel.query.order_by(Reel.views.desc()).all()
     summary = _build_export_summary(reels)
     pdf_buffer = _build_creator_brief_pdf(summary)
+    user = _current_user()
+
+    if user:
+        export_payload = {
+            "title": f"{summary['predicted_next_topic']} brief",
+            "topic": summary["predicted_next_topic"],
+            "region": summary["hottest_region"],
+            "cta": "Download and post",
+            "caption": f"{summary['hottest_region']} is talking about {summary['predicted_next_topic']} right now.",
+            "hook": f"Why {summary['hottest_region']} cannot ignore {summary['predicted_next_topic']} now.",
+            "voiceover": f"Quick brief for {summary['hottest_region']} creators covering {summary['predicted_next_topic']}.",
+            "hashtags": ["#MVPulse", f"#{summary['predicted_next_topic'].replace(' ', '')}"],
+        }
+        _save_project(user, export_payload, kind="export", status="downloaded")
 
     return send_file(
         pdf_buffer,

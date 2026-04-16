@@ -1,30 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MV Pulse</title>
+    <style>
+        :root {
+            --ink: #172126;
+            --muted: #5f6a6d;
+            --accent: #0f9d7a;
+            --warm: #f17c45;
+            --panel: rgba(255, 251, 246, 0.86);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 157, 122, 0.22), transparent 24%),
+                radial-gradient(circle at bottom right, rgba(241, 124, 69, 0.22), transparent 24%),
+                linear-gradient(180deg, #f4efe6 0%, #efe5d5 100%);
+            padding: 24px;
+        }
+
+        .shell {
+            max-width: 1040px;
+            margin: 0 auto;
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero,
+        .panel {
+            border-radius: 24px;
+            padding: 24px;
+            background: var(--panel);
+            box-shadow: 0 18px 40px rgba(23, 33, 38, 0.1);
+        }
+
+        .hero {
+            background: linear-gradient(145deg, rgba(23, 33, 38, 0.96), rgba(29, 48, 55, 0.93));
+            color: #fff8ef;
+        }
+
+        .hero h1,
+        h2 {
+            margin-top: 0;
+        }
+
+        .hero-copy {
+            max-width: 42rem;
+            color: rgba(255, 248, 239, 0.84);
+            line-height: 1.55;
+        }
+
+        .grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .grid.two-up {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .chip,
+        button {
+            border-radius: 999px;
+            padding: 12px 16px;
+            border: 0;
+            font: inherit;
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff8ef;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        form {
+            display: grid;
+            gap: 12px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(23, 33, 38, 0.1);
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent) 0%, #41b691 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        p { color: var(--muted); line-height: 1.5; }
+        .current-user strong { color: var(--ink); }
+    </style>
 </head>
 <body>
-    <h1>Welcome to MV Pulse 🎤📱</h1>
+    <div class="shell">
+        <section class="hero">
+            <h1>MV Pulse</h1>
+            <p class="hero-copy">Creator OS for trend prediction, AI content generation, analytics, scheduling, and export history. Sign in to turn the live dashboard into your personal creator workspace.</p>
+            <div class="chip-row">
+                <a class="chip" href="/dashboard">Open Creator OS</a>
+                <a class="chip" href="/feed">Watch Feed</a>
+                {% if current_user %}
+                <a class="chip" href="/logout">Log out</a>
+                {% endif %}
+            </div>
+        </section>
 
-    <h2>Signup</h2>
-    <form action="/signup" method="post">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Create Account</button>
-    </form>
-    
-    <h2>Login</h2>
-<form action="/login" method="post">
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <button type="submit">Login</button>
-</form>
+        {% if current_user %}
+        <section class="panel current-user">
+            <h2>Signed In</h2>
+            <p><strong>{{ current_user.username }}</strong> is active. Your drafts, exports, and creator profile are now attached to your account.</p>
+            <div class="chip-row">
+                <a class="chip" href="/dashboard#profile">Open Profile</a>
+                <a class="chip" href="/dashboard#create">Create Draft</a>
+            </div>
+        </section>
+        {% else %}
+        <section class="grid two-up">
+            <div class="panel">
+                <h2>Create Account</h2>
+                <form action="/signup" method="post">
+                    <input type="text" name="username" placeholder="Username" required>
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="password" name="password" placeholder="Password" required>
+                    <button type="submit">Create Account</button>
+                </form>
+            </div>
 
-    <h2>Voice Upload</h2>
-    <form action="/upload_voice" method="post" enctype="multipart/form-data">
-        <input type="file" name="voice">
-        <button type="submit">Upload Voice</button>
-    </form>
+            <div class="panel">
+                <h2>Login</h2>
+                <form action="/login" method="post">
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="password" name="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="panel">
+            <h2>Voice Upload</h2>
+            <form action="/upload_voice" method="post" enctype="multipart/form-data">
+                <input type="file" name="voice">
+                <button type="submit">Upload Voice</button>
+            </form>
+        </section>
+    </div>
 </body>
 </html>
