@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#030507">
+    <title>Offline | MV Pulse</title>
+    <style>
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: calc(28px + var(--safe-top)) calc(22px + var(--safe-right)) calc(28px + var(--safe-bottom)) calc(22px + var(--safe-left));
+            display: grid;
+            place-items: center;
+            font-family: "Segoe UI", sans-serif;
+            color: #f5f7fa;
+            background:
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 24%),
+                radial-gradient(circle at bottom right, rgba(255, 135, 86, 0.16), transparent 24%),
+                linear-gradient(180deg, #030507 0%, #09111a 100%);
+        }
+
+        .card {
+            width: min(460px, 100%);
+            border-radius: 28px;
+            padding: 28px;
+            background: rgba(8, 11, 16, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            display: grid;
+            gap: 14px;
+        }
+
+        h1, p { margin: 0; }
+        p { color: rgba(245, 247, 250, 0.8); line-height: 1.6; }
+
+        a {
+            min-height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            padding: 0 18px;
+            border-radius: 999px;
+            color: #061018;
+            text-decoration: none;
+            font-weight: 700;
+            background: linear-gradient(135deg, #18d4ab 0%, #ff8756 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>You are offline</h1>
+        <p>MV Pulse is still installed, but this screen needs a connection to load fresh videos and voice threads.</p>
+        <a href="/feed">Try feed again</a>
+    </div>
+</body>
+</html>

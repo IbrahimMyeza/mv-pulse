@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#030507">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MV Pulse">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/static/icons/mv-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/icons/mv-icon.svg">
     <title>MV Pulse</title>
     <style>
         :root {
@@ -238,6 +245,8 @@
             <div class="chip-row">
                 <a class="chip" href="/dashboard">Open Creator OS</a>
                 <a class="chip" href="/feed">Watch Feed</a>
+                <button class="chip" type="button" data-install-app hidden>Install app</button>
+                <button class="chip" type="button" data-enable-notifications>Enable notifications</button>
                 {% if current_user %}
                 <a class="chip" href="/logout">Log out</a>
                 {% endif %}
@@ -362,5 +371,6 @@
             });
         });
     </script>
+    <script src="/static/pwa.js"></script>
 </body>
 </html>

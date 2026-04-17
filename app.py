@@ -158,6 +158,21 @@ def media_asset(asset_path):
         abort(404)
     return send_from_directory(media_root, asset_path, conditional=True)
 
+
+@app.route("/manifest.webmanifest")
+def web_manifest():
+    return send_from_directory(app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
+
+
+@app.route("/sw.js")
+def service_worker():
+    return send_from_directory(app.static_folder, "sw.js", mimetype="application/javascript")
+
+
+@app.route("/offline")
+def offline_page():
+    return send_from_directory(app.static_folder, "offline.html")
+
 with app.app_context():
     db.create_all()
 

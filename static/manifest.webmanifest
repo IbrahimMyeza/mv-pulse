@@ -1,0 +1,34 @@
+{
+  "name": "Umbono Wami",
+  "short_name": "MV Pulse",
+  "description": "Voice-first short video conversations powered by MV Pulse.",
+  "start_url": "/feed",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030507",
+  "theme_color": "#030507",
+  "orientation": "portrait-primary",
+  "categories": ["social", "entertainment", "productivity"],
+  "icons": [
+    {
+      "src": "/static/icons/mv-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Watch Feed",
+      "short_name": "Feed",
+      "url": "/feed",
+      "icons": [{ "src": "/static/icons/mv-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Upload Video",
+      "short_name": "Upload",
+      "url": "/upload",
+      "icons": [{ "src": "/static/icons/mv-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
