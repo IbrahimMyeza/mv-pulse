@@ -16,16 +16,12 @@ imageio[ffmpeg]==2.37.2
 itsdangerous==2.2.0
 Jinja2==3.1.6
 joblib==1.5.3
-llvmlite==0.44.0
 MarkupSafe==3.0.3
-more-itertools==11.0.2
 moviepy==2.2.1
 mpmath==1.3.0
 networkx==3.6.1
 nltk==3.9.4
-numba==0.61.0
 numpy==2.2.3
-openai-whisper==20240930
 packaging==26.1
 pandas==2.2.3
 Pillow==11.1.0
@@ -47,8 +43,6 @@ stripe==15.0.1
 sympy==1.14.0
 textblob==0.20.0
 threadpoolctl==3.6.0
-tiktoken==0.12.0
-torch==2.5.1
 tqdm==4.67.3
 typing_extensions==4.15.0
 tzdata==2025.1
