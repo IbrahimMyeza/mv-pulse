@@ -740,6 +740,7 @@
                     <span class="chip">@{{ current_user.username }}</span>
                     <a class="action-link" href="/logout">Log out</a>
                     {% else %}
+                    <span class="pill">Guest watch mode</span>
                     <a class="action-link" href="/">Sign in</a>
                     {% endif %}
                     <a class="action-link primary" href="/upload">Upload</a>
@@ -877,6 +878,12 @@
 
                 <div class="secondary-grid">
                     <article class="panel">
+                        {% if not current_user %}
+                        <div class="project-item">
+                            <strong>Visitors can watch public videos now</strong>
+                            <p>Likes, follows, comments, saves, and voice replies will prompt for sign-in. Watching stays open.</p>
+                        </div>
+                        {% endif %}
                         <h3>Conversation radar</h3>
                         <p>Search the existing ranking and conversation intelligence signals without leaving the feed.</p>
                         <form action="/feed" method="get">
@@ -932,6 +939,7 @@
                 <article class="panel">
                     <h3>Upload</h3>
                     <p>Post a short video and seed the next voice discussion.</p>
+                    {% if current_user %}
                     <form action="/upload" method="post" enctype="multipart/form-data">
                         <input type="text" name="title" placeholder="Video title" required>
                         <textarea name="caption" placeholder="Add a caption in English or isiZulu"></textarea>
@@ -945,10 +953,22 @@
                         <input type="file" name="video" accept="video/*" required>
                         <button class="submit" type="submit">Upload video</button>
                     </form>
+                    {% else %}
+                    <div class="project-item">
+                        <strong>Sign in required</strong>
+                        <p>Uploads only save when you are signed in. Public visitors can browse the feed, but they cannot publish a video yet.</p>
+                    </div>
+                    <div class="sheet-actions">
+                        <a class="sheet-link primary" href="/">Sign in to upload</a>
+                    </div>
+                    {% endif %}
                 </article>
                 <article class="panel">
                     <h3>Saved drafts</h3>
                     <div class="project-list">
+                        {% if not current_user %}
+                        <div class="project-item">Sign in to see your drafts and uploaded videos.</div>
+                        {% else %}
                         {% for project in saved_projects %}
                         <div class="project-item">
                             <strong>{{ project.title }}</strong>
@@ -957,6 +977,7 @@
                         {% else %}
                         <div class="project-item">No saved drafts yet.</div>
                         {% endfor %}
+                        {% endif %}
                     </div>
                 </article>
             </div>
@@ -1588,6 +1609,13 @@
         };
 
         bindFeedHoldMenus();
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeSheets();
+                closeAuthModal();
+            }
+        });
 
         unreadBadges.forEach((badge) => {
             if (!badge.textContent.trim()) {

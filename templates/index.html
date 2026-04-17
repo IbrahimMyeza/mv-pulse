@@ -67,6 +67,86 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
+        .public-video-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+            align-items: start;
+        }
+
+        .featured-video {
+            display: grid;
+            gap: 16px;
+        }
+
+        .featured-video-player,
+        .video-preview {
+            width: 100%;
+            border-radius: 22px;
+            background: #0f1418;
+            overflow: hidden;
+            border: 1px solid rgba(23, 33, 38, 0.1);
+            box-shadow: 0 18px 40px rgba(23, 33, 38, 0.14);
+        }
+
+        .featured-video-player video,
+        .video-preview video {
+            display: block;
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            object-fit: cover;
+            background: #101418;
+        }
+
+        .featured-video-copy,
+        .video-preview-copy {
+            display: grid;
+            gap: 10px;
+        }
+
+        .video-preview-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .video-preview-card {
+            display: grid;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.56);
+            border: 1px solid rgba(23, 33, 38, 0.08);
+        }
+
+        .video-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .video-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .viewer-note {
+            padding: 12px 14px;
+            border-radius: 18px;
+            background: rgba(15, 157, 122, 0.12);
+            color: #0d6a52;
+            font-weight: 600;
+        }
+
+        @media (max-width: 860px) {
+            .public-video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .chip-row {
             display: flex;
             flex-wrap: wrap;
@@ -141,7 +221,7 @@
     <div class="shell">
         <section class="hero">
             <h1>MV Pulse</h1>
-            <p class="hero-copy">Creator OS for trend prediction, AI content generation, analytics, scheduling, and export history. Sign in to turn the live dashboard into your personal creator workspace.</p>
+            <p class="hero-copy">Creator OS for trend prediction, AI content generation, analytics, scheduling, and export history. Visitors can now watch public videos immediately. Sign in when you want likes, follows, comments, and voice replies to persist.</p>
             <div class="chip-row">
                 <a class="chip" href="/dashboard">Open Creator OS</a>
                 <a class="chip" href="/feed">Watch Feed</a>
@@ -154,6 +234,62 @@
         {% if auth_message %}
         <section class="auth-message">{{ auth_message }}</section>
         {% endif %}
+
+        <section class="panel">
+            <h2>Public Video Feed</h2>
+            <p>Anyone can watch public uploads. Reactions, follows, typed comments, and voice replies unlock after sign-in.</p>
+            {% if featured_public_video %}
+            <div class="public-video-grid">
+                <article class="featured-video">
+                    <a class="featured-video-player" href="/video/{{ featured_public_video.id }}">
+                        <video src="{{ featured_public_video.video_url }}" muted loop playsinline autoplay preload="metadata"></video>
+                    </a>
+                    <div class="featured-video-copy">
+                        <h2><a href="/video/{{ featured_public_video.id }}">{{ featured_public_video.title }}</a></h2>
+                        <p>{{ featured_public_video.caption or featured_public_video.description or 'Watch the latest public thread and open the full conversation.' }}</p>
+                        <div class="video-meta">
+                            <span>@{{ featured_public_video.creator }}</span>
+                            <span>{{ featured_public_video.views }} views</span>
+                            <span>{{ featured_public_video.voice_replies }} voice replies</span>
+                            <span>{{ featured_public_video.text_comments_count }} comments</span>
+                        </div>
+                        <div class="viewer-note">Visitors can watch now. Sign in to react and join the thread.</div>
+                        <div class="video-actions">
+                            <a class="chip" href="/video/{{ featured_public_video.id }}">Watch this video</a>
+                            <a class="chip" href="/feed">Open full feed</a>
+                            {% if not current_user %}
+                            <a class="chip" href="/">Sign in to react</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+                <aside class="video-preview-list">
+                    {% for video in public_videos %}
+                    <article class="video-preview-card">
+                        <a class="video-preview" href="/video/{{ video.id }}">
+                            <video src="{{ video.video_url }}" muted loop playsinline preload="metadata"></video>
+                        </a>
+                        <div class="video-preview-copy">
+                            <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
+                            <div class="video-meta">
+                                <span>@{{ video.creator }}</span>
+                                <span>{{ video.likes }} likes</span>
+                                <span>{{ video.text_comments_count }} comments</span>
+                            </div>
+                        </div>
+                    </article>
+                    {% else %}
+                    <article class="video-preview-card">
+                        <strong>No additional public videos yet</strong>
+                        <p>The next public upload will appear here automatically.</p>
+                    </article>
+                    {% endfor %}
+                </aside>
+            </div>
+            {% else %}
+            <div class="viewer-note">No public videos are live yet. The first public upload will appear here for every visitor, even before they sign in.</div>
+            {% endif %}
+        </section>
 
         {% if current_user %}
         <section class="panel current-user">

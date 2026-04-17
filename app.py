@@ -40,6 +40,7 @@ from routes.controversy import controversy_bp
 from routes.dashboard import dashboard_bp
 from routes.simulate import simulate_bp
 from routes.api_responses import json_error, wants_json_response
+from routes.social_utils import ensure_social_seed, hydrate_videos, serialize_video
 
 
 def _env_flag(name, default=False):
@@ -126,9 +127,20 @@ def home():
     if user_id:
         current_user = db.session.get(User, user_id)
 
+    ensure_social_seed()
+    public_videos = Video.query.filter_by(is_public=True).order_by(Video.created_at.desc()).limit(6).all()
+    hydrate_videos(public_videos, viewer=current_user)
+    public_video_payloads = [serialize_video(video) for video in public_videos]
+
     auth_message = session.pop("auth_message", None)
 
-    return render_template("index.html", current_user=current_user, auth_message=auth_message)
+    return render_template(
+        "index.html",
+        current_user=current_user,
+        auth_message=auth_message,
+        featured_public_video=public_video_payloads[0] if public_video_payloads else None,
+        public_videos=public_video_payloads[1:6] if len(public_video_payloads) > 1 else [],
+    )
 
 with app.app_context():
     db.create_all()

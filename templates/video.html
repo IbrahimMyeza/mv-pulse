@@ -694,6 +694,9 @@
                     <a class="back-link" href="/feed">Back to feed</a>
                 </div>
                 <div class="topbar-right chip-row">
+                    {% if not current_user %}
+                    <span class="top-pill">Guest watch mode</span>
+                    {% endif %}
                     <button class="top-pill" type="button" data-video-audio-toggle data-target-video="detail">Audio off</button>
                     {% if thread_summary %}
                     <span class="top-pill">{{ thread_summary.cluster_label }}</span>
@@ -743,6 +746,9 @@
                         </div>
                         {% if thread_summary %}
                         <p class="sheet-copy">{{ thread_summary.summary_text }}</p>
+                        {% endif %}
+                        {% if not current_user %}
+                        <p class="sheet-copy">Visitors can watch this public video now. Sign in when you want likes, follows, comments, saves, and voice replies to persist.</p>
                         {% endif %}
                         {% if current_user and video.creator_id == current_user.id %}
                         <div class="insights-overlay">
@@ -809,7 +815,7 @@
 
     <div class="sheet-backdrop" data-sheet-backdrop></div>
 
-    <div class="sheet active" data-reply-sheet>
+    <div class="sheet" data-reply-sheet>
         <div class="sheet-card">
             <div class="sheet-handle"></div>
             <div class="sheet-scroll">
@@ -830,7 +836,7 @@
                         <div class="sheet-header">
                             <div>
                                 <h2>Reply with your voice</h2>
-                                <p class="helper" data-recorder-status>Tap to record, hold to speak, slide up to lock, or slide left to cancel before preview.</p>
+                                <p class="helper" data-recorder-status>Tap to record, hold to speak, slide up to lock, or slide left to cancel. When you stop, the voice reply sends immediately.</p>
                             </div>
                             <button class="control-button" type="button" data-open-comment-tab>Type instead</button>
                         </div>
@@ -841,41 +847,17 @@
                         </select>
                         <div class="waveform" data-modal-wave></div>
                         <button class="record-pad" type="button" data-record-pad>
-                            <span data-record-pad-label>Hold to record. Release for preview. Tap for start and stop.</span>
+                            <span data-record-pad-label>Hold to record. Release to send. Tap for start and stop.</span>
                         </button>
                         <div class="recording-hints">
-                            <span>Release: preview before send</span>
+                            <span>Release: send reply</span>
                             <span>Slide up: lock recording</span>
                             <span>Slide left: cancel capture</span>
                         </div>
                         <div class="recording-tools">
                             <button class="control-button primary" type="button" data-toggle-recording>Start recording</button>
-                            <button class="control-button" type="button" data-stop-recording>Stop</button>
-                            <button class="control-button" type="button" data-open-file-picker>Choose audio file</button>
+                            <button class="control-button" type="button" data-stop-recording>Stop and send</button>
                         </div>
-                        <input type="file" accept="audio/*" data-recording-file hidden>
-                        <div class="recording-preview" data-recording-preview-wrapper hidden>
-                            <span class="badge">Preview</span>
-                            <audio controls preload="metadata" data-recording-preview hidden></audio>
-                            <div class="preview-actions">
-                                <button class="reply-submit" type="button" data-submit-recording>Send voice reply</button>
-                                <button class="control-button" type="button" data-delete-recording>Delete preview</button>
-                            </div>
-                        </div>
-                        <details>
-                            <summary>Upload instead of recording</summary>
-                            <form action="/voice/reply" method="post" enctype="multipart/form-data" class="fallback">
-                                <input type="hidden" name="video_id" value="{{ video.id }}">
-                                <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
-                                <select name="language_code">
-                                    {% for code, label in locale_options.items() %}
-                                    <option value="{{ code }}">{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                                <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %} {% if premium_preview_only %}disabled{% endif %}>
-                                <button class="reply-submit" type="submit" {% if premium_preview_only %}disabled{% endif %}>Upload voice reply</button>
-                            </form>
-                        </details>
                         <div class="upload-status" data-upload-status>
                             <strong data-upload-status-text>Ready to post.</strong>
                             <div class="progress-track"><div class="progress-bar" data-upload-progress></div></div>
@@ -975,11 +957,14 @@
                 <section class="sheet-panel" data-sheet-panel="comments">
                     <div class="panel">
                         <h3>Quick comments</h3>
-                        <p class="helper">Keep it short here, or switch back to replies for voice-first discussion.</p>
+                        <p class="helper">Keep it short here, or record a voice reply from this same section when typing is not enough.</p>
                         <form class="comment-form" data-comment-form>
                             <input type="text" name="content" maxlength="280" placeholder="Write a comment..." {% if not current_user %}disabled{% endif %}>
                             <button class="comment-submit" type="submit" {% if not current_user %}disabled{% endif %}>{% if current_user %}Post comment{% else %}Sign in to comment{% endif %}</button>
                         </form>
+                        <div class="sheet-actions">
+                            <button class="control-button" type="button" data-comment-voice-option {% if premium_preview_only %}disabled{% endif %}>{% if current_user %}Record voice reply instead{% else %}Sign in to voice reply{% endif %}</button>
+                        </div>
                     </div>
                     <div class="comment-list" data-comment-list>
                         {% for comment in text_comments %}
@@ -1057,20 +1042,13 @@
         const replySheet = document.querySelector('[data-reply-sheet]');
         const moreSheet = document.querySelector('[data-more-sheet]');
         const authSheet = document.querySelector('[data-auth-sheet]');
-        let activeSheet = replySheet;
+        let activeSheet = null;
 
         const recorderStatus = document.querySelector('[data-recorder-status]');
         const modalWave = document.querySelector('[data-modal-wave]');
         const recordPad = document.querySelector('[data-record-pad]');
         const recordPadLabel = document.querySelector('[data-record-pad-label]');
-        const preview = document.querySelector('[data-recording-preview]');
-        const previewWrapper = document.querySelector('[data-recording-preview-wrapper]');
-        const fileInput = document.querySelector('[data-recording-file]');
         const languageInput = document.querySelector('[data-recorder-language]');
-        const fallbackForm = document.querySelector('.fallback');
-        const fallbackFileInput = fallbackForm?.querySelector('input[type="file"][name="voice"]');
-        const fallbackLanguageInput = fallbackForm?.querySelector('select[name="language_code"]');
-        const fallbackDurationInput = fallbackForm?.querySelector('input[name="duration"]');
         const uploadStatus = document.querySelector('[data-upload-status]');
         const uploadStatusText = document.querySelector('[data-upload-status-text]');
         const uploadProgress = document.querySelector('[data-upload-progress]');
@@ -1079,12 +1057,14 @@
         const commentForm = document.querySelector('[data-comment-form]');
         const commentInput = commentForm?.querySelector('input[name="content"]');
         const commentList = document.querySelector('[data-comment-list]');
+        const commentVoiceOption = document.querySelector('[data-comment-voice-option]');
         const firstReplyAudio = () => document.querySelector('[data-thread-list] [data-reply-audio]');
 
         let recorder = null;
         let recorderStream = null;
         let recorderChunks = [];
         let recordedFile = null;
+        let recordedDurationSeconds = 0;
         let currentParentReplyId = '';
         let retryUploadAction = null;
         let recorderStartedAt = 0;
@@ -1388,23 +1368,19 @@
             window.setTimeout(() => replyNode.classList.remove('focused'), 3600);
         };
 
-        const assignRecordedFile = (file) => {
-            recordedFile = file;
-            if (!recordedFile) {
-                preview.hidden = true;
-                previewWrapper.hidden = true;
-                preview.removeAttribute('src');
-                return;
-            }
-            preview.src = URL.createObjectURL(recordedFile);
-            preview.hidden = false;
-            previewWrapper.hidden = false;
-        };
-
         const updateRecordPadState = (stateText) => {
             if (recordPadLabel) {
                 recordPadLabel.textContent = stateText;
             }
+        };
+
+        const resetRecorderUi = ({ statusText = 'Tap to record, hold to speak, slide up to lock, or slide left to cancel. When you stop, the voice reply sends immediately.' } = {}) => {
+            recordedFile = null;
+            recordedDurationSeconds = 0;
+            recorderStatus.textContent = statusText;
+            updateRecordPadState('Hold to record. Release to send. Tap for start and stop.');
+            modalWave?.classList.remove('recording');
+            recordPad?.classList.remove('active', 'locked', 'cancel-ready');
         };
 
         const resetGestureState = () => {
@@ -1436,20 +1412,12 @@
                         recorderChunks.push(event.data);
                     }
                 });
-                recorder.addEventListener('stop', () => {
-                    const blob = new Blob(recorderChunks, { type: recorder?.mimeType || 'audio/webm' });
-                    assignRecordedFile(new File([blob], 'voice-reply.webm', { type: blob.type }));
-                    modalWave?.classList.remove('recording');
-                    recorderStream?.getTracks().forEach((track) => track.stop());
-                    recorderStream = null;
-                    recorder = null;
-                }, { once: true });
                 recorder.start();
                 recorderStartedAt = Date.now();
                 modalWave?.classList.add('recording');
                 recordPad?.classList.add('active');
                 recorderStatus.textContent = statusText || 'Recording... speak now.';
-                updateRecordPadState('Recording now. Release for preview, slide up to lock, slide left to cancel.');
+                updateRecordPadState('Recording now. Release to send, slide up to lock, slide left to cancel.');
                 return true;
             } catch (error) {
                 recorderStatus.textContent = 'Microphone access failed. Upload a file instead.';
@@ -1457,33 +1425,74 @@
             }
         };
 
-        const stopRecording = ({ discard = false, statusText = null } = {}) => {
-            if (recorder && recorder.state !== 'inactive') {
-                recorder.addEventListener('stop', () => {
+        const stopRecording = async ({ discard = false, statusText = null, autoSubmit = false, sourceButton = null } = {}) => {
+            if (!recorder || recorder.state === 'inactive') {
+                if (discard) {
+                    resetRecorderUi({ statusText: 'Recording cancelled.' });
+                }
+                resetGestureState();
+                return null;
+            }
+
+            const activeRecorder = recorder;
+            const mimeType = activeRecorder.mimeType || 'audio/webm';
+            const elapsed = Math.max(0.1, (Date.now() - recorderStartedAt) / 1000);
+
+            if (discard) {
+                recorderChunks = [];
+            }
+
+            const file = await new Promise((resolve) => {
+                activeRecorder.addEventListener('stop', () => {
                     modalWave?.classList.remove('recording');
-                    recordPad?.classList.remove('active', 'locked', 'cancel-ready');
-                    if (discard) {
-                        assignRecordedFile(null);
-                        recorderStatus.textContent = 'Recording cancelled.';
-                        updateRecordPadState('Hold to record. Release for preview. Tap for start and stop.');
+                    recorderStream?.getTracks().forEach((track) => track.stop());
+                    recorderStream = null;
+                    recorder = null;
+                    const blob = discard ? null : new Blob(recorderChunks, { type: mimeType });
+                    if (!blob || !blob.size) {
+                        recordedFile = null;
+                        recordedDurationSeconds = 0;
+                        resolve(null);
                         return;
                     }
-                    const elapsed = Math.max(0, (Date.now() - recorderStartedAt) / 1000);
-                    if (statusText) {
-                        recorderStatus.textContent = statusText;
-                    } else {
-                        recorderStatus.textContent = `Preview ready. ${elapsed.toFixed(1)}s captured.`;
-                    }
-                    updateRecordPadState('Preview ready. Send it, delete it, or record again.');
+                    recordedFile = new File([blob], 'voice-reply.webm', { type: blob.type });
+                    recordedDurationSeconds = elapsed;
+                    resolve(recordedFile);
                 }, { once: true });
-                if (discard) {
-                    recorderChunks = [];
-                }
-                recorder.stop();
-            } else if (discard) {
-                assignRecordedFile(null);
-            }
+                activeRecorder.stop();
+            });
+
             resetGestureState();
+
+            if (discard || !file) {
+                resetRecorderUi({ statusText: statusText || 'Recording cancelled.' });
+                return null;
+            }
+
+            if (!autoSubmit) {
+                recorderStatus.textContent = statusText || `Voice reply ready. ${elapsed.toFixed(1)}s captured.`;
+                updateRecordPadState('Tap stop to send, or record again.');
+                return file;
+            }
+
+            recorderStatus.textContent = statusText || 'Uploading voice reply...';
+            updateRecordPadState('Sending voice reply now.');
+            const payload = await postVoiceReply({
+                file,
+                languageCode: languageInput?.value || 'en',
+                duration: elapsed.toFixed(1),
+                parentReplyId: currentParentReplyId,
+                sourceButton,
+                resetInput: () => {
+                    currentParentReplyId = '';
+                    resetRecorderUi({ statusText: 'Voice reply posted. Record another one whenever you are ready.' });
+                },
+            });
+            if (payload) {
+                recorderStatus.textContent = 'Voice reply posted into the thread.';
+                updateRecordPadState('Hold to record another reply.');
+            }
+            return payload;
         };
 
         const postVoiceReply = async ({ file, languageCode, duration, parentReplyId = '', sourceButton = null, resetInput = null }) => {
@@ -1562,6 +1571,19 @@
             openReplyTab('comments');
             openSheet(replySheet);
             commentInput?.focus();
+        });
+
+        commentVoiceOption?.addEventListener('click', async () => {
+            if (!isAuthenticated) {
+                authRequired();
+                return;
+            }
+            openReplyTab('replies');
+            openSheet(replySheet);
+            currentParentReplyId = '';
+            if (!recorder || recorder.state === 'inactive') {
+                await startRecording({ statusText: 'Recording from comments. Speak now and stop to send.' });
+            }
         });
 
         document.querySelectorAll('[data-open-reply-sheet]').forEach((button) => {
@@ -1965,21 +1987,9 @@
 
         bindInteractiveControls();
         focusReplyThread();
+        resetRecorderUi();
 
         detailVideo?.play().catch(() => {});
-
-        fileInput?.addEventListener('change', () => {
-            const [file] = fileInput.files || [];
-            if (file) {
-                assignRecordedFile(file);
-                recorderStatus.textContent = 'Audio file ready to preview and send.';
-                updateRecordPadState('Preview loaded. Send it, delete it, or record again.');
-            }
-        });
-
-        document.querySelector('[data-open-file-picker]')?.addEventListener('click', () => {
-            fileInput?.click();
-        });
 
         document.querySelector('[data-toggle-recording]')?.addEventListener('click', async () => {
             if (!isAuthenticated) {
@@ -1987,24 +1997,19 @@
                 return;
             }
             if (recorder && recorder.state !== 'inactive') {
-                stopRecording({ statusText: 'Preview ready. Review before sending.' });
+                await stopRecording({ statusText: 'Uploading voice reply...', autoSubmit: true, sourceButton: document.querySelector('[data-toggle-recording]') });
                 return;
             }
             currentParentReplyId = currentParentReplyId || '';
             await startRecording({ statusText: 'Recording... tap stop when finished.' });
         });
 
-        document.querySelector('[data-stop-recording]')?.addEventListener('click', () => {
-            stopRecording({ statusText: 'Preview ready. Review before sending.' });
-        });
-
-        document.querySelector('[data-delete-recording]')?.addEventListener('click', () => {
-            assignRecordedFile(null);
-            if (fileInput) {
-                fileInput.value = '';
+        document.querySelector('[data-stop-recording]')?.addEventListener('click', async () => {
+            if (!isAuthenticated) {
+                authRequired();
+                return;
             }
-            recorderStatus.textContent = 'Preview deleted. Record again or choose another file.';
-            updateRecordPadState('Hold to record. Release for preview. Tap for start and stop.');
+            await stopRecording({ statusText: 'Uploading voice reply...', autoSubmit: true, sourceButton: document.querySelector('[data-stop-recording]') });
         });
 
         recordPad?.addEventListener('pointerdown', async (event) => {
@@ -2021,7 +2026,7 @@
             gestureState.holdActive = true;
             recordPad.setPointerCapture(event.pointerId);
             currentParentReplyId = currentParentReplyId || '';
-            await startRecording({ statusText: 'Hold and speak. Release for preview.' });
+            await startRecording({ statusText: 'Hold and speak. Release to send.' });
         });
 
         recordPad?.addEventListener('pointermove', (event) => {
@@ -2034,7 +2039,7 @@
                 gestureState.locked = true;
                 recordPad.classList.add('locked');
                 recorderStatus.textContent = 'Recording locked. Tap stop when you are done.';
-                updateRecordPadState('Recording locked. Keep speaking or tap stop for preview.');
+                updateRecordPadState('Recording locked. Keep speaking or tap stop to send.');
             }
             if (dx < -90) {
                 gestureState.cancelReady = true;
@@ -2056,37 +2061,20 @@
             const shouldStayLocked = gestureState.locked;
             gestureState.holdActive = false;
             if (shouldCancel) {
-                stopRecording({ discard: true });
+                stopRecording({ discard: true, statusText: 'Recording cancelled.' });
                 return;
             }
             if (shouldStayLocked) {
                 recorderStatus.textContent = 'Recording locked. Tap stop when you are done.';
-                updateRecordPadState('Recording locked. Tap stop for preview.');
+                updateRecordPadState('Recording locked. Tap stop to send.');
                 recordPad.classList.remove('cancel-ready');
                 return;
             }
-            stopRecording({ statusText: 'Preview ready. Review before sending.' });
+            stopRecording({ statusText: 'Uploading voice reply...', autoSubmit: true });
         };
 
         recordPad?.addEventListener('pointerup', handleRecordPadRelease);
         recordPad?.addEventListener('pointercancel', handleRecordPadRelease);
-
-        fallbackForm?.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            if (!isAuthenticated) {
-                authRequired();
-                return;
-            }
-            const submitButton = fallbackForm.querySelector('button[type="submit"]');
-            await postVoiceReply({
-                file: fallbackFileInput?.files?.[0],
-                languageCode: fallbackLanguageInput?.value || 'en',
-                duration: fallbackDurationInput?.value || '0',
-                parentReplyId: currentParentReplyId,
-                sourceButton: submitButton,
-                resetInput: () => fallbackForm.reset(),
-            });
-        });
 
         commentForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -2126,33 +2114,6 @@
         retryUploadButton?.addEventListener('click', () => {
             if (typeof retryUploadAction === 'function') {
                 retryUploadAction();
-            }
-        });
-
-        document.querySelector('[data-submit-recording]')?.addEventListener('click', async () => {
-            if (!recordedFile) {
-                recorderStatus.textContent = 'Record or choose an audio file before posting.';
-                return;
-            }
-            const submitButton = document.querySelector('[data-submit-recording]');
-            const payload = await postVoiceReply({
-                file: recordedFile,
-                languageCode: languageInput?.value || 'en',
-                duration: ((Date.now() - recorderStartedAt) / 1000).toFixed(1),
-                parentReplyId: currentParentReplyId,
-                sourceButton: submitButton,
-                resetInput: () => {
-                    assignRecordedFile(null);
-                    if (fileInput) {
-                        fileInput.value = '';
-                    }
-                    currentParentReplyId = '';
-                    recorderStatus.textContent = 'Tap to record, hold to speak, slide up to lock, or slide left to cancel before preview.';
-                    updateRecordPadState('Hold to record. Release for preview. Tap for start and stop.');
-                },
-            });
-            if (payload) {
-                recorderStatus.textContent = 'Reply posted into the thread.';
             }
         });
 
@@ -2226,6 +2187,12 @@
         };
 
         bindHoldMenus();
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeSheets();
+            }
+        });
     </script>
 </body>
 </html>
