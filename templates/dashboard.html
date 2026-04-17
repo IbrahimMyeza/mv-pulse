@@ -35,6 +35,8 @@
                 radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 26%),
                 radial-gradient(circle at top right, rgba(255, 135, 86, 0.16), transparent 30%),
                 linear-gradient(180deg, #030507 0%, #09111a 50%, #030507 100%);
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         a {
@@ -171,6 +173,7 @@
             width: min(1180px, 100%);
             margin: 0 auto;
             padding: 92px 14px 120px;
+            scroll-margin-top: 92px;
         }
 
         .screen.active {
@@ -208,7 +211,7 @@
         }
 
         .feed-stage {
-            scroll-snap-type: y mandatory;
+            scroll-snap-type: y proximity;
         }
 
         .reel-video,
@@ -582,10 +585,12 @@
             transition: transform 0.24s ease;
             z-index: 39;
             padding: 0 12px 12px;
+            pointer-events: none;
         }
 
         .sheet.active {
             transform: translate(-50%, 0);
+            pointer-events: auto;
         }
 
         .sheet-card {
@@ -611,6 +616,8 @@
             overflow: auto;
             display: grid;
             gap: 14px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         .sheet-header {
@@ -630,6 +637,10 @@
             min-width: 44px;
             min-height: 44px;
             cursor: pointer;
+            padding: 0;
+            font-size: 1.3rem;
+            line-height: 1;
+            font-weight: 700;
         }
 
         .insight-grid {
@@ -1090,7 +1101,7 @@
                         <h3 data-sheet-title>Voice thread</h3>
                         <p class="meta-copy" data-sheet-summary>Open the full video page to speak and continue the conversation.</p>
                     </div>
-                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
                 <div class="chip-row">
                     <span class="pill" data-sheet-replies>0 voice replies</span>
@@ -1116,7 +1127,7 @@
                         <h3>More actions</h3>
                         <p class="meta-copy">Share, repost, save, report, or copy a direct link.</p>
                     </div>
-                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
                 <div class="sheet-actions">
                     <button class="sheet-link primary" type="button" data-more-share>Share</button>
@@ -1132,11 +1143,16 @@
 
     <div class="modal-backdrop" data-auth-modal>
         <div class="modal-card">
-            <h3>Sign in to interact</h3>
-            <p class="meta-copy">Likes, saves, follows, and voice replies are tied to your account.</p>
+            <div class="sheet-header">
+                <div>
+                    <h3>Sign in to interact</h3>
+                    <p class="meta-copy">Likes, saves, follows, and voice replies are tied to your account.</p>
+                </div>
+                <button class="menu-button" type="button" data-close-modal aria-label="Close overlay">&times;</button>
+            </div>
             <div class="sheet-actions">
                 <a class="sheet-link primary" href="/">Sign in or create account</a>
-                <button class="sheet-link" type="button" data-close-modal>Close</button>
+                <button class="sheet-link" type="button" data-close-modal>Keep browsing</button>
             </div>
         </div>
     </div>

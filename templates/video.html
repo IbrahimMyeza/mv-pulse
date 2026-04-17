@@ -21,6 +21,11 @@
 
         * { box-sizing: border-box; }
 
+        html {
+            background: #030507;
+            scroll-behavior: smooth;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
@@ -30,6 +35,8 @@
                 radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 24%),
                 radial-gradient(circle at top right, rgba(255, 135, 86, 0.14), transparent 28%),
                 linear-gradient(180deg, #030507 0%, #09111a 60%, #05070a 100%);
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         a {
@@ -47,6 +54,9 @@
         .viewer {
             position: relative;
             min-height: 100vh;
+            display: grid;
+            gap: 18px;
+            padding-bottom: 24px;
         }
 
         .stage {
@@ -347,10 +357,12 @@
             transition: transform 0.24s ease;
             z-index: 30;
             padding: 0 12px 12px;
+            pointer-events: none;
         }
 
         .sheet.active {
             transform: translate(-50%, 0);
+            pointer-events: auto;
         }
 
         .sheet-card {
@@ -376,6 +388,8 @@
             padding: 16px 18px 22px;
             display: grid;
             gap: 16px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         .sheet-header {
@@ -383,6 +397,16 @@
             justify-content: space-between;
             gap: 12px;
             align-items: flex-start;
+        }
+
+        .menu-button {
+            width: 44px;
+            min-width: 44px;
+            height: 44px;
+            padding: 0;
+            font-size: 1.3rem;
+            line-height: 1;
+            font-weight: 700;
         }
 
         .sheet-tabs {
@@ -824,7 +848,7 @@
                         <h2>Voice thread</h2>
                         <p>Slide this panel, listen to replies, speak back, or drop a quick text comment.</p>
                     </div>
-                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
                 <div class="sheet-tabs">
                     <button class="sheet-tab active" type="button" data-sheet-tab="replies">Replies</button>
@@ -990,7 +1014,7 @@
                         <h2>More actions</h2>
                         <p>Share, repost, save, report, or copy a direct link.</p>
                     </div>
-                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
                 <div class="sheet-menu-list">
                     <button class="sheet-link primary" type="button" data-more-share>Share</button>
@@ -1018,7 +1042,7 @@
                         <h2>Sign in before reacting</h2>
                         <p>Voice replies, likes, saves, and follows persist after you sign in.</p>
                     </div>
-                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
                 <div class="sheet-actions">
                     <a class="sheet-link primary" href="/">Sign in</a>
