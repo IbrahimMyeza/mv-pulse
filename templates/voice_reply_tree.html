@@ -1,5 +1,15 @@
 <div class="reply-card" id="reply-{{ reply.id }}" data-reply-card data-reply-id="{{ reply.id }}">
-    <strong>@{{ reply.username }}</strong>
+    <div class="actions" style="margin-top: 0; margin-bottom: 8px;">
+        <strong>@{{ reply.username }}</strong>
+        {% if reply.supporter_badge %}
+        <span class="ghost">{{ reply.supporter_badge }}</span>
+        {% endif %}
+        <span class="ghost">{{ reply.topic_label }}</span>
+        <span class="ghost">{{ reply.tone_label }}</span>
+        {% if reply.moderation_state != 'clear' %}
+        <span class="ghost">{{ reply.moderation_state }}</span>
+        {% endif %}
+    </div>
     <p>{{ reply.transcript or 'Voice note with no transcript yet.' }}</p>
     <div class="waveform"></div>
     <audio class="reply-audio" controls preload="metadata" src="{{ reply.audio_url }}" data-reply-audio data-reply-id="{{ reply.id }}"></audio>
@@ -8,7 +18,12 @@
         <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
         <button class="ghost {% if reply.is_liked %}active{% endif %}" type="button" data-reply-like-button data-reply-id="{{ reply.id }}" data-liked="{{ 'true' if reply.is_liked else 'false' }}">❤️ <span data-reply-like-count>{{ reply.likes_count }}</span></button>
         <button class="ghost {% if reply.is_saved %}active{% endif %}" type="button" data-reply-save-button data-reply-id="{{ reply.id }}" data-saved="{{ 'true' if reply.is_saved else 'false' }}">🔖 <span data-reply-save-count>{{ reply.saves_count }}</span></button>
+        <button class="ghost" type="button" data-tip-button data-target-type="voice_reply" data-voice-reply-id="{{ reply.id }}">Tip creator</button>
         <span class="ghost">{{ reply.language_code|upper }}</span>
+        <span class="ghost">IQ {{ '%.2f'|format(reply.intelligence_score) }}</span>
+        {% if premium_room and premium_room.can_access %}
+        <span class="ghost">Premium room live</span>
+        {% endif %}
         <button class="ghost" type="button" data-open-recorder data-parent-reply-id="{{ reply.id }}">Reply</button>
     </div>
     {% if reply.children %}

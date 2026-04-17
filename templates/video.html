@@ -27,6 +27,10 @@
         .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
         .stack { display: grid; gap: 12px; }
         .helper { font-size: 0.94rem; color: #9aa6b5; }
+        .banner { display: grid; gap: 10px; padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); margin-top: 14px; }
+        .badge { display: inline-flex; width: fit-content; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); }
+        .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .clip-card { padding: 12px; border-radius: 16px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
         .fallback { display: grid; gap: 10px; margin-top: 12px; }
         .modal-backdrop {
             position: fixed;
@@ -74,7 +78,53 @@
                 {% if video_payload.can_follow_creator %}
                 <button class="ghost {% if video_payload.creator_is_followed %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ video_payload.creator_id }}" data-following="{{ 'true' if video_payload.creator_is_followed else 'false' }}">{% if video_payload.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
                 {% endif %}
+                <button class="ghost" type="button" data-tip-button data-target-type="video" data-video-id="{{ video.id }}">Tip creator</button>
             </div>
+            {% if creator_tiers %}
+            <div class="banner">
+                <span class="badge">Creator subscriptions</span>
+                <div class="actions">
+                    {% for tier in creator_tiers %}
+                    <button class="ghost {% if tier.active_access %}active{% endif %}" type="button" data-subscribe-button data-tier-id="{{ tier.id }}">{{ tier.tier_name }} · {{ tier.currency }} {{ '%.2f'|format(tier.monthly_price_cents / 100) }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if premium_room %}
+            <div class="banner" data-premium-room data-room-id="{{ premium_room.id }}">
+                <span class="badge">{{ premium_room.label }}</span>
+                <strong>{{ premium_room.title }}</strong>
+                <p>{{ premium_room.description or 'Premium voice room attached to this thread.' }}</p>
+                <p class="meta">{{ premium_room.room_type }} · {{ premium_room.participant_count }}/{{ premium_room.participant_cap }} joined{% if premium_room.scheduled_for %} · starts {{ premium_room.scheduled_for }}{% endif %}</p>
+                {% if premium_preview_only %}
+                <p class="helper">This thread is showing a preview. Join the room or subscribe to unlock the full conversation.</p>
+                {% endif %}
+                <div class="actions">
+                    {% if premium_room.can_access %}
+                    <button class="btn" type="button" data-room-join-button data-room-id="{{ premium_room.id }}">Enter room</button>
+                    {% elif premium_room.room_type == 'subscriber_only' %}
+                    <button class="btn" type="button" data-subscribe-button data-tier-id="{{ creator_tiers[0].id if creator_tiers else '' }}">Subscribe to unlock</button>
+                    {% elif premium_room.room_type == 'paid_entry' %}
+                    <button class="btn" type="button" data-room-join-button data-room-id="{{ premium_room.id }}">Pay and join</button>
+                    {% else %}
+                    <button class="ghost" type="button" disabled>Invite required</button>
+                    {% endif %}
+                    <button class="ghost" type="button" data-tip-button data-target-type="premium_room" data-premium-room-id="{{ premium_room.id }}">Tip room host</button>
+                </div>
+            </div>
+            {% endif %}
+            {% if thread_summary %}
+            <div class="banner">
+                <span class="badge">Conversation Intelligence Core</span>
+                <strong>{{ thread_summary.cluster_label }}</strong>
+                <p>{{ thread_summary.summary_text }}</p>
+                <div class="actions">
+                    <span class="ghost">controversy {{ thread_summary.controversy_score }}</span>
+                    <span class="ghost">velocity {{ thread_summary.reply_velocity }}</span>
+                    <span class="ghost">participants {{ thread_summary.participant_count }}</span>
+                </div>
+            </div>
+            {% endif %}
         </section>
 
         <section class="card">
@@ -83,8 +133,11 @@
                 <div class="waveform" data-recorder-wave></div>
                 <div class="row">
                     <p class="helper">Record in-browser for fast mobile replies. If recording is unavailable, upload an audio file instead.</p>
-                    <button class="btn" type="button" data-open-recorder data-parent-reply-id="">{% if current_user %}Record voice reply{% else %}Sign in to record{% endif %}</button>
+                    <button class="btn" type="button" data-open-recorder data-parent-reply-id="" {% if premium_preview_only %}disabled{% endif %}>{% if premium_preview_only %}Join room to reply{% elif current_user %}Record voice reply{% else %}Sign in to record{% endif %}</button>
                 </div>
+                {% if premium_preview_only %}
+                <p class="helper">Replies are locked to paying members or subscribers while this premium room is active.</p>
+                {% endif %}
                 <form action="/voice/reply" method="post" enctype="multipart/form-data" class="fallback">
                     <input type="hidden" name="video_id" value="{{ video.id }}">
                     <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
@@ -93,8 +146,8 @@
                         <option value="{{ code }}">{{ label }}</option>
                         {% endfor %}
                     </select>
-                    <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %}>
-                    <button type="submit">Upload voice reply</button>
+                    <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %} {% if premium_preview_only %}disabled{% endif %}>
+                    <button type="submit" {% if premium_preview_only %}disabled{% endif %}>Upload voice reply</button>
                 </form>
             </div>
         </section>
@@ -107,6 +160,24 @@
             <p>No voice replies yet. Be the first voice in the thread.</p>
             {% endfor %}
         </section>
+
+        {% if clip_suggestions %}
+        <section class="card">
+            <h2>Auto clip suggestions</h2>
+            <div class="insight-grid">
+                {% for clip in clip_suggestions %}
+                <a class="clip-card" href="{{ clip.target_url }}">
+                    <strong>{{ clip.headline }}</strong>
+                    <p>{{ clip.reason }}</p>
+                    <div class="actions">
+                        <span class="ghost">{{ clip.start_second }}s - {{ clip.end_second }}s</span>
+                        <span class="ghost">score {{ clip.score }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
     </div>
 
     <div class="modal-backdrop" data-auth-modal>
@@ -153,6 +224,7 @@
         const preview = document.querySelector('[data-recording-preview]');
         const fileInput = document.querySelector('[data-recording-file]');
         const languageInput = document.querySelector('[data-recorder-language]');
+        const creatorId = {{ video_payload.creator_id }};
         let recorder = null;
         let recorderStream = null;
         let recorderChunks = [];
@@ -315,6 +387,83 @@
                 } catch (error) {
                     button.dataset.following = previouslyFollowing ? 'true' : 'false';
                     setToggleButton(button, previouslyFollowing, 'Following', 'Follow creator');
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-subscribe-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                if (!isAuthenticated) {
+                    authModal?.classList.add('active');
+                    return;
+                }
+                const tierId = button.dataset.tierId;
+                try {
+                    const payload = await requestJson(`/api/creators/${creatorId}/subscribe`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subscription_id: tierId ? Number(tierId) : null }),
+                    });
+                    button.classList.add('active');
+                    button.textContent = `${payload.tier_name} active`;
+                    window.location.reload();
+                } catch (error) {
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-room-join-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const roomId = button.dataset.roomId;
+                try {
+                    await requestJson(`/api/rooms/${roomId}/join`, { method: 'POST' });
+                    window.location.reload();
+                } catch (error) {
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-tip-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                if (!isAuthenticated) {
+                    authModal?.classList.add('active');
+                    return;
+                }
+                const amountValue = window.prompt('Tip amount in cents', '1000');
+                const amountCents = Number(amountValue || 0);
+                if (!Number.isFinite(amountCents) || amountCents <= 0) {
+                    return;
+                }
+                const payload = {
+                    amount_cents: amountCents,
+                    target_type: button.dataset.targetType,
+                };
+                if (button.dataset.videoId) {
+                    payload.video_id = Number(button.dataset.videoId);
+                }
+                if (button.dataset.voiceReplyId) {
+                    payload.voice_reply_id = Number(button.dataset.voiceReplyId);
+                }
+                if (button.dataset.premiumRoomId) {
+                    payload.premium_room_id = Number(button.dataset.premiumRoomId);
+                }
+                try {
+                    await requestJson('/api/tips', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    button.textContent = 'Tip sent';
+                } catch (error) {
                     if (error.message !== 'auth') {
                         console.error(error);
                     }

@@ -48,3 +48,64 @@ class User(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    creator_subscription_tiers = db.relationship(
+        "CreatorSubscription",
+        foreign_keys="CreatorSubscription.creator_user_id",
+        back_populates="creator",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    subscriber_records = db.relationship(
+        "SubscriberAccess",
+        foreign_keys="SubscriberAccess.creator_user_id",
+        back_populates="creator",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    subscriber_access_records = db.relationship(
+        "SubscriberAccess",
+        foreign_keys="SubscriberAccess.subscriber_user_id",
+        back_populates="subscriber",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    sent_tip_transactions = db.relationship(
+        "TipTransaction",
+        foreign_keys="TipTransaction.sender_user_id",
+        back_populates="sender",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    received_tip_transactions = db.relationship(
+        "TipTransaction",
+        foreign_keys="TipTransaction.receiver_user_id",
+        back_populates="receiver",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    premium_voice_rooms = db.relationship(
+        "PremiumVoiceRoom",
+        foreign_keys="PremiumVoiceRoom.creator_user_id",
+        back_populates="creator",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    voice_room_participations = db.relationship(
+        "VoiceRoomParticipant",
+        foreign_keys="VoiceRoomParticipant.user_id",
+        back_populates="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    voice_embeddings = db.relationship(
+        "VoiceEmbedding",
+        back_populates="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+    voice_insights = db.relationship(
+        "VoiceInsight",
+        back_populates="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )

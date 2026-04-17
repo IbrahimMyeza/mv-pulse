@@ -32,3 +32,15 @@ class VoiceReply(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    embedding_record = db.relationship(
+        "VoiceEmbedding",
+        back_populates="voice_reply",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    insight_record = db.relationship(
+        "VoiceInsight",
+        back_populates="voice_reply",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )

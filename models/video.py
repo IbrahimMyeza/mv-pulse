@@ -50,3 +50,9 @@ class Video(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    thread_summaries = db.relationship(
+        "ThreadSummary",
+        back_populates="video",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )

@@ -4,7 +4,10 @@ from database import db
 from models.follow import Follow
 from models.user import User
 from models.video import Video
+from models.voice_insight import VoiceInsight
 from models.voice_reply import VoiceReply
+from services.ai_pipeline import ensure_processed_for_video
+from services.clip_engine import suggest_clips_for_video
 from services.social_engagement import (
     follow_payload,
     toggle_follow,
@@ -13,6 +16,18 @@ from services.social_engagement import (
     toggle_voice_reply_save,
     toggle_voice_reply_like,
     track_video_share,
+)
+from services.thread_intelligence import get_thread_summary, search_discovery
+from services.voice_identity import voice_identity_payload
+from services.creator_monetization import (
+    apply_supporter_badges,
+    ensure_creator_tiers,
+    extract_reply_subtree,
+    preview_reply_tree,
+    room_access_state,
+    room_for_video,
+    serialize_room,
+    serialize_subscription_tier,
 )
 from services.social_retention import (
     load_activity,
@@ -58,17 +73,31 @@ def _auth_response(message):
 
 @social_bp.route("/feed")
 def feed():
-    return render_template("dashboard.html", **social_context(active_tab="home"))
+    return render_template(
+        "dashboard.html",
+        **social_context(
+            active_tab="home",
+            discovery_query=request.args.get("q", "").strip() or None,
+            discovery_topic=request.args.get("topic", "").strip() or None,
+            discovery_tone=request.args.get("tone", "").strip() or None,
+        ),
+    )
 
 
 @social_bp.route("/api/feed")
 def api_feed():
-    context = social_context(active_tab="home")
+    context = social_context(
+        active_tab="home",
+        discovery_query=request.args.get("q", "").strip() or None,
+        discovery_topic=request.args.get("topic", "").strip() or None,
+        discovery_tone=request.args.get("tone", "").strip() or None,
+    )
     return jsonify({
         "videos": context["feed_videos"],
         "feed_items": context["feed_items"],
         "hot_threads": context["hot_threads"],
         "featured_video": context["featured_video"],
+        "discovery_results": context["discovery_results"],
         "locale_options": context["locale_options"],
         "notifications_unread_count": context["notifications_unread_count"],
     })
@@ -196,16 +225,39 @@ def video_detail(id):
     video = Video.query.get_or_404(id)
     viewer = current_user()
     focused_reply_id = request.args.get("focus_reply_id", type=int)
+    ensure_processed_for_video(video.id)
     hydrate_videos([video], viewer=viewer)
     context = social_context(active_tab="home", selected_video=video)
+    serialized_replies = build_reply_tree(video.id, viewer=viewer)
+    premium_room = room_for_video(video.id, focused_reply_id)
+    premium_access = None
+    video_creator_tiers = []
+    if video.creator:
+        video_creator_tiers = [serialize_subscription_tier(tier, viewer=viewer) for tier in ensure_creator_tiers(video.creator)]
+    if premium_room:
+        premium_access = room_access_state(viewer, premium_room) if viewer else room_access_state(None, premium_room)
+        serialized_replies = extract_reply_subtree(serialized_replies, premium_room.highlighted_reply_id) if premium_room.highlighted_reply_id else serialized_replies
+        if not premium_access["can_access"]:
+            serialized_replies = preview_reply_tree(serialized_replies, focus_reply_id=premium_room.highlighted_reply_id)
+
+    serialized_replies = apply_supporter_badges(serialized_replies, video.creator_id or 0)
+    clip_suggestions = suggest_clips_for_video(
+        video,
+        insights_by_reply_id={row.voice_reply_id: row for row in VoiceInsight.query.join(VoiceReply, VoiceReply.id == VoiceInsight.voice_reply_id).filter(VoiceReply.video_id == video.id).all()},
+    )
     return render_template(
         "video.html",
         video=video,
         video_payload=serialize_video(video),
-        replies=build_reply_tree(video.id, viewer=viewer),
+        replies=serialized_replies,
         current_user=viewer,
         locale_options=context["locale_options"],
         focused_reply_id=focused_reply_id,
+        premium_room=serialize_room(premium_room, viewer) if premium_room else None,
+        premium_preview_only=bool(premium_room and premium_access and not premium_access["can_access"]),
+        creator_tiers=video_creator_tiers,
+        thread_summary=get_thread_summary(video.id),
+        clip_suggestions=clip_suggestions,
     )
 
 
@@ -281,6 +333,37 @@ def api_voice_replies_save(id):
 def profile(username):
     profile_user = User.query.filter_by(username=username).first_or_404()
     return render_template("profile.html", **social_context(active_tab="profile", profile_user=profile_user))
+
+
+@social_bp.route("/api/profile/<username>/voice-identity")
+def api_profile_voice_identity(username):
+    profile_user = User.query.filter_by(username=username).first_or_404()
+    return jsonify(voice_identity_payload(profile_user))
+
+
+@social_bp.route("/api/thread/<int:video_id>/summary")
+def api_thread_summary(video_id):
+    Video.query.get_or_404(video_id)
+    ensure_processed_for_video(video_id)
+    return jsonify(get_thread_summary(video_id) or {})
+
+
+@social_bp.route("/api/discovery")
+def api_discovery():
+    return jsonify({
+        "items": search_discovery(
+            query=request.args.get("q", "").strip() or None,
+            topic=request.args.get("topic", "").strip() or None,
+            tone=request.args.get("tone", "").strip() or None,
+        )
+    })
+
+
+@social_bp.route("/api/videos/<int:id>/clip-suggestions")
+def api_clip_suggestions(id):
+    video = Video.query.get_or_404(id)
+    ensure_processed_for_video(video.id)
+    return jsonify({"items": suggest_clips_for_video(video)})
 
 
 @social_bp.route("/api/profile/<username>/follow", methods=["POST"])

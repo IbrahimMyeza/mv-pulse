@@ -9,16 +9,32 @@ from database import db
 from ml.debate_detector import controversy_score
 from ml.ranker import rank_reels
 from ml.reputation import get_creator_score, update_creator_score
+from models.creator_subscription import CreatorSubscription
 from models.export_project import ExportProject
 from models.follow import Follow
 from models.like import Like
 from models.notification import Notification
+from models.premium_voice_room import PremiumVoiceRoom
 from models.reel import Reel
 from models.save import Save
+from models.thread_summary import ThreadSummary
 from models.user import User
 from models.user_social_profile import UserSocialProfile
 from models.video import Video
 from models.voice_reply import VoiceReply
+from services.ai_pipeline import intelligence_snapshot_for_video
+from services.clip_engine import suggest_clips_for_video
+from services.creator_monetization import (
+    annotate_hot_thread_cards,
+    annotate_videos_with_premium_rooms,
+    apply_supporter_badges,
+    ensure_creator_tiers,
+    room_for_video,
+    serialize_room,
+    serialize_subscription_tier,
+)
+from services.thread_intelligence import get_thread_summary, search_discovery
+from services.voice_identity import voice_identity_payload
 from services.social_retention import group_notifications, retention_rank_videos, unread_notification_count
 from services.thread_heat import compute_hot_threads, inject_hot_thread_cards, notify_hot_thread_participants
 
@@ -163,6 +179,9 @@ def serialize_video(video):
         "creator_followers_count": getattr(video, "creator_followers_count", 0),
         "retention_score": getattr(video, "retention_score", 0),
         "thread_heat_score": getattr(video, "thread_heat_score", 0),
+        "intelligence_score": getattr(video, "intelligence_score", 0),
+        "thread_summary": getattr(video, "thread_summary", None),
+        "premium_room": getattr(video, "premium_room", None),
     }
 
 
@@ -182,6 +201,7 @@ def serialize_hot_thread_card(card):
         "caption": card["caption"],
         "creator": card["creator"],
         "reply_depth": card["reply_depth"],
+        "premium_room": card.get("premium_room"),
     }
 
 
@@ -211,6 +231,11 @@ def serialize_voice_reply(reply):
         "is_saved": getattr(reply, "is_saved", False),
         "can_reply": getattr(reply, "can_reply", False),
         "target_url": f"/video/{reply.video_id}#reply-{reply.id}",
+        "supporter_badge": getattr(reply, "supporter_badge", None),
+        "topic_label": getattr(reply, "topic_label", getattr(reply.insight_record, "topic_label", "general") if getattr(reply, "insight_record", None) else "general"),
+        "tone_label": getattr(reply, "tone_label", getattr(reply.insight_record, "tone_label", "balanced") if getattr(reply, "insight_record", None) else "balanced"),
+        "intelligence_score": getattr(reply, "intelligence_score", getattr(reply.insight_record, "intelligence_score", 0.0) if getattr(reply, "insight_record", None) else 0.0),
+        "moderation_state": getattr(reply, "moderation_state", getattr(reply.insight_record, "moderation_state", "clear") if getattr(reply, "insight_record", None) else "clear"),
         "children": [serialize_voice_reply(child) for child in sorted(reply.child_replies, key=lambda item: item.created_at or 0)],
     }
 
@@ -311,6 +336,11 @@ def _hydrate_replies(replies, viewer=None):
             item.is_liked = item.id in liked_ids
             item.is_saved = item.id in saved_ids
             item.can_reply = viewer is not None
+            if item.insight_record:
+                item.topic_label = item.insight_record.topic_label
+                item.tone_label = item.insight_record.tone_label
+                item.intelligence_score = item.insight_record.intelligence_score
+                item.moderation_state = item.insight_record.moderation_state
             apply_state(item.child_replies)
 
     apply_state(replies)
@@ -400,20 +430,26 @@ def preferred_region_for(user):
     return counts.most_common(1)[0][0] if counts else None
 
 
-def social_context(active_tab="home", profile_user=None, selected_video=None):
+def social_context(active_tab="home", profile_user=None, selected_video=None, discovery_query=None, discovery_topic=None, discovery_tone=None):
     ensure_social_seed()
     user = current_user()
     if user:
         ensure_social_profile(user)
+        ensure_creator_tiers(user)
     if profile_user:
         ensure_social_profile(profile_user)
+        ensure_creator_tiers(profile_user)
     topic = preferred_topic_for(user)
     region = preferred_region_for(user)
     videos, hot_threads = ranked_feed(preferred_topic=topic, preferred_region=region, viewer=user)
     hydrate_videos(videos, viewer=user)
+    room_map = annotate_videos_with_premium_rooms(videos, viewer=user)
+    annotate_hot_thread_cards(hot_threads, room_map, viewer=user)
     feed_items = inject_hot_thread_cards(videos, hot_threads)
     featured_video = selected_video or (videos[0] if videos else None)
     profile_owner = profile_user or user
+    for video in videos:
+        video.thread_summary = get_thread_summary(video.id)
 
     saved_projects = []
     if user:
@@ -426,11 +462,16 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
     notification_groups = group_notifications(notifications)
 
     recent_replies = VoiceReply.query.order_by(VoiceReply.created_at.desc()).limit(10).all()
-    recent_replies_serialized = [serialize_voice_reply(reply) for reply in recent_replies]
+    recent_replies_serialized = apply_supporter_badges([serialize_voice_reply(reply) for reply in recent_replies], profile_owner.id if profile_owner else 0)
     follower_count = profile_owner.followers.count() if profile_owner else 0
     following_count = profile_owner.following.count() if profile_owner else 0
     video_count = profile_owner.videos.count() if profile_owner else 0
     reply_count = profile_owner.voice_replies.count() if profile_owner else 0
+    discovery_results = search_discovery(query=discovery_query, topic=discovery_topic, tone=discovery_tone) if (discovery_query or discovery_topic or discovery_tone) else search_discovery(limit=5)
+    profile_voice_identity = voice_identity_payload(profile_owner) if profile_owner else voice_identity_payload(None)
+    active_thread_summary = get_thread_summary(featured_video.id) if featured_video else None
+    active_clip_suggestions = suggest_clips_for_video(featured_video) if featured_video else []
+    active_intelligence = intelligence_snapshot_for_video(featured_video.id) if featured_video else {"avg_intelligence_score": 0.0, "avg_toxicity_score": 0.0, "dominant_topics": []}
 
     return {
         "active_tab": active_tab,
@@ -447,6 +488,8 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
         "recent_voice_threads": recent_replies_serialized,
         "profile_user": profile_owner,
         "profile_is_owner": bool(user and profile_owner and user.id == profile_owner.id),
+        "creator_tiers": [serialize_subscription_tier(tier, viewer=user) for tier in (profile_owner.creator_subscription_tiers.order_by(CreatorSubscription.monthly_price_cents.asc()).all() if profile_owner else [])],
+        "profile_premium_rooms": [serialize_room(room, user) for room in (profile_owner.premium_voice_rooms.order_by(PremiumVoiceRoom.created_at.desc()).all() if profile_owner else [])],
         "profile_stats": {
             "followers": follower_count,
             "following": following_count,
@@ -455,6 +498,15 @@ def social_context(active_tab="home", profile_user=None, selected_video=None):
             "creator_score": round(get_creator_score(profile_owner.id if profile_owner else 0), 2) if profile_owner else 100,
         },
         "profile_videos": [serialize_video(video) for video in (profile_owner.videos.order_by(Video.created_at.desc()).all() if profile_owner else [])],
+        "active_premium_room": serialize_room(room_for_video(featured_video.id if featured_video else None), user) if featured_video else None,
+        "profile_voice_identity": profile_voice_identity,
+        "active_thread_summary": active_thread_summary,
+        "active_clip_suggestions": active_clip_suggestions,
+        "active_intelligence": active_intelligence,
+        "discovery_results": discovery_results,
+        "discovery_query": discovery_query or "",
+        "discovery_topic": discovery_topic or "",
+        "discovery_tone": discovery_tone or "",
         "saved_projects": [
             {
                 "id": project.id,

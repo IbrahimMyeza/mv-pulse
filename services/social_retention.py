@@ -1,12 +1,16 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from database import db
 from models.follow import Follow
 from models.like import Like
 from models.notification import Notification
 from models.save import Save
+from models.thread_summary import ThreadSummary
 from models.video import Video
+from models.voice_insight import VoiceInsight
 from models.voice_reply import VoiceReply
+from sqlalchemy import func
 
 
 def reply_target_url(video_id, reply_id):
@@ -250,6 +254,30 @@ def retention_rank_videos(videos, viewer=None):
     video_ids = [video.id for video in videos]
     save_counts = _save_count_map(video_ids)
     voice_reply_counts, reply_depth = _reply_metrics(video_ids)
+    summary_rows = ThreadSummary.query.filter(ThreadSummary.video_id.in_(video_ids), ThreadSummary.root_reply_id.is_(None)).all() if video_ids else []
+    summary_map = {row.video_id: row for row in summary_rows}
+    insight_rows = (
+        db.session.query(
+            VoiceReply.video_id,
+            func.avg(VoiceInsight.intelligence_score),
+            func.avg(VoiceInsight.toxicity_score),
+            func.max(VoiceInsight.sentiment_score),
+            func.max(VoiceInsight.replay_signal),
+        )
+        .join(VoiceReply, VoiceReply.id == VoiceInsight.voice_reply_id)
+        .filter(VoiceReply.video_id.in_(video_ids))
+        .group_by(VoiceReply.video_id)
+        .all()
+    ) if video_ids else []
+    insight_map = {
+        video_id: {
+            "avg_intelligence": float(avg_intelligence or 0.0),
+            "avg_toxicity": float(avg_toxicity or 0.0),
+            "max_sentiment": float(max_sentiment or 0.0),
+            "max_replay": float(max_replay or 0.0),
+        }
+        for video_id, avg_intelligence, avg_toxicity, max_sentiment, max_replay in insight_rows
+    }
 
     scored = []
     for video in videos:
@@ -259,6 +287,14 @@ def retention_rank_videos(videos, viewer=None):
         save_weight = save_counts.get(video.id, 0)
         voice_reply_weight = voice_reply_counts.get(video.id, video.voice_replies or 0)
         depth_weight = reply_depth.get(video.id, 0)
+        summary = summary_map.get(video.id)
+        insight = insight_map.get(video.id, {})
+        intelligence_score = float(insight.get("avg_intelligence", 0.0))
+        controversy_boost = float(summary.controversy_score if summary else 0.0)
+        velocity_boost = float(summary.reply_velocity if summary else 0.0)
+        sentiment_boost = abs(float(insight.get("max_sentiment", 0.0)))
+        replay_boost = float(insight.get("max_replay", 0.0))
+        moderation_penalty = 2.5 if float(insight.get("avg_toxicity", 0.0)) >= 0.72 else 1.25 if float(insight.get("avg_toxicity", 0.0)) >= 0.45 else 0.0
         retention_score = (
             (follow_weight * 3)
             + (save_weight * 4)
@@ -266,8 +302,15 @@ def retention_rank_videos(videos, viewer=None):
             + (depth_weight * 2)
             + freshness_decay
             + (getattr(video, "thread_heat_score", 0) * 1.5)
+            + controversy_boost
+            + velocity_boost
+            + sentiment_boost
+            + replay_boost
+            + (intelligence_score * 1.5)
+            - moderation_penalty
         )
         video.retention_score = round(retention_score, 2)
+        video.intelligence_score = round(intelligence_score, 2)
         scored.append((retention_score, video.created_at or now, video))
 
     scored.sort(key=lambda item: (item[0], item[1]), reverse=True)

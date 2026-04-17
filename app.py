@@ -6,16 +6,25 @@ from database import db
 from models.user import User
 from models.reel import Reel
 from models.export_project import ExportProject
+from models.creator_subscription import CreatorSubscription
 from models.follow import Follow
 from models.like import Like
 from models.notification import Notification
+from models.premium_voice_room import PremiumVoiceRoom
+from models.subscriber_access import SubscriberAccess
+from models.tip_transaction import TipTransaction
+from models.thread_summary import ThreadSummary
 from models.video import Video
 from models.save import Save
 from models.user_social_profile import UserSocialProfile
+from models.voice_embedding import VoiceEmbedding
+from models.voice_insight import VoiceInsight
 from models.voice_reply import VoiceReply
+from models.voice_room_participant import VoiceRoomParticipant
 
 from routes.voice import voice_bp
 from routes.auth import auth_bp
+from routes.monetization import monetization_bp
 from routes.reels import reels_bp
 from routes.social import social_bp
 from routes.analytics import analytics_bp
@@ -44,6 +53,7 @@ db.init_app(app)
 
 app.register_blueprint(voice_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(monetization_bp)
 app.register_blueprint(reels_bp)
 app.register_blueprint(social_bp)
 app.register_blueprint(analytics_bp)

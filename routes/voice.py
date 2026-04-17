@@ -2,14 +2,22 @@ from flask import Blueprint, jsonify, redirect, request, session, url_for
 
 from database import db
 from ml.debate_detector import controversy_score
-from ml.transcriber import transcribe_audio
-from ml.voice_sentiment import analyze_voice_sentiment
 from models.video import Video
 from models.voice_reply import VoiceReply
 from routes.social_utils import create_notification, current_user, save_video_file, touch_video_reputation
+from services.ai_pipeline import schedule_voice_reply_processing
 
 voice_bp = Blueprint("voice", __name__)
 VOICE_FOLDER = "static/voices/replies"
+
+
+def _analyze_audio(audio_path):
+    from ml.transcriber import transcribe_audio
+    from ml.voice_sentiment import analyze_voice_sentiment
+
+    transcript = transcribe_audio(audio_path)
+    sentiment = analyze_voice_sentiment(transcript)
+    return transcript, sentiment
 
 
 def _wants_json_response():
@@ -24,8 +32,7 @@ def api_voice_transcribe():
 
     audio_url = save_video_file(audio, VOICE_FOLDER)
     audio_path = audio_url.lstrip("/")
-    transcript = transcribe_audio(audio_path)
-    sentiment = analyze_voice_sentiment(transcript)
+    transcript, sentiment = _analyze_audio(audio_path)
     debate = controversy_score(sentiment, transcript)
 
     return jsonify({
@@ -57,8 +64,7 @@ def voice_reply():
     video = Video.query.get_or_404(int(video_id))
     audio_url = save_video_file(audio, VOICE_FOLDER)
     audio_path = audio_url.lstrip("/")
-    transcript = transcribe_audio(audio_path)
-    sentiment = analyze_voice_sentiment(transcript)
+    transcript, sentiment = _analyze_audio(audio_path)
     debate = controversy_score(sentiment, transcript)
 
     reply = VoiceReply(
@@ -80,6 +86,7 @@ def voice_reply():
     video.emotion_score = max(video.emotion_score, abs(sentiment) or 1.0)
     db.session.commit()
     touch_video_reputation(video, sentiment)
+    schedule_voice_reply_processing(reply.id)
 
     if video.creator_id and video.creator_id != user.id:
         create_notification(

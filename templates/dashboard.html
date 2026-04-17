@@ -187,6 +187,8 @@
         }
 
         .thread-list, .notification-list, .profile-video-list, .project-list { display: grid; gap: 12px; }
+        .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .insight-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.04); display: grid; gap: 8px; }
         .reply-card audio { width: 100%; margin-top: 10px; }
         .reply-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .speed-button, .thread-link, .ghost {
@@ -312,6 +314,18 @@
         }
         .thread-card h3 { margin: 0; font-size: 1.28rem; }
         .thread-card p { margin: 0; }
+        .premium-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 216, 92, 0.12);
+            color: #ffe59b;
+            border: 1px solid rgba(255, 216, 92, 0.22);
+            font-weight: 700;
+        }
+        .premium-stack { display: grid; gap: 10px; }
         @keyframes thread-pulse {
             0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(27, 209, 165, 0.45); }
             70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(27, 209, 165, 0); }
@@ -374,6 +388,9 @@
                 <span class="pill">{{ code|upper }} · {{ label }}</span>
                 {% endfor %}
                 <span class="pill">Voice replies are the main discussion layer</span>
+                {% if active_thread_summary %}
+                <span class="pill">CIC live · {{ active_thread_summary.cluster_label }}</span>
+                {% endif %}
             </div>
         </header>
 
@@ -385,6 +402,58 @@
                         <p>For You ranking powered by the existing AI ranking stack.</p>
                     </div>
                 </div>
+                <div class="grid two-up">
+                    <article class="card">
+                        <h3>Conversation Radar</h3>
+                        <form action="/feed" method="get">
+                            <input type="text" name="q" value="{{ discovery_query }}" placeholder="Search politics, football, religion, funny debates...">
+                            <div class="grid two-up">
+                                <input type="text" name="topic" value="{{ discovery_topic }}" placeholder="Topic label">
+                                <input type="text" name="tone" value="{{ discovery_tone }}" placeholder="Tone label">
+                            </div>
+                            <button class="submit" type="submit">Search conversation intelligence</button>
+                        </form>
+                    </article>
+                    <article class="card">
+                        <h3>Active Thread Intelligence</h3>
+                        {% if active_thread_summary %}
+                        <div class="insight-grid">
+                            <div class="insight-card">
+                                <strong>Summary</strong>
+                                <p>{{ active_thread_summary.summary_text }}</p>
+                            </div>
+                            <div class="insight-card">
+                                <strong>Cluster</strong>
+                                <p>{{ active_thread_summary.cluster_label }}</p>
+                                <p>controversy {{ active_thread_summary.controversy_score }} · velocity {{ active_thread_summary.reply_velocity }}</p>
+                            </div>
+                            <div class="insight-card">
+                                <strong>Dominant topics</strong>
+                                <p>{{ active_intelligence.dominant_topics|join(', ') if active_intelligence.dominant_topics else 'Processing replies...' }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p>No active thread intelligence yet.</p>
+                        {% endif %}
+                    </article>
+                </div>
+                {% if discovery_results %}
+                <article class="card">
+                    <h3>Discovery Results</h3>
+                    <div class="thread-list">
+                        {% for result in discovery_results %}
+                        <a class="reply-card" href="{{ result.target_url }}">
+                            <strong>{{ result.cluster_label }}</strong>
+                            <p>{{ result.summary_text }}</p>
+                            <div class="reply-actions">
+                                {% if result.tone_label %}<span class="ghost">{{ result.tone_label }}</span>{% endif %}
+                                <span class="ghost">controversy {{ result.controversy_score }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endif %}
                 <div class="feed-stack">
                     {% for item in feed_items %}
                     {% if item.kind == 'hot_thread' %}
@@ -407,10 +476,16 @@
                             <span class="participant-avatar" title="@{{ participant.username }}">{{ participant.initials }}</span>
                             {% endfor %}
                             <span class="pill">@{{ item.creator }}</span>
+                            {% if item.premium_room %}
+                            <span class="premium-pill">{{ item.premium_room.label }}</span>
+                            {% endif %}
                         </div>
                         <div class="inline-actions">
                             <a class="action primary" href="{{ item.target_url }}">Jump into hot subtree</a>
                             <a class="action" href="/video/{{ item.video_id }}">Open full reel</a>
+                            {% if item.premium_room %}
+                            <a class="action" href="{{ item.premium_room.target_url }}">{{ item.premium_room.upgrade_cta or 'Join Premium Room' }}</a>
+                            {% endif %}
                         </div>
                     </article>
                     {% else %}
@@ -443,13 +518,18 @@
                                         <span>{{ video.region }}</span>
                                         <span>{{ video.topic }}</span>
                                         <span>{{ video.language_label }}</span>
+                                        {% if video.thread_summary %}
+                                        <span class="pill">{{ video.thread_summary.cluster_label }}</span>
+                                        {% endif %}
+                                        {% if video.premium_room %}
+                                        <span class="premium-pill">{{ video.premium_room.label }}</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div class="side-actions">
                                     <button class="icon-button like-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">❤️<br><small data-video-like-count>{{ video.likes }}</small></button>
                                     <button class="icon-button save-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">🔖<br><small data-video-save-count>{{ video.saves_count }}</small></button>
                                     <button class="icon-button share-button" type="button" data-video-share-button data-video-id="{{ video.id }}">↗️<br><small data-video-share-count>{{ video.shares_count }}</small></button>
-                                    <button class="icon-button" type="button" data-open-voice-entry data-video-id="{{ video.id }}">🎙️<br><small>{{ video.voice_replies }}</small></button>
                                 </div>
                             </div>
                         </div>
@@ -458,12 +538,19 @@
                                 <span class="pill">{{ video.views }} views</span>
                                 <span class="pill">{{ video.voice_replies }} voice replies</span>
                                 <span class="pill">debate {{ video.debate_score }}</span>
+                                <span class="pill">intelligence {{ video.intelligence_score }}</span>
                                 {% if video.creator_id %}
                                 <span class="pill" data-followers-for="{{ video.creator_id }}">{{ video.creator_followers_count }} followers</span>
                                 {% endif %}
                             </div>
+                            {% if video.thread_summary %}
+                            <p class="assist-text">{{ video.thread_summary.summary_text }}</p>
+                            {% endif %}
                             <div class="inline-actions">
                                 <a class="action" href="/video/{{ video.id }}">Open threaded voice discussion</a>
+                                {% if video.premium_room %}
+                                <a class="action primary" href="{{ video.premium_room.target_url }}">{{ video.premium_room.upgrade_cta or 'Join Premium Room' }}</a>
+                                {% endif %}
                                 {% if current_user %}
                                 <a class="action" href="/profile/{{ current_user.username }}">Your profile</a>
                                 {% endif %}
@@ -858,16 +945,6 @@
                         console.error(error);
                     }
                 }
-            });
-        });
-
-        document.querySelectorAll('[data-open-voice-entry]').forEach((button) => {
-            button.addEventListener('click', () => {
-                if (!isAuthenticated) {
-                    openAuthModal();
-                    return;
-                }
-                window.location.href = `/video/${button.dataset.videoId}#record`;
             });
         });
 

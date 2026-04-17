@@ -24,6 +24,11 @@
         .tab-button { border-radius: 999px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); color: #f5f7fa; cursor: pointer; }
         .tab-button.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
         .helper { color: #9aa6b5; font-size: 0.94rem; }
+        .tier-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .tier-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
+        .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+        .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .insight-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
     </style>
 </head>
 <body>
@@ -52,6 +57,99 @@
             {% else %}
             <p>Profile not found.</p>
             {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Conversation Intelligence Core</h2>
+            <div class="insight-grid">
+                <div class="insight-card">
+                    <strong>Brand voice</strong>
+                    <p>{{ profile_voice_identity.creator_brand_voice_hint }}</p>
+                    <span class="pill">tone {{ profile_voice_identity.dominant_tone }}</span>
+                </div>
+                <div class="insight-card">
+                    <strong>What topics am I known for?</strong>
+                    <p>{% for topic in profile_voice_identity.dominant_topics %}{{ topic.label }}{% if not loop.last %}, {% endif %}{% else %}No processed topics yet.{% endfor %}</p>
+                    <p>processed replies {{ profile_voice_identity.total_processed_replies }}</p>
+                </div>
+                <div class="insight-card">
+                    <strong>Audience sentiment analysis</strong>
+                    <p>{{ profile_voice_identity.audience_sentiment_analysis }}</p>
+                    <p>avg sentiment {{ profile_voice_identity.average_sentiment }} · avg toxicity {{ profile_voice_identity.average_toxicity }}</p>
+                </div>
+                <div class="insight-card">
+                    <strong>Suggested premium room topics</strong>
+                    <p>{{ profile_voice_identity.suggested_premium_room_topics|join(', ') if profile_voice_identity.suggested_premium_room_topics else 'Wait for more processed conversations.' }}</p>
+                </div>
+            </div>
+            {% if profile_voice_identity.best_performing_replies %}
+            <div class="video-item">
+                <strong>Best performing voice replies</strong>
+                {% for item in profile_voice_identity.best_performing_replies %}
+                <p><a href="{{ item.target_url }}">{{ item.topic_label }} · {{ item.tone_label }} · intelligence {{ item.intelligence_score }}</a></p>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>{% if profile_is_owner %}Creator Monetization{% else %}Subscribe to {{ profile_user.username }}{% endif %}</h2>
+            <div class="tier-grid">
+                {% for tier in creator_tiers %}
+                <div class="tier-card">
+                    <strong>{{ tier.tier_name }}</strong>
+                    <p>{{ tier.description }}</p>
+                    <span class="pill">{{ tier.currency }} {{ '%.2f'|format(tier.monthly_price_cents / 100) }} / month</span>
+                    {% if profile_is_owner %}
+                    <span class="pill">{% if tier.founder_badges_enabled %}Founder badge enabled{% else %}Standard tier{% endif %}</span>
+                    {% else %}
+                    <button class="btn {% if tier.active_access %}active{% endif %}" type="button" data-subscribe-button data-tier-id="{{ tier.id }}">{% if tier.active_access %}Subscribed{% else %}Subscribe{% endif %}</button>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p>No creator tiers yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Premium Voice Rooms</h2>
+            {% if profile_is_owner %}
+            <form id="room-form" class="video-item" style="margin-top: 0;">
+                <input type="text" name="title" placeholder="Room title" required>
+                <input type="text" name="description" placeholder="What is this debate or AMA about?">
+                <input type="number" name="video_id" placeholder="Linked reel ID">
+                <input type="number" name="highlighted_reply_id" placeholder="Highlighted reply ID">
+                <select name="room_type">
+                    <option value="public">public</option>
+                    <option value="subscriber_only">subscriber_only</option>
+                    <option value="paid_entry">paid_entry</option>
+                    <option value="invite_only">invite_only</option>
+                </select>
+                <select name="session_kind">
+                    <option value="debate">debate</option>
+                    <option value="ama">ama</option>
+                </select>
+                <input type="number" name="entry_price_cents" placeholder="Entry price cents">
+                <input type="number" name="participant_cap" placeholder="Participant cap" value="100">
+                <button class="btn" type="submit">Create Premium Room</button>
+            </form>
+            <div class="video-item" id="creator-earnings-panel">
+                <strong>Creator earnings</strong>
+                <p class="helper">Loading earnings, room conversion, and supporter leaderboard...</p>
+            </div>
+            {% endif %}
+            <div id="room-list">
+                {% for room in profile_premium_rooms %}
+                <div class="video-item">
+                    <strong><a href="{{ room.target_url }}">{{ room.title }}</a></strong>
+                    <p>{{ room.label }} · {{ room.room_type }} · {{ room.participant_count }}/{{ room.participant_cap }} joined</p>
+                    <p>{% if room.scheduled_for %}Starts {{ room.scheduled_for }}{% else %}Open now{% endif %}</p>
+                </div>
+                {% else %}
+                <p class="helper">No premium rooms yet.</p>
+                {% endfor %}
+            </div>
         </section>
 
         {% if profile_is_owner %}
@@ -103,6 +201,7 @@
         const isOwner = shell?.dataset.profileOwner === 'true';
         const tabContent = document.querySelector('[data-tab-content]');
         const tabCache = new Map();
+        const creatorId = {{ profile_user.id if profile_user else 'null' }};
         const tabEndpoints = {
             'saved-videos': '/api/me/saved/videos',
             'saved-replies': '/api/me/saved/replies',
@@ -216,6 +315,77 @@
                 }
             });
         });
+
+        document.querySelectorAll('[data-subscribe-button]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                if (!isAuthenticated) {
+                    openAuthModal();
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/creators/${creatorId}/subscribe`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+                        body: JSON.stringify({ subscription_id: Number(button.dataset.tierId) }),
+                    });
+                    if (response.status === 401) {
+                        openAuthModal();
+                        throw new Error('auth');
+                    }
+                    if (!response.ok) {
+                        throw new Error('request');
+                    }
+                    button.classList.add('active');
+                    button.textContent = 'Subscribed';
+                } catch (error) {
+                    if (error.message !== 'auth') {
+                        console.error(error);
+                    }
+                }
+            });
+        });
+
+        const earningsPanel = document.getElementById('creator-earnings-panel');
+        if (isOwner && earningsPanel) {
+            fetch('/api/creator/earnings', { headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch' } })
+                .then((response) => response.json())
+                .then((payload) => {
+                    earningsPanel.innerHTML = `
+                        <strong>Total earnings</strong>
+                        <p>ZAR ${(payload.total_earnings_cents / 100).toFixed(2)}</p>
+                        <p>Room conversion ${payload.room_conversion_rate}</p>
+                        <p>Subscriber retention ${payload.subscriber_retention}%</p>
+                        <p>Average tip ZAR ${(payload.avg_tip_per_creator_cents / 100).toFixed(2)}</p>
+                        <p>Top supporters: ${(payload.top_supporters || []).map((item) => item.username).join(', ') || 'No supporters yet'}</p>
+                    `;
+                })
+                .catch((error) => {
+                    console.error(error);
+                    earningsPanel.innerHTML = '<p class="helper">Could not load creator earnings right now.</p>';
+                });
+        }
+
+        const roomForm = document.getElementById('room-form');
+        if (roomForm) {
+            roomForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const formData = new FormData(roomForm);
+                const payload = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch('/api/rooms', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!response.ok) {
+                        throw new Error('request');
+                    }
+                    window.location.reload();
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+        }
 
         document.querySelectorAll('[data-tab]').forEach((button) => {
             button.addEventListener('click', () => loadTab(button.dataset.tab));
