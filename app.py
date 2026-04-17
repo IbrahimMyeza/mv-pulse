@@ -1,7 +1,12 @@
 import os
+import time
+import uuid
+from http import HTTPStatus
+
+from werkzeug.exceptions import RequestEntityTooLarge
 import stripe
 
-from flask import Flask, render_template, session
+from flask import Flask, g, render_template, request, session
 from database import db
 from models.user import User
 from models.reel import Reel
@@ -33,6 +38,14 @@ from routes.predict import predict_bp
 from routes.controversy import controversy_bp
 from routes.dashboard import dashboard_bp
 from routes.simulate import simulate_bp
+from routes.api_responses import json_error, wants_json_response
+
+
+def _env_flag(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _database_uri():
@@ -46,6 +59,10 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mv-pulse-dev-secret")
 app.config["SQLALCHEMY_DATABASE_URI"] = _database_uri()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", 32 * 1024 * 1024))
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+app.config["SESSION_COOKIE_SECURE"] = _env_flag("SESSION_COOKIE_SECURE", default=False)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 
@@ -62,6 +79,44 @@ app.register_blueprint(predict_bp)
 app.register_blueprint(controversy_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(simulate_bp)
+
+
+@app.before_request
+def track_request_start():
+    g.request_started_at = time.perf_counter()
+    g.request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+
+
+@app.after_request
+def log_request(response):
+    response.headers["X-Request-ID"] = getattr(g, "request_id", "")
+    started_at = getattr(g, "request_started_at", None)
+    if started_at is None:
+        return response
+
+    duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+    slow_threshold_ms = float(os.getenv("SLOW_REQUEST_MS", "800"))
+    log_payload = {
+        "request_id": getattr(g, "request_id", None),
+        "method": request.method,
+        "path": request.path,
+        "status": response.status_code,
+        "duration_ms": duration_ms,
+    }
+    if response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR or duration_ms >= slow_threshold_ms:
+        app.logger.warning("request.complete %s", log_payload)
+    elif response.status_code >= HTTPStatus.BAD_REQUEST:
+        app.logger.info("request.client_error %s", log_payload)
+    return response
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_upload(error):
+    app.logger.warning("request.too_large path=%s", request.path)
+    if wants_json_response():
+        return json_error("upload exceeds size limit", status=413, code="payload_too_large")
+    session["auth_message"] = "Upload exceeds the size limit."
+    return render_template("index.html", current_user=None, auth_message=session.get("auth_message")), 413
 
 @app.route("/")
 def home():

@@ -46,6 +46,7 @@ from routes.social_utils import (
     hydrate_videos,
     save_video_file,
 )
+from routes.api_responses import auth_required_response, json_error
 from services.thread_heat import record_reply_listen
 
 social_bp = Blueprint("social", __name__)
@@ -56,7 +57,7 @@ def _auth_required_json():
     user = current_user()
     if user:
         return user, None
-    return None, (jsonify({"error": "authentication required"}), 401)
+    return None, auth_required_response()
 
 
 def _auth_required_redirect():
@@ -68,7 +69,7 @@ def _auth_required_redirect():
 
 
 def _auth_response(message):
-    return jsonify({"error": message, "login_url": url_for("home")}), 401
+    return auth_required_response(message=message)
 
 
 @social_bp.route("/feed")
@@ -162,7 +163,7 @@ def api_follow_user(user_id):
 
     target_user = User.query.get_or_404(user_id)
     if viewer.id == target_user.id:
-        return jsonify({"error": "cannot follow yourself"}), 400
+        return json_error("cannot follow yourself", status=400)
 
     relation_exists = Follow.query.filter_by(follower_id=viewer.id, followed_id=target_user.id).first() is not None
     if request.method == "POST" and not relation_exists:
@@ -377,7 +378,7 @@ def follow_profile(username):
 
     profile_user = User.query.filter_by(username=username).first_or_404()
     if viewer.id == profile_user.id:
-        return jsonify({"error": "cannot follow yourself"}), 400
+        return json_error("cannot follow yourself", status=400)
 
     state = toggle_follow(viewer, profile_user)
     if request.is_json:

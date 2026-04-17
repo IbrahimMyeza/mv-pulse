@@ -738,6 +738,18 @@
         const authModal = document.querySelector('[data-auth-modal]');
         const unreadBadges = document.querySelectorAll('[data-unread-badge]');
 
+        const setPending = (button, pending) => {
+            if (!button) {
+                return false;
+            }
+            if (pending && button.dataset.pending === 'true') {
+                return true;
+            }
+            button.dataset.pending = pending ? 'true' : 'false';
+            button.disabled = pending;
+            return false;
+        };
+
         const preserveScroll = () => {
             const currentTop = window.scrollY;
             requestAnimationFrame(() => window.scrollTo({ top: currentTop }));
@@ -785,15 +797,23 @@
                 },
             });
 
+            const payload = await response.json().catch(() => ({}));
+
             if (await handleAuthError(response)) {
-                throw new Error('auth');
+                const authError = new Error(payload.error || 'auth');
+                authError.code = payload.code || 'auth_required';
+                authError.payload = payload;
+                throw authError;
             }
 
             if (!response.ok) {
-                throw new Error('request');
+                const requestError = new Error(payload.error || 'request failed');
+                requestError.code = payload.code || 'request_error';
+                requestError.payload = payload;
+                throw requestError;
             }
 
-            return response.json();
+            return payload;
         };
 
         const setCount = (element, value) => {
@@ -846,6 +866,9 @@
 
         document.querySelectorAll('.like-button').forEach((button) => {
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-video-like-count]');
                 const previousLiked = button.dataset.liked === 'true';
                 const previousCount = Number(countNode?.textContent || '0');
@@ -863,15 +886,20 @@
                     button.dataset.liked = previousLiked ? 'true' : 'false';
                     button.classList.toggle('active', previousLiked);
                     setCount(countNode, previousCount);
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
         document.querySelectorAll('[data-video-save-button]').forEach((button) => {
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-video-save-count]');
                 const previousSaved = button.dataset.saved === 'true';
                 const previousCount = Number(countNode?.textContent || '0');
@@ -889,15 +917,20 @@
                     button.dataset.saved = previousSaved ? 'true' : 'false';
                     button.classList.toggle('active', previousSaved);
                     setCount(countNode, previousCount);
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
         document.querySelectorAll('.share-button').forEach((button) => {
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-video-share-count]');
                 const previousCount = Number(countNode?.textContent || '0');
                 setCount(countNode, previousCount + 1);
@@ -915,12 +948,17 @@
                 } catch (error) {
                     setCount(countNode, previousCount);
                     console.error(error);
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
         document.querySelectorAll('[data-follow-button]').forEach((button) => {
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const targetUserId = button.dataset.targetUserId;
                 const currentlyFollowing = button.dataset.following === 'true';
                 button.dataset.following = currentlyFollowing ? 'false' : 'true';
@@ -941,9 +979,11 @@
                 } catch (error) {
                     button.dataset.following = currentlyFollowing ? 'true' : 'false';
                     setActiveState(button, currentlyFollowing, 'Following', 'Follow');
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });

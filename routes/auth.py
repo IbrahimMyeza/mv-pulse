@@ -1,13 +1,14 @@
-from flask import Blueprint, jsonify, redirect, request, session, url_for
+from flask import Blueprint, redirect, request, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from models.user import User
 from database import db
+from routes.api_responses import auth_required_response, json_error, json_success, wants_json_response
 
 auth_bp = Blueprint("auth", __name__)
 
 
 def _wants_json_response():
-    return request.is_json or "application/json" in request.headers.get("Accept", "")
+    return wants_json_response()
 
 
 def _login_user(user):
@@ -18,21 +19,23 @@ def _login_user(user):
 
 def _auth_success_response(message, user):
     if _wants_json_response():
-        return jsonify({
-            "message": message,
-            "user": {
+        return json_success(
+            message=message,
+            user={
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
             },
-        })
+        )
 
     return redirect(url_for("dashboard.dashboard"))
 
 
 def _auth_error_response(message, status_code):
     if _wants_json_response():
-        return jsonify({"error": message}), status_code
+        if status_code == 401:
+            return auth_required_response(message=message, status=status_code)
+        return json_error(message, status=status_code)
 
     session["auth_message"] = message
     return redirect(url_for("home"))
@@ -86,7 +89,7 @@ def logout():
     session.clear()
 
     if _wants_json_response():
-        return jsonify({"message": "logout success"})
+        return json_success(message="logout success")
 
     return redirect(url_for("home"))
 
@@ -95,18 +98,18 @@ def logout():
 def auth_session():
     user_id = session.get("user_id")
     if not user_id:
-        return jsonify({"authenticated": False, "user": None})
+        return json_success(authenticated=False, user=None)
 
     user = db.session.get(User, user_id)
     if not user:
         session.clear()
-        return jsonify({"authenticated": False, "user": None})
+        return json_success(authenticated=False, user=None)
 
-    return jsonify({
-        "authenticated": True,
-        "user": {
+    return json_success(
+        authenticated=True,
+        user={
             "id": user.id,
             "username": user.username,
             "email": user.email,
         },
-    })
+    )

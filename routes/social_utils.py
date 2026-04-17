@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 from collections import Counter
 
 from flask import session
@@ -90,9 +91,12 @@ def ensure_social_seed():
 
 def save_video_file(file_storage, target_folder):
     os.makedirs(target_folder, exist_ok=True)
-    filename = secure_filename(file_storage.filename or "upload.bin")
-    if not filename:
-        filename = "upload.bin"
+    original_name = secure_filename(file_storage.filename or "upload.bin")
+    if not original_name:
+        original_name = "upload.bin"
+    name, extension = os.path.splitext(original_name)
+    unique_prefix = uuid4().hex
+    filename = f"{name[:80] or 'upload'}-{unique_prefix}{extension[:12]}"
     file_path = os.path.join(target_folder, filename)
     file_storage.save(file_path)
     return "/" + file_path.replace("\\", "/")
@@ -216,6 +220,7 @@ def serialize_voice_reply(reply):
         "id": reply.id,
         "video_id": reply.video_id,
         "user_id": reply.user_id,
+        "client_token": reply.client_token,
         "username": reply.creator.username if reply.creator else "voice",
         "audio_url": reply.audio_url,
         "duration": reply.duration,

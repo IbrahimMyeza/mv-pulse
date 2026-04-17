@@ -8,6 +8,7 @@ class VoiceReply(db.Model):
     video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     parent_reply_id = db.Column(db.Integer, db.ForeignKey("voice_reply.id"), nullable=True, index=True)
+    client_token = db.Column(db.String(128), nullable=True, index=True)
     audio_url = db.Column(db.String(400), nullable=False)
     duration = db.Column(db.Float, nullable=False, default=0)
     transcript = db.Column(db.Text, nullable=True)

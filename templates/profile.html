@@ -202,12 +202,45 @@
         const tabContent = document.querySelector('[data-tab-content]');
         const tabCache = new Map();
         const creatorId = {{ profile_user.id if profile_user else 'null' }};
+        const setPending = (button, pending) => {
+            if (!button) {
+                return false;
+            }
+            if (pending && button.dataset.pending === 'true') {
+                return true;
+            }
+            button.dataset.pending = pending ? 'true' : 'false';
+            button.disabled = pending;
+            return false;
+        };
         const tabEndpoints = {
             'saved-videos': '/api/me/saved/videos',
             'saved-replies': '/api/me/saved/replies',
             'my-replies': '/api/me/voice-replies',
             'likes': '/api/me/likes',
             'activity': '/api/me/activity',
+        };
+
+        const requestJson = async (url, options = {}) => {
+            const response = await fetch(url, {
+                ...options,
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch', ...(options.headers || {}) },
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                openAuthModal();
+                const authError = new Error(payload.error || 'auth');
+                authError.code = payload.code || 'auth_required';
+                authError.payload = payload;
+                throw authError;
+            }
+            if (!response.ok) {
+                const requestError = new Error(payload.error || 'request failed');
+                requestError.code = payload.code || 'request_error';
+                requestError.payload = payload;
+                throw requestError;
+            }
+            return payload;
         };
 
         const setFollowButtonState = (button, following) => {
@@ -253,22 +286,12 @@
 
             tabContent.innerHTML = '<p class="helper">Loading...</p>';
             try {
-                const response = await fetch(tabEndpoints[tabName], {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch' },
-                });
-                if (response.status === 401) {
-                    openAuthModal();
-                    throw new Error('auth');
-                }
-                if (!response.ok) {
-                    throw new Error('request');
-                }
-                const payload = await response.json();
+                const payload = await requestJson(tabEndpoints[tabName]);
                 const items = payload.items || [];
                 tabCache.set(tabName, items);
                 renderItems(items, 'Nothing here yet.');
             } catch (error) {
-                if (error.message !== 'auth') {
+                if (error.code !== 'auth_required') {
                     tabContent.innerHTML = '<p class="helper">Could not load this tab right now.</p>';
                     console.error(error);
                 }
@@ -285,33 +308,29 @@
                     openAuthModal();
                     return;
                 }
+                if (setPending(button, true)) {
+                    return;
+                }
 
                 const targetUserId = button.dataset.targetUserId;
                 const previouslyFollowing = button.dataset.following === 'true';
                 setFollowButtonState(button, !previouslyFollowing);
 
                 try {
-                    const response = await fetch(`/api/follow/${targetUserId}`, {
+                    const payload = await requestJson(`/api/follow/${targetUserId}`, {
                         method: previouslyFollowing ? 'DELETE' : 'POST',
-                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch' },
                     });
-                    if (response.status === 401) {
-                        openAuthModal();
-                        throw new Error('auth');
-                    }
-                    if (!response.ok) {
-                        throw new Error('request');
-                    }
-                    const payload = await response.json();
                     setFollowButtonState(button, payload.following);
                     document.querySelectorAll(`[data-followers-for="${targetUserId}"]`).forEach((node) => {
                         node.textContent = `${payload.followers} followers`;
                     });
                 } catch (error) {
                     setFollowButtonState(button, previouslyFollowing);
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
@@ -322,33 +341,30 @@
                     openAuthModal();
                     return;
                 }
+                if (setPending(button, true)) {
+                    return;
+                }
                 try {
-                    const response = await fetch(`/api/creators/${creatorId}/subscribe`, {
+                    await requestJson(`/api/creators/${creatorId}/subscribe`, {
                         method: 'POST',
-                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ subscription_id: Number(button.dataset.tierId) }),
                     });
-                    if (response.status === 401) {
-                        openAuthModal();
-                        throw new Error('auth');
-                    }
-                    if (!response.ok) {
-                        throw new Error('request');
-                    }
                     button.classList.add('active');
                     button.textContent = 'Subscribed';
                 } catch (error) {
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
         const earningsPanel = document.getElementById('creator-earnings-panel');
         if (isOwner && earningsPanel) {
-            fetch('/api/creator/earnings', { headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch' } })
-                .then((response) => response.json())
+            requestJson('/api/creator/earnings')
                 .then((payload) => {
                     earningsPanel.innerHTML = `
                         <strong>Total earnings</strong>
@@ -371,18 +387,21 @@
                 event.preventDefault();
                 const formData = new FormData(roomForm);
                 const payload = Object.fromEntries(formData.entries());
+                const submitButton = roomForm.querySelector('button[type="submit"]');
+                if (setPending(submitButton, true)) {
+                    return;
+                }
                 try {
-                    const response = await fetch('/api/rooms', {
+                    await requestJson('/api/rooms', {
                         method: 'POST',
-                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
                     });
-                    if (!response.ok) {
-                        throw new Error('request');
-                    }
                     window.location.reload();
                 } catch (error) {
                     console.error(error);
+                } finally {
+                    setPending(submitButton, false);
                 }
             });
         }

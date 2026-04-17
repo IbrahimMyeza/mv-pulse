@@ -1,10 +1,11 @@
-from flask import Blueprint, jsonify, redirect, request, session, url_for
+from flask import Blueprint, current_app, redirect, request, session, url_for
 
 from database import db
 from ml.debate_detector import controversy_score
 from models.video import Video
 from models.voice_reply import VoiceReply
-from routes.social_utils import create_notification, current_user, save_video_file, touch_video_reputation
+from routes.api_responses import auth_required_response, json_error, json_success, wants_json_response
+from routes.social_utils import create_notification, current_user, save_video_file, serialize_voice_reply, touch_video_reputation
 from services.ai_pipeline import schedule_voice_reply_processing
 
 voice_bp = Blueprint("voice", __name__)
@@ -12,35 +13,66 @@ VOICE_FOLDER = "static/voices/replies"
 
 
 def _analyze_audio(audio_path):
-    from ml.transcriber import transcribe_audio
-    from ml.voice_sentiment import analyze_voice_sentiment
+    try:
+        from ml.transcriber import transcribe_audio
+        from ml.voice_sentiment import analyze_voice_sentiment
 
-    transcript = transcribe_audio(audio_path)
-    sentiment = analyze_voice_sentiment(transcript)
-    return transcript, sentiment
+        transcript = transcribe_audio(audio_path)
+        sentiment = analyze_voice_sentiment(transcript)
+        return transcript, sentiment
+    except Exception:
+        current_app.logger.exception("voice.analysis_failed path=%s", audio_path)
+        return "", 0.0
 
 
 def _wants_json_response():
-    return request.is_json or request.accept_mimetypes.best == "application/json" or request.headers.get("X-Requested-With") == "fetch"
+    return wants_json_response()
+
+
+def _safe_int(value):
+    try:
+        return int(value) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _reply_response(reply, video, deduplicated=False):
+    return json_success(
+        reply_id=reply.id,
+        video_id=video.id,
+        reply=serialize_voice_reply(reply),
+        deduplicated=deduplicated,
+        redirect_url=url_for("social.video_detail", id=video.id),
+        focus_url=f"{url_for('social.video_detail', id=video.id)}?focus_reply_id={reply.id}#reply-{reply.id}",
+        voice_replies=video.voice_replies,
+        comments=video.comments,
+    )
 
 
 @voice_bp.route("/api/voice/transcribe", methods=["POST"])
 def api_voice_transcribe():
     audio = request.files.get("voice") or request.files.get("audio")
     if not audio:
-        return jsonify({"error": "voice file required"}), 400
+        return json_error("voice file required", status=400)
 
     audio_url = save_video_file(audio, VOICE_FOLDER)
     audio_path = audio_url.lstrip("/")
     transcript, sentiment = _analyze_audio(audio_path)
     debate = controversy_score(sentiment, transcript)
 
-    return jsonify({
-        "audio_url": audio_url,
-        "transcript": transcript,
-        "sentiment": sentiment,
-        "controversy": debate,
-    })
+    return json_success(
+        audio_url=audio_url,
+        transcript=transcript,
+        sentiment=sentiment,
+        controversy=debate,
+    )
 
 
 @voice_bp.route("/voice/reply", methods=["POST"])
@@ -48,20 +80,31 @@ def voice_reply():
     user = current_user()
     if not user:
         if _wants_json_response():
-            return jsonify({"error": "authentication required", "login_url": url_for("home")}), 401
+            return auth_required_response(message="Sign in to post voice replies.")
         session["auth_message"] = "Sign in to post voice replies."
         return redirect(url_for("home"))
 
-    video_id = request.form.get("video_id") or request.form.get("id")
+    video_id = _safe_int(request.form.get("video_id") or request.form.get("id"))
     parent_reply_id = request.form.get("parent_reply_id")
-    duration = float(request.form.get("duration") or 0)
+    duration = _safe_float(request.form.get("duration") or 0)
     language_code = (request.form.get("language_code") or "en").strip() or "en"
     audio = request.files.get("voice") or request.files.get("audio")
+    client_token = (request.form.get("client_token") or request.headers.get("X-Idempotency-Key") or "").strip()[:128] or None
 
     if not video_id or not audio:
-        return jsonify({"error": "video_id and audio are required"}), 400
+        return json_error("video_id and audio are required", status=400)
 
-    video = Video.query.get_or_404(int(video_id))
+    video = Video.query.get_or_404(video_id)
+
+    if client_token:
+        existing_reply = VoiceReply.query.filter_by(
+            video_id=video.id,
+            user_id=user.id,
+            client_token=client_token,
+        ).first()
+        if existing_reply:
+            return _reply_response(existing_reply, video, deduplicated=True)
+
     audio_url = save_video_file(audio, VOICE_FOLDER)
     audio_path = audio_url.lstrip("/")
     transcript, sentiment = _analyze_audio(audio_path)
@@ -71,6 +114,7 @@ def voice_reply():
         video_id=video.id,
         user_id=user.id,
         parent_reply_id=int(parent_reply_id) if parent_reply_id else None,
+        client_token=client_token,
         audio_url=audio_url,
         duration=duration,
         transcript=transcript,
@@ -111,11 +155,7 @@ def voice_reply():
             )
 
     if _wants_json_response():
-        return jsonify({
-            "reply_id": reply.id,
-            "video_id": video.id,
-            "redirect_url": url_for("social.video_detail", id=video.id),
-        })
+        return _reply_response(reply, video)
 
     return redirect(url_for("social.video_detail", id=video.id))
 

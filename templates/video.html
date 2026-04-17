@@ -32,6 +32,13 @@
         .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
         .clip-card { padding: 12px; border-radius: 16px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
         .fallback { display: grid; gap: 10px; margin-top: 12px; }
+        .upload-status { display: none; gap: 8px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+        .upload-status.visible { display: grid; }
+        .upload-status.error { border-color: rgba(255,143,90,0.42); background: rgba(255,143,90,0.12); }
+        .upload-status.success { border-color: rgba(27,209,165,0.42); background: rgba(27,209,165,0.12); }
+        .progress-track { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; border-radius: 999px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); transition: width 0.18s ease; }
+        .ghost[disabled], button[disabled] { opacity: 0.6; cursor: not-allowed; }
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -70,7 +77,7 @@
             <h1>{{ video.title }}</h1>
             <p>{{ video.caption }}</p>
             <p class="meta">@{{ video_payload.creator }} · {{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</p>
-            <p class="meta">{{ video.views }} views · {{ video.voice_replies }} voice replies · creator score {{ '%.2f'|format(video.creator_score) }}</p>
+            <p class="meta">{{ video.views }} views · <span data-video-replies-total>{{ video.voice_replies }}</span> voice replies · creator score {{ '%.2f'|format(video.creator_score) }}</p>
             <div class="actions">
                 <button class="ghost {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">❤️ <span data-video-like-count>{{ video_payload.likes }}</span></button>
                 <button class="ghost {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">🔖 <span data-video-save-count>{{ video_payload.saves_count }}</span></button>
@@ -149,16 +156,25 @@
                     <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %} {% if premium_preview_only %}disabled{% endif %}>
                     <button type="submit" {% if premium_preview_only %}disabled{% endif %}>Upload voice reply</button>
                 </form>
+                <div class="upload-status" data-upload-status>
+                    <strong data-upload-status-text>Ready to post.</strong>
+                    <div class="progress-track"><div class="progress-bar" data-upload-progress></div></div>
+                    <div class="actions">
+                        <button class="ghost" type="button" data-retry-upload disabled>Retry last upload</button>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section class="card" id="thread">
             <h2>Threaded voice discussion</h2>
-            {% for reply in replies %}
-                {% include 'voice_reply_tree.html' %}
-            {% else %}
-            <p>No voice replies yet. Be the first voice in the thread.</p>
-            {% endfor %}
+            <div data-thread-list>
+                {% for reply in replies %}
+                    {% include 'voice_reply_tree.html' %}
+                {% else %}
+                <p data-thread-empty>No voice replies yet. Be the first voice in the thread.</p>
+                {% endfor %}
+            </div>
         </section>
 
         {% if clip_suggestions %}
@@ -224,12 +240,66 @@
         const preview = document.querySelector('[data-recording-preview]');
         const fileInput = document.querySelector('[data-recording-file]');
         const languageInput = document.querySelector('[data-recorder-language]');
+        const fallbackForm = document.querySelector('.fallback');
+        const fallbackFileInput = fallbackForm?.querySelector('input[type="file"][name="voice"]');
+        const fallbackLanguageInput = fallbackForm?.querySelector('select[name="language_code"]');
+        const fallbackDurationInput = fallbackForm?.querySelector('input[name="duration"]');
+        const uploadStatus = document.querySelector('[data-upload-status]');
+        const uploadStatusText = document.querySelector('[data-upload-status-text]');
+        const uploadProgress = document.querySelector('[data-upload-progress]');
+        const retryUploadButton = document.querySelector('[data-retry-upload]');
+        const threadList = document.querySelector('[data-thread-list]');
         const creatorId = {{ video_payload.creator_id }};
+        const premiumRoomAccessible = {{ 'true' if premium_room and premium_room.can_access else 'false' }};
         let recorder = null;
         let recorderStream = null;
         let recorderChunks = [];
         let recordedFile = null;
         let currentParentReplyId = '';
+        let retryUploadAction = null;
+        const listenedReplies = new Set();
+
+        const escapeHtml = (value) => String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const createClientToken = () => `reply-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+        const showUploadStatus = (message, tone = 'info', progress = null) => {
+            uploadStatus?.classList.add('visible');
+            uploadStatus?.classList.remove('error', 'success');
+            if (tone === 'error' || tone === 'success') {
+                uploadStatus?.classList.add(tone);
+            }
+            if (uploadStatusText) {
+                uploadStatusText.textContent = message;
+            }
+            if (uploadProgress) {
+                uploadProgress.style.width = progress === null ? '0%' : `${Math.max(0, Math.min(progress, 100))}%`;
+            }
+        };
+
+        const setRetryUpload = (handler) => {
+            retryUploadAction = handler;
+            if (retryUploadButton) {
+                retryUploadButton.disabled = typeof handler !== 'function';
+            }
+        };
+
+        const setPending = (button, pending) => {
+            if (!button) {
+                return false;
+            }
+            if (pending && button.dataset.pending === 'true') {
+                return true;
+            }
+            button.dataset.pending = pending ? 'true' : 'false';
+            button.disabled = pending;
+            return false;
+        };
 
         const requestJson = async (url, options = {}) => {
             const response = await fetch(url, {
@@ -240,14 +310,70 @@
                     ...(options.headers || {}),
                 },
             });
+            const payload = await response.json().catch(() => ({}));
             if (response.status === 401) {
                 authModal?.classList.add('active');
-                throw new Error('auth');
+                const authError = new Error(payload.error || 'auth');
+                authError.code = payload.code || 'auth_required';
+                authError.payload = payload;
+                throw authError;
             }
             if (!response.ok) {
-                throw new Error('request');
+                const requestError = new Error(payload.error || 'request failed');
+                requestError.code = payload.code || 'request_error';
+                requestError.payload = payload;
+                throw requestError;
             }
-            return response.json();
+            return payload;
+        };
+
+        const uploadJson = (url, formData, onProgress) => new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.setRequestHeader('X-Requested-With', 'fetch');
+            const clientToken = formData.get('client_token');
+            if (clientToken) {
+                xhr.setRequestHeader('X-Idempotency-Key', clientToken);
+            }
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable && typeof onProgress === 'function') {
+                    onProgress((event.loaded / event.total) * 100);
+                }
+            });
+            xhr.addEventListener('load', () => {
+                const payload = (() => {
+                    try {
+                        return JSON.parse(xhr.responseText || '{}');
+                    } catch (error) {
+                        return {};
+                    }
+                })();
+                if (xhr.status === 401) {
+                    authModal?.classList.add('active');
+                    const authError = new Error(payload.error || 'auth');
+                    authError.code = payload.code || 'auth_required';
+                    authError.payload = payload;
+                    reject(authError);
+                    return;
+                }
+                if (xhr.status < 200 || xhr.status >= 300) {
+                    const requestError = new Error(payload.error || 'upload failed');
+                    requestError.code = payload.code || 'request_error';
+                    requestError.payload = payload;
+                    reject(requestError);
+                    return;
+                }
+                resolve(payload);
+            });
+            xhr.addEventListener('error', () => reject(new Error('network error')));
+            xhr.send(formData);
+        });
+
+        const updateReplyTotals = (count) => {
+            document.querySelectorAll('[data-video-replies-total]').forEach((node) => {
+                node.textContent = count;
+            });
         };
 
         const playbackQueueFrom = (replyCard) => {
@@ -292,6 +418,123 @@
             button.textContent = active ? activeLabel : idleLabel;
         };
 
+        const renderReplyCard = (reply) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'reply-card';
+            wrapper.id = `reply-${reply.id}`;
+            wrapper.dataset.replyCard = 'true';
+            wrapper.dataset.replyId = reply.id;
+            wrapper.innerHTML = `
+                <div class="actions" style="margin-top: 0; margin-bottom: 8px;">
+                    <strong>@${escapeHtml(reply.username)}</strong>
+                    ${reply.supporter_badge ? `<span class="ghost">${escapeHtml(reply.supporter_badge)}</span>` : ''}
+                    <span class="ghost">${escapeHtml(reply.topic_label || 'general')}</span>
+                    <span class="ghost">${escapeHtml(reply.tone_label || 'balanced')}</span>
+                    ${reply.moderation_state && reply.moderation_state !== 'clear' ? `<span class="ghost">${escapeHtml(reply.moderation_state)}</span>` : ''}
+                </div>
+                <p>${escapeHtml(reply.transcript || 'Voice note with no transcript yet.')}</p>
+                <div class="waveform"></div>
+                <audio class="reply-audio" controls preload="metadata" src="${escapeHtml(reply.audio_url)}" data-reply-audio data-reply-id="${reply.id}"></audio>
+                <div class="actions">
+                    <button class="ghost speed-button" type="button" data-rate="1">1x</button>
+                    <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
+                    <button class="ghost ${reply.is_liked ? 'active' : ''}" type="button" data-reply-like-button data-reply-id="${reply.id}" data-liked="${reply.is_liked ? 'true' : 'false'}">❤️ <span data-reply-like-count>${reply.likes_count || 0}</span></button>
+                    <button class="ghost ${reply.is_saved ? 'active' : ''}" type="button" data-reply-save-button data-reply-id="${reply.id}" data-saved="${reply.is_saved ? 'true' : 'false'}">🔖 <span data-reply-save-count>${reply.saves_count || 0}</span></button>
+                    <button class="ghost" type="button" data-tip-button data-target-type="voice_reply" data-voice-reply-id="${reply.id}">Tip creator</button>
+                    <span class="ghost">${escapeHtml((reply.language_code || 'en').toUpperCase())}</span>
+                    <span class="ghost">IQ ${Number(reply.intelligence_score || 0).toFixed(2)}</span>
+                    ${premiumRoomAccessible ? '<span class="ghost">Premium room live</span>' : ''}
+                    <button class="ghost" type="button" data-open-recorder data-parent-reply-id="${reply.id}">Reply</button>
+                </div>
+            `;
+            if (Array.isArray(reply.children) && reply.children.length) {
+                const thread = document.createElement('div');
+                thread.className = 'thread';
+                reply.children.forEach((child) => {
+                    thread.appendChild(renderReplyCard(child));
+                });
+                wrapper.appendChild(thread);
+            }
+            return wrapper;
+        };
+
+        const attachReplyToThread = (reply) => {
+            if (!threadList || !reply) {
+                return;
+            }
+            threadList.querySelector('[data-thread-empty]')?.remove();
+            const replyNode = renderReplyCard(reply);
+            if (reply.parent_reply_id) {
+                const parentCard = document.getElementById(`reply-${reply.parent_reply_id}`);
+                if (parentCard) {
+                    let parentThread = parentCard.querySelector(':scope > .thread');
+                    if (!parentThread) {
+                        parentThread = document.createElement('div');
+                        parentThread.className = 'thread';
+                        parentCard.appendChild(parentThread);
+                    }
+                    parentThread.appendChild(replyNode);
+                } else {
+                    threadList.appendChild(replyNode);
+                }
+            } else {
+                threadList.appendChild(replyNode);
+            }
+            bindInteractiveControls(replyNode);
+            replyNode.classList.add('focused');
+            replyNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            window.setTimeout(() => replyNode.classList.remove('focused'), 3600);
+        };
+
+        const postVoiceReply = async ({ file, languageCode, duration, parentReplyId = '', sourceButton = null, resetInput = null }) => {
+            if (!file) {
+                showUploadStatus('Choose or record an audio file before posting.', 'error', 0);
+                return;
+            }
+
+            const runUpload = async () => {
+                const formData = new FormData();
+                formData.append('video_id', videoId);
+                formData.append('language_code', languageCode || 'en');
+                formData.append('duration', String(duration || 0));
+                if (parentReplyId) {
+                    formData.append('parent_reply_id', parentReplyId);
+                }
+                formData.append('client_token', createClientToken());
+                formData.append('voice', file);
+                showUploadStatus('Uploading voice reply...', 'info', 0);
+                const payload = await uploadJson('/voice/reply', formData, (progress) => {
+                    showUploadStatus(progress >= 100 ? 'Finalizing reply...' : `Uploading voice reply... ${Math.round(progress)}%`, 'info', progress);
+                });
+                attachReplyToThread(payload.reply);
+                updateReplyTotals(payload.voice_replies);
+                showUploadStatus(payload.deduplicated ? 'Reply restored from your previous submit.' : 'Voice reply posted.', 'success', 100);
+                setRetryUpload(null);
+                if (typeof resetInput === 'function') {
+                    resetInput();
+                }
+                return payload;
+            };
+
+            setRetryUpload(() => postVoiceReply({ file, languageCode, duration, parentReplyId, sourceButton, resetInput }));
+            try {
+                if (sourceButton && setPending(sourceButton, true)) {
+                    return;
+                }
+                const payload = await runUpload();
+                return payload;
+            } catch (error) {
+                showUploadStatus(error.message === 'auth' ? 'Your session expired. Sign in again to post.' : (error.message || 'Upload failed. Retry when your connection stabilizes.'), 'error', 0);
+                if (error.message !== 'auth') {
+                    console.error(error);
+                }
+            } finally {
+                if (sourceButton) {
+                    setPending(sourceButton, false);
+                }
+            }
+        };
+
         const closeModals = () => {
             authModal?.classList.remove('active');
             recorderModal?.classList.remove('active');
@@ -309,8 +552,15 @@
             });
         });
 
-        document.querySelectorAll('[data-video-like-button]').forEach((button) => {
+        const bindVideoLikeButtons = (root = document) => root.querySelectorAll('[data-video-like-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-video-like-count]');
                 const previous = button.classList.contains('active');
                 const previousCount = Number(countNode?.textContent || '0');
@@ -323,15 +573,24 @@
                 } catch (error) {
                     button.classList.toggle('active', previous);
                     countNode.textContent = previousCount;
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-video-save-button]').forEach((button) => {
+        const bindVideoSaveButtons = (root = document) => root.querySelectorAll('[data-video-save-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-video-save-count]');
                 const previous = button.classList.contains('active');
                 const previousCount = Number(countNode?.textContent || '0');
@@ -344,15 +603,24 @@
                 } catch (error) {
                     button.classList.toggle('active', previous);
                     countNode.textContent = previousCount;
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-video-share-button]').forEach((button) => {
+        const bindVideoShareButtons = (root = document) => root.querySelectorAll('[data-video-share-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-video-share-count]');
                 const previousCount = Number(countNode?.textContent || '0');
                 countNode.textContent = previousCount + 1;
@@ -368,12 +636,21 @@
                 } catch (error) {
                     countNode.textContent = previousCount;
                     console.error(error);
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-follow-button]').forEach((button) => {
+        const bindFollowButtons = (root = document) => root.querySelectorAll('[data-follow-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const targetUserId = button.dataset.targetUserId;
                 const previouslyFollowing = button.dataset.following === 'true';
                 button.dataset.following = previouslyFollowing ? 'false' : 'true';
@@ -387,17 +664,26 @@
                 } catch (error) {
                     button.dataset.following = previouslyFollowing ? 'true' : 'false';
                     setToggleButton(button, previouslyFollowing, 'Following', 'Follow creator');
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-subscribe-button]').forEach((button) => {
+        const bindSubscribeButtons = (root = document) => root.querySelectorAll('[data-subscribe-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
                 if (!isAuthenticated) {
                     authModal?.classList.add('active');
+                    return;
+                }
+                if (setPending(button, true)) {
                     return;
                 }
                 const tierId = button.dataset.tierId;
@@ -411,36 +697,55 @@
                     button.textContent = `${payload.tier_name} active`;
                     window.location.reload();
                 } catch (error) {
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-room-join-button]').forEach((button) => {
+        const bindRoomJoinButtons = (root = document) => root.querySelectorAll('[data-room-join-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const roomId = button.dataset.roomId;
                 try {
                     await requestJson(`/api/rooms/${roomId}/join`, { method: 'POST' });
                     window.location.reload();
                 } catch (error) {
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-tip-button]').forEach((button) => {
+        const bindTipButtons = (root = document) => root.querySelectorAll('[data-tip-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
                 if (!isAuthenticated) {
                     authModal?.classList.add('active');
                     return;
                 }
+                if (setPending(button, true)) {
+                    return;
+                }
                 const amountValue = window.prompt('Tip amount in cents', '1000');
                 const amountCents = Number(amountValue || 0);
                 if (!Number.isFinite(amountCents) || amountCents <= 0) {
+                    setPending(button, false);
                     return;
                 }
                 const payload = {
@@ -464,15 +769,24 @@
                     });
                     button.textContent = 'Tip sent';
                 } catch (error) {
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-reply-like-button]').forEach((button) => {
+        const bindReplyLikeButtons = (root = document) => root.querySelectorAll('[data-reply-like-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-reply-like-count]');
                 const replyId = button.dataset.replyId;
                 const previous = button.dataset.liked === 'true';
@@ -489,15 +803,24 @@
                     button.dataset.liked = previous ? 'true' : 'false';
                     button.classList.toggle('active', previous);
                     countNode.textContent = previousCount;
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        document.querySelectorAll('[data-reply-save-button]').forEach((button) => {
+        const bindReplySaveButtons = (root = document) => root.querySelectorAll('[data-reply-save-button]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
+                if (setPending(button, true)) {
+                    return;
+                }
                 const countNode = button.querySelector('[data-reply-save-count]');
                 const replyId = button.dataset.replyId;
                 const previous = button.dataset.saved === 'true';
@@ -514,15 +837,20 @@
                     button.dataset.saved = previous ? 'true' : 'false';
                     button.classList.toggle('active', previous);
                     countNode.textContent = previousCount;
-                    if (error.message !== 'auth') {
+                    if (error.code !== 'auth_required') {
                         console.error(error);
                     }
+                } finally {
+                    setPending(button, false);
                 }
             });
         });
 
-        const listenedReplies = new Set();
-        document.querySelectorAll('[data-reply-audio]').forEach((audio) => {
+        const bindReplyAudio = (root = document) => root.querySelectorAll('[data-reply-audio]').forEach((audio) => {
+            if (audio.dataset.bound === 'true') {
+                return;
+            }
+            audio.dataset.bound = 'true';
             audio.addEventListener('play', () => {
                 const replyId = audio.dataset.replyId;
                 if (!replyId || listenedReplies.has(replyId)) {
@@ -554,7 +882,11 @@
             }
         });
 
-        document.querySelectorAll('[data-open-recorder]').forEach((button) => {
+        const bindOpenRecorderButtons = (root = document) => root.querySelectorAll('[data-open-recorder]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
             button.addEventListener('click', () => {
                 currentParentReplyId = button.dataset.parentReplyId || '';
                 if (!isAuthenticated) {
@@ -565,10 +897,39 @@
             });
         });
 
+        const bindSpeedButtons = (root = document) => root.querySelectorAll('.speed-button').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
+            button.addEventListener('click', () => {
+                const audio = button.closest('.reply-card').querySelector('audio');
+                if (audio) {
+                    audio.playbackRate = Number(button.dataset.rate || 1);
+                }
+            });
+        });
+
+        const bindInteractiveControls = (root = document) => {
+            bindVideoLikeButtons(root);
+            bindVideoSaveButtons(root);
+            bindVideoShareButtons(root);
+            bindFollowButtons(root);
+            bindSubscribeButtons(root);
+            bindRoomJoinButtons(root);
+            bindTipButtons(root);
+            bindReplyLikeButtons(root);
+            bindReplySaveButtons(root);
+            bindReplyAudio(root);
+            bindOpenRecorderButtons(root);
+            bindSpeedButtons(root);
+        };
+
         if (window.location.hash === '#record' && isAuthenticated) {
             recorderModal?.classList.add('active');
         }
 
+        bindInteractiveControls();
         focusReplyThread();
 
         document.querySelector('[data-start-recording]')?.addEventListener('click', async () => {
@@ -607,55 +968,54 @@
             }
         });
 
+        fallbackForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!isAuthenticated) {
+                authModal?.classList.add('active');
+                return;
+            }
+            const submitButton = fallbackForm.querySelector('button[type="submit"]');
+            await postVoiceReply({
+                file: fallbackFileInput?.files?.[0],
+                languageCode: fallbackLanguageInput?.value || 'en',
+                duration: fallbackDurationInput?.value || '0',
+                parentReplyId: '',
+                sourceButton: submitButton,
+                resetInput: () => fallbackForm.reset(),
+            });
+        });
+
+        retryUploadButton?.addEventListener('click', () => {
+            if (typeof retryUploadAction === 'function') {
+                retryUploadAction();
+            }
+        });
+
         document.querySelector('[data-submit-recording]')?.addEventListener('click', async () => {
             if (!recordedFile) {
                 recorderStatus.textContent = 'Record or choose an audio file before posting.';
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('video_id', videoId);
-            formData.append('language_code', languageInput?.value || 'en');
-            formData.append('duration', '0');
-            if (currentParentReplyId) {
-                formData.append('parent_reply_id', currentParentReplyId);
-            }
-            formData.append('voice', recordedFile);
-
-            recorderStatus.textContent = 'Posting voice reply...';
-            try {
-                const response = await fetch('/voice/reply', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'fetch',
-                    },
-                });
-                if (response.status === 401) {
-                    authModal?.classList.add('active');
-                    throw new Error('auth');
-                }
-                if (!response.ok) {
-                    throw new Error('request');
-                }
-                const payload = await response.json();
-                window.location.href = `${payload.redirect_url}#thread`;
-            } catch (error) {
-                recorderStatus.textContent = 'Posting failed. Try again or upload the file manually.';
-                if (error.message !== 'auth') {
-                    console.error(error);
-                }
-            }
-        });
-
-        document.querySelectorAll('.speed-button').forEach((button) => {
-            button.addEventListener('click', () => {
-                const audio = button.closest('.reply-card').querySelector('audio');
-                if (audio) {
-                    audio.playbackRate = Number(button.dataset.rate || 1);
-                }
+            const submitButton = document.querySelector('[data-submit-recording]');
+            const payload = await postVoiceReply({
+                file: recordedFile,
+                languageCode: languageInput?.value || 'en',
+                duration: '0',
+                parentReplyId: currentParentReplyId,
+                sourceButton: submitButton,
+                resetInput: () => {
+                    assignRecordedFile(null);
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                    recorderStatus.textContent = 'Tap start, speak, then post your reply into the thread.';
+                    closeModals();
+                },
             });
+            if (payload) {
+                recorderStatus.textContent = 'Reply posted into the thread.';
+            }
         });
     </script>
 </body>
