@@ -5,274 +5,1066 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ video.title }}</title>
     <style>
-        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #0d1117; color: #f5f7fa; padding: 18px; }
-        .shell { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
-        .card { background: rgba(17,24,32,0.94); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 18px; }
-        video { width: 100%; max-height: 72vh; border-radius: 20px; background: #080c12; }
-        .meta, p { color: #9aa6b5; line-height: 1.5; }
-        .thread { margin-top: 12px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px; }
-        .waveform { height: 48px; border-radius: 16px; background: linear-gradient(90deg, rgba(27,209,165,0.18), rgba(27,209,165,0.45), rgba(255,143,90,0.24), rgba(27,209,165,0.42)); position: relative; overflow: hidden; }
-        .waveform::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.08) 10px, rgba(255,255,255,0.08) 12px); }
-        .waveform.recording::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(27,209,165,0.12), rgba(255,143,90,0.22), rgba(27,209,165,0.12)); animation: pulse-wave 1.2s linear infinite; }
-        form { display: grid; gap: 12px; }
-        input, select, button { font: inherit; }
-        input, select { width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.06); color: #f5f7fa; }
-        button, .btn { border: 0; border-radius: 16px; padding: 12px 16px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .reply-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.04); margin-top: 12px; }
-        .reply-card.focused { outline: 2px solid rgba(27,209,165,0.6); box-shadow: 0 0 0 0 rgba(27,209,165,0.45); animation: focus-pulse 1.8s ease-out 2; }
-        audio { width: 100%; margin-top: 10px; }
-        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-        .ghost { border-radius: 999px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #f5f7fa; cursor: pointer; }
-        .ghost.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
-        .player-toolbar { display: flex; justify-content: flex-end; margin-top: 12px; }
-        .video-action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
-        .video-action-button { border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #f5f7fa; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; }
-        .video-action-button.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
-        .comment-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
-        .comment-list { display: grid; gap: 10px; margin-top: 12px; }
-        .comment-card { padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); }
-        .comment-card strong { display: block; margin-bottom: 6px; }
-        .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-        .stack { display: grid; gap: 12px; }
-        .helper { font-size: 0.94rem; color: #9aa6b5; }
-        .banner { display: grid; gap: 10px; padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); margin-top: 14px; }
-        .badge { display: inline-flex; width: fit-content; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); }
-        .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-        .clip-card { padding: 12px; border-radius: 16px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
-        .fallback { display: grid; gap: 10px; margin-top: 12px; }
-        .upload-status { display: none; gap: 8px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
-        .upload-status.visible { display: grid; }
-        .upload-status.error { border-color: rgba(255,143,90,0.42); background: rgba(255,143,90,0.12); }
-        .upload-status.success { border-color: rgba(27,209,165,0.42); background: rgba(27,209,165,0.12); }
-        .progress-track { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
-        .progress-bar { width: 0%; height: 100%; border-radius: 999px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); transition: width 0.18s ease; }
-        .ghost[disabled], button[disabled] { opacity: 0.6; cursor: not-allowed; }
-        .modal-backdrop {
-            position: fixed;
+        :root {
+            --bg: #040608;
+            --bg-soft: #0d141c;
+            --panel: rgba(8, 11, 16, 0.94);
+            --panel-soft: rgba(255, 255, 255, 0.06);
+            --line: rgba(255, 255, 255, 0.1);
+            --text: #f5f7fa;
+            --muted: #a7b0bc;
+            --accent: #18d4ab;
+            --accent-warm: #ff8756;
+            --danger: #ff6d6d;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 24%),
+                radial-gradient(circle at top right, rgba(255, 135, 86, 0.14), transparent 28%),
+                linear-gradient(180deg, #030507 0%, #09111a 60%, #05070a 100%);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button,
+        input,
+        textarea,
+        select {
+            font: inherit;
+        }
+
+        .viewer {
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .stage {
+            position: relative;
+            min-height: min(100svh, 980px);
+            overflow: hidden;
+            background: #05070a;
+        }
+
+        .stage video {
+            position: absolute;
             inset: 0;
-            display: none;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #05070a;
+        }
+
+        .stage::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(4, 6, 10, 0.34) 0%, rgba(4, 6, 10, 0.15) 20%, rgba(4, 6, 10, 0.5) 58%, rgba(4, 6, 10, 0.92) 100%),
+                radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.08), transparent 26%);
+            pointer-events: none;
+        }
+
+        .topbar,
+        .bottom-copy,
+        .right-rail {
+            position: relative;
+            z-index: 2;
+        }
+
+        .topbar {
+            padding: 18px 18px 0;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .topbar-left,
+        .topbar-right,
+        .chip-row,
+        .meta-row,
+        .actions,
+        .stats-row,
+        .audio-row,
+        .reply-toolbar,
+        .sheet-tabs,
+        .sheet-actions,
+        .comment-form,
+        .reply-actions,
+        .recording-tools,
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .top-pill,
+        .ghost,
+        .sheet-tab,
+        .sheet-link,
+        .rail-button,
+        .control-button,
+        .comment-submit,
+        .reply-submit,
+        .record-pad,
+        .follow-button,
+        .menu-button,
+        .subscribe-button {
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(7, 10, 16, 0.66);
+            color: var(--text);
+            backdrop-filter: blur(14px);
+        }
+
+        .top-pill,
+        .ghost,
+        .sheet-tab {
+            padding: 8px 12px;
+            font-size: 0.88rem;
+        }
+
+        .sheet-link,
+        .comment-submit,
+        .reply-submit,
+        .control-button,
+        .follow-button,
+        .menu-button,
+        .subscribe-button {
+            min-height: 44px;
+            padding: 0 16px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.78);
-            z-index: 40;
+            cursor: pointer;
         }
-        .modal-backdrop.active { display: flex; }
-        .modal-card {
-            width: min(520px, 100%);
+
+        .sheet-link.primary,
+        .comment-submit,
+        .reply-submit,
+        .sheet-tab.active,
+        .rail-button.active,
+        .follow-button.active,
+        .subscribe-button.active,
+        .control-button.primary,
+        .record-pad.active {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            color: #061018;
+            font-weight: 700;
+        }
+
+        .topbar-left {
+            display: grid;
+            gap: 8px;
+        }
+
+        .brand-label {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 0 16px;
+            border-radius: 999px;
+            background: rgba(7, 10, 16, 0.68);
+            border: 1px solid var(--line);
+        }
+
+        .bottom-copy {
+            min-height: 100%;
+            display: grid;
+            align-items: end;
+            padding: 0 18px 24px;
+        }
+
+        .bottom-copy-inner {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .video-copy {
+            display: grid;
+            gap: 12px;
+            max-width: 740px;
+        }
+
+        .video-copy h1,
+        .sheet-header h2,
+        .panel h3,
+        .reply-card strong,
+        .comment-card strong {
+            margin: 0;
+        }
+
+        .video-copy h1 {
+            font-size: clamp(1.6rem, 4vw, 2.5rem);
+        }
+
+        .video-copy p,
+        .sheet-header p,
+        .helper,
+        .panel p,
+        .reply-card p,
+        .comment-card p,
+        .sheet-copy {
+            margin: 0;
+            color: rgba(245, 247, 250, 0.82);
+            line-height: 1.5;
+        }
+
+        .creator-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(7, 10, 16, 0.68);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .creator-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 700;
+        }
+
+        .creator-meta {
+            display: grid;
+            gap: 2px;
+        }
+
+        .creator-meta span {
+            color: rgba(245, 247, 250, 0.76);
+            font-size: 0.84rem;
+        }
+
+        .right-rail {
+            display: grid;
+            gap: 12px;
+            justify-items: center;
+            width: 84px;
+        }
+
+        .rail-action {
+            display: grid;
+            gap: 6px;
+            justify-items: center;
+        }
+
+        .rail-button {
+            width: 62px;
+            height: 62px;
+            padding: 0;
+            display: grid;
+            place-items: center;
+            font-size: 0.98rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rail-button.voice-primary {
+            width: 70px;
+            height: 70px;
+            border-color: transparent;
+            background: linear-gradient(135deg, rgba(24, 212, 171, 0.96) 0%, rgba(255, 135, 86, 0.96) 100%);
+            color: #061018;
+            box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.42);
+            animation: record-glow 1.8s infinite;
+            font-weight: 800;
+        }
+
+        .rail-button.like-burst::after {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.86);
+            animation: like-burst 0.42s ease-out;
+        }
+
+        .rail-label {
+            display: grid;
+            gap: 2px;
+            justify-items: center;
+            text-align: center;
+            font-size: 0.78rem;
+        }
+
+        .rail-label strong {
+            font-size: 0.92rem;
+        }
+
+        .sheet-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.66);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.24s ease;
+            z-index: 29;
+        }
+
+        .sheet-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sheet {
+            position: fixed;
+            left: 50%;
+            bottom: 0;
+            width: min(760px, 100%);
+            max-height: min(84vh, 860px);
+            transform: translate(-50%, calc(100% + 24px));
+            transition: transform 0.24s ease;
+            z-index: 30;
+            padding: 0 12px 12px;
+        }
+
+        .sheet.active {
+            transform: translate(-50%, 0);
+        }
+
+        .sheet-card {
+            border-radius: 30px 30px 0 0;
+            background: rgba(7, 10, 16, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: grid;
+            max-height: min(84vh, 860px);
+        }
+
+        .sheet-handle {
+            width: 64px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            margin: 12px auto 0;
+        }
+
+        .sheet-scroll {
+            overflow: auto;
+            padding: 16px 18px 22px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .sheet-tabs {
+            gap: 8px;
+        }
+
+        .sheet-panel {
+            display: none;
+            gap: 16px;
+        }
+
+        .sheet-panel.active {
+            display: grid;
+        }
+
+        .stats-row {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .waveform {
+            height: 58px;
+            border-radius: 18px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(90deg,
+                rgba(24, 212, 171, 0.12) 0%,
+                rgba(24, 212, 171, 0.46) 15%,
+                rgba(255, 135, 86, 0.24) 30%,
+                rgba(255, 255, 255, 0.08) 45%,
+                rgba(24, 212, 171, 0.42) 62%,
+                rgba(255, 135, 86, 0.22) 78%,
+                rgba(24, 212, 171, 0.14) 100%);
+        }
+
+        .waveform::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255, 255, 255, 0.08) 10px, rgba(255, 255, 255, 0.08) 12px);
+        }
+
+        .waveform.recording::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(24, 212, 171, 0.12), rgba(255, 135, 86, 0.24), rgba(24, 212, 171, 0.12));
+            animation: pulse-wave 1.1s linear infinite;
+        }
+
+        .recording-card,
+        .panel,
+        .reply-card,
+        .comment-card,
+        .insight-card,
+        .clip-card,
+        .upload-status {
             border-radius: 24px;
-            background: #101720;
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 16px;
+        }
+
+        .recording-card {
+            display: grid;
+            gap: 14px;
+        }
+
+        .record-pad {
+            min-height: 96px;
+            width: 100%;
+            border-radius: 28px;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.16s ease, border-color 0.16s ease;
+        }
+
+        .record-pad.locked {
+            border-color: rgba(24, 212, 171, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .record-pad.cancel-ready {
+            border-color: rgba(255, 109, 109, 0.6);
+            background: rgba(255, 109, 109, 0.14);
+        }
+
+        .recording-hints {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .recording-preview {
             display: grid;
             gap: 12px;
         }
+
+        .recording-preview[hidden] {
+            display: none;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .comment-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .comment-form input {
+            min-width: 0;
+        }
+
+        .comment-list,
+        .thread-list,
+        .insight-grid,
+        .clip-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .insight-grid,
+        .clip-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .reply-card.focused {
+            outline: 2px solid rgba(24, 212, 171, 0.6);
+            animation: focus-pulse 1.8s ease-out 2;
+        }
+
+        .thread {
+            margin-top: 12px;
+            padding-left: 12px;
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .upload-status {
+            display: none;
+            gap: 10px;
+        }
+
+        .upload-status.visible {
+            display: grid;
+        }
+
+        .upload-status.error {
+            border-color: rgba(255, 109, 109, 0.5);
+            background: rgba(255, 109, 109, 0.14);
+        }
+
+        .upload-status.success {
+            border-color: rgba(24, 212, 171, 0.45);
+            background: rgba(24, 212, 171, 0.14);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            transition: width 0.18s ease;
+        }
+
+        details {
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 14px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .sheet-menu-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .insights-overlay {
+            display: grid;
+            gap: 10px;
+            width: min(340px, 100%);
+            padding: 14px;
+            border-radius: 22px;
+            background: rgba(7, 10, 16, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(14px);
+        }
+
+        .insights-grid-compact {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .insight-tile {
+            padding: 10px 12px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .insight-tile strong,
+        .insight-tile span {
+            display: block;
+        }
+
+        .insight-tile span {
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-bottom: 4px;
+        }
+
         @keyframes pulse-wave {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
         }
+
+        @keyframes like-burst {
+            0% { opacity: 0.9; transform: scale(0.4); }
+            100% { opacity: 0; transform: scale(1.8); }
+        }
+
+        @keyframes record-glow {
+            0% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.44); }
+            70% { box-shadow: 0 0 0 16px rgba(24, 212, 171, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0); }
+        }
+
         @keyframes focus-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(27,209,165,0.45); }
-            100% { box-shadow: 0 0 0 18px rgba(27,209,165,0); }
+            0% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.45); }
+            100% { box-shadow: 0 0 0 18px rgba(24, 212, 171, 0); }
+        }
+
+        @media (max-width: 860px) {
+            .bottom-copy-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .right-rail {
+                width: 100%;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                justify-items: stretch;
+            }
+
+            .rail-action {
+                justify-items: center;
+            }
+
+            .rail-button {
+                width: 100%;
+                max-width: 72px;
+            }
+
+            .comment-form {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}" data-video-id="{{ video.id }}" data-focus-reply-id="{{ focused_reply_id or '' }}">
-        <a class="btn" href="/feed">Back to feed</a>
-        <section class="card">
-            <video src="{{ video_payload.video_url }}" controls playsinline preload="metadata" data-detail-video></video>
-            <div class="player-toolbar">
-                <button class="ghost" type="button" data-video-audio-toggle data-target-video="detail">Mute video</button>
-            </div>
-            <h1>{{ video.title }}</h1>
-            <p>{{ video.caption }}</p>
-            <p class="meta">@{{ video_payload.creator }} · {{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</p>
-            <p class="meta">{{ video.views }} views · <span data-video-replies-total>{{ video.voice_replies }}</span> voice replies · creator score {{ '%.2f'|format(video.creator_score) }}</p>
-            <div class="video-action-row">
-                <button class="video-action-button {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">Like <span data-video-like-count>{{ video_payload.likes }}</span></button>
-                <button class="video-action-button {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">Save <span data-video-save-count>{{ video_payload.saves_count }}</span></button>
-                <button class="video-action-button" type="button" data-video-share-button>Share <span data-video-share-count>{{ video_payload.shares_count }}</span></button>
-                <a class="video-action-button" href="#comments">Comment <span data-text-comment-count>{{ text_comments|length }}</span></a>
-                <a class="video-action-button" href="{{ video_payload.video_url }}" download>Download</a>
-                {% if video_payload.can_follow_creator %}
-                <button class="video-action-button {% if video_payload.creator_is_followed %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ video_payload.creator_id }}" data-following="{{ 'true' if video_payload.creator_is_followed else 'false' }}">{% if video_payload.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
-                {% endif %}
-                {% if creator_tiers %}
-                <button class="video-action-button" type="button" data-subscribe-button data-tier-id="{{ creator_tiers[0].id if creator_tiers else '' }}">Subscribe</button>
-                {% endif %}
-                <button class="video-action-button" type="button" data-tip-button data-target-type="video" data-video-id="{{ video.id }}">Tip creator</button>
-            </div>
-            {% if creator_tiers %}
-            <div class="banner">
-                <span class="badge">Creator subscriptions</span>
-                <div class="actions">
-                    {% for tier in creator_tiers %}
-                    <button class="ghost {% if tier.active_access %}active{% endif %}" type="button" data-subscribe-button data-tier-id="{{ tier.id }}">{{ tier.tier_name }} · {{ tier.currency }} {{ '%.2f'|format(tier.monthly_price_cents / 100) }}</button>
-                    {% endfor %}
+    <div class="viewer" data-authenticated="{{ 'true' if current_user else 'false' }}" data-video-id="{{ video.id }}" data-focus-reply-id="{{ focused_reply_id or '' }}">
+        <section class="stage">
+            <video src="{{ video_payload.video_url }}" autoplay muted playsinline preload="metadata" data-detail-video></video>
+            <div class="topbar">
+                <div class="topbar-left">
+                    <span class="brand-label">Umbono Wami</span>
+                    <a class="back-link" href="/feed">Back to feed</a>
                 </div>
-            </div>
-            {% endif %}
-            {% if premium_room %}
-            <div class="banner" data-premium-room data-room-id="{{ premium_room.id }}">
-                <span class="badge">{{ premium_room.label }}</span>
-                <strong>{{ premium_room.title }}</strong>
-                <p>{{ premium_room.description or 'Premium voice room attached to this thread.' }}</p>
-                <p class="meta">{{ premium_room.room_type }} · {{ premium_room.participant_count }}/{{ premium_room.participant_cap }} joined{% if premium_room.scheduled_for %} · starts {{ premium_room.scheduled_for }}{% endif %}</p>
-                {% if premium_preview_only %}
-                <p class="helper">This thread is showing a preview. Join the room or subscribe to unlock the full conversation.</p>
-                {% endif %}
-                <div class="actions">
-                    {% if premium_room.can_access %}
-                    <button class="btn" type="button" data-room-join-button data-room-id="{{ premium_room.id }}">Enter room</button>
-                    {% elif premium_room.room_type == 'subscriber_only' %}
-                    <button class="btn" type="button" data-subscribe-button data-tier-id="{{ creator_tiers[0].id if creator_tiers else '' }}">Subscribe to unlock</button>
-                    {% elif premium_room.room_type == 'paid_entry' %}
-                    <button class="btn" type="button" data-room-join-button data-room-id="{{ premium_room.id }}">Pay and join</button>
-                    {% else %}
-                    <button class="ghost" type="button" disabled>Invite required</button>
+                <div class="topbar-right chip-row">
+                    <button class="top-pill" type="button" data-video-audio-toggle data-target-video="detail">Audio off</button>
+                    {% if thread_summary %}
+                    <span class="top-pill">{{ thread_summary.cluster_label }}</span>
                     {% endif %}
-                    <button class="ghost" type="button" data-tip-button data-target-type="premium_room" data-premium-room-id="{{ premium_room.id }}">Tip room host</button>
+                    {% if premium_room %}
+                    <span class="top-pill">{{ premium_room.label }}</span>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
-            {% if thread_summary %}
-            <div class="banner">
-                <span class="badge">Conversation Intelligence Core</span>
-                <strong>{{ thread_summary.cluster_label }}</strong>
-                <p>{{ thread_summary.summary_text }}</p>
-                <div class="actions">
-                    <span class="ghost">controversy {{ thread_summary.controversy_score }}</span>
-                    <span class="ghost">velocity {{ thread_summary.reply_velocity }}</span>
-                    <span class="ghost">participants {{ thread_summary.participant_count }}</span>
-                </div>
-            </div>
-            {% endif %}
-        </section>
-
-        <section class="card">
-            <h2>Reply with a voice note</h2>
-            <div class="stack">
-                <div class="waveform" data-recorder-wave></div>
-                <div class="row">
-                    <p class="helper">Record in-browser for fast mobile replies. If recording is unavailable, upload an audio file instead.</p>
-                    <button class="btn" type="button" data-open-recorder data-parent-reply-id="" {% if premium_preview_only %}disabled{% endif %}>{% if premium_preview_only %}Join room to reply{% elif current_user %}Record voice reply{% else %}Sign in to record{% endif %}</button>
-                </div>
-                {% if premium_preview_only %}
-                <p class="helper">Replies are locked to paying members or subscribers while this premium room is active.</p>
-                {% endif %}
-                <form action="/voice/reply" method="post" enctype="multipart/form-data" class="fallback">
-                    <input type="hidden" name="video_id" value="{{ video.id }}">
-                    <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
-                    <select name="language_code">
-                        {% for code, label in locale_options.items() %}
-                        <option value="{{ code }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                    <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %} {% if premium_preview_only %}disabled{% endif %}>
-                    <button type="submit" {% if premium_preview_only %}disabled{% endif %}>Upload voice reply</button>
-                </form>
-                <div class="upload-status" data-upload-status>
-                    <strong data-upload-status-text>Ready to post.</strong>
-                    <div class="progress-track"><div class="progress-bar" data-upload-progress></div></div>
-                    <div class="actions">
-                        <button class="ghost" type="button" data-retry-upload disabled>Retry last upload</button>
+            <div class="bottom-copy">
+                <div class="bottom-copy-inner">
+                    <div class="video-copy">
+                        <div class="creator-pill">
+                            <span class="creator-avatar">{{ (video_payload.creator or 'U')[:1]|upper }}</span>
+                            <div class="creator-meta">
+                                <strong>
+                                    {% if video_payload.creator_username %}
+                                    <a href="/profile/{{ video_payload.creator_username }}">@{{ video_payload.creator }}</a>
+                                    {% else %}
+                                    @{{ video_payload.creator }}
+                                    {% endif %}
+                                </strong>
+                                <span>{{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</span>
+                            </div>
+                        </div>
+                        <h1>{{ video.title }}</h1>
+                        <p>{{ video.caption }}</p>
+                        <div class="meta-row">
+                            <span>{{ video.views }} views</span>
+                            <span><span data-video-replies-total>{{ video.voice_replies }}</span> voice replies</span>
+                            <span><span data-text-comment-count>{{ text_comments|length }}</span> comments</span>
+                            <span>creator score {{ '%.2f'|format(video.creator_score) }}</span>
+                        </div>
+                        <div class="chip-row">
+                            <span class="ghost">#{{ video.topic|replace(' ', '') }}</span>
+                            <span class="ghost">#{{ video.region|replace(' ', '') }}</span>
+                            <span class="ghost">Original sound · MV voice thread</span>
+                        </div>
+                        <div class="actions">
+                            {% if video_payload.can_follow_creator %}
+                            <button class="follow-button {% if video_payload.creator_is_followed %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ video_payload.creator_id }}" data-following="{{ 'true' if video_payload.creator_is_followed else 'false' }}">{% if video_payload.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
+                            {% endif %}
+                            {% if creator_tiers %}
+                            <button class="subscribe-button" type="button" data-subscribe-button data-tier-id="{{ creator_tiers[0].id if creator_tiers else '' }}">Subscribe</button>
+                            {% endif %}
+                            <a class="sheet-link" href="{{ video_payload.video_url }}" download>Download</a>
+                        </div>
+                        {% if thread_summary %}
+                        <p class="sheet-copy">{{ thread_summary.summary_text }}</p>
+                        {% endif %}
+                        {% if current_user and video.creator_id == current_user.id %}
+                        <div class="insights-overlay">
+                            <strong>Creator insights</strong>
+                            <div class="insights-grid-compact">
+                                <div class="insight-tile">
+                                    <span>Views</span>
+                                    <strong>{{ video.views }}</strong>
+                                </div>
+                                <div class="insight-tile">
+                                    <span>Likes</span>
+                                    <strong>{{ video_payload.likes }}</strong>
+                                </div>
+                                <div class="insight-tile">
+                                    <span>Replies</span>
+                                    <strong>{{ video.voice_replies }}</strong>
+                                </div>
+                                <div class="insight-tile">
+                                    <span>Shares</span>
+                                    <strong>{{ video_payload.shares_count }}</strong>
+                                </div>
+                                <div class="insight-tile">
+                                    <span>Comments</span>
+                                    <strong>{{ video.comments }}</strong>
+                                </div>
+                                <div class="insight-tile">
+                                    <span>Watch time %</span>
+                                    <strong>{{ [video.watch_time, 100]|min }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="right-rail">
+                        <div class="rail-action">
+                            <button class="rail-button {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">Like</button>
+                            <div class="rail-label"><strong data-video-like-count>{{ video_payload.likes }}</strong><span>Like</span></div>
+                        </div>
+                        <div class="rail-action">
+                            <button class="rail-button" type="button" data-open-reply-sheet data-target-tab="comments">Reply</button>
+                            <div class="rail-label"><strong data-text-comment-count>{{ text_comments|length }}</strong><span>Reply</span></div>
+                        </div>
+                        <div class="rail-action">
+                            <button class="rail-button voice-primary" type="button" data-open-reply-sheet data-target-tab="replies">Voice</button>
+                            <div class="rail-label"><strong data-video-replies-total>{{ video.voice_replies }}</strong><span>Voice</span></div>
+                        </div>
+                        <div class="rail-action">
+                            <button class="rail-button {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">Save</button>
+                            <div class="rail-label"><strong data-video-save-count>{{ video_payload.saves_count }}</strong><span>Save</span></div>
+                        </div>
+                        <div class="rail-action">
+                            <button class="rail-button" type="button" data-video-share-button>Share</button>
+                            <div class="rail-label"><strong data-video-share-count>{{ video_payload.shares_count }}</strong><span>Share</span></div>
+                        </div>
+                        <div class="rail-action">
+                            <button class="rail-button" type="button" data-open-more-sheet>More</button>
+                            <div class="rail-label"><strong>Menu</strong><span>More</span></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
-
-        <section class="card" id="comments">
-            <h2>Quick comments</h2>
-            <p class="helper">Type a short comment in one line, or use a voice reply below for a richer response.</p>
-            <form class="comment-form" data-comment-form>
-                <input type="text" name="content" maxlength="280" placeholder="Write a comment..." {% if not current_user %}disabled{% endif %}>
-                <button type="submit" {% if not current_user %}disabled{% endif %}>{% if current_user %}Post comment{% else %}Sign in to comment{% endif %}</button>
-            </form>
-            <div class="comment-list" data-comment-list>
-                {% for comment in text_comments %}
-                <div class="comment-card" id="comment-{{ comment.id }}">
-                    <strong>@{{ comment.username }}</strong>
-                    <p>{{ comment.content }}</p>
-                </div>
-                {% else %}
-                <p data-comment-empty>No text comments yet.</p>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section class="card" id="thread">
-            <h2>Threaded voice discussion</h2>
-            <div data-thread-list>
-                {% for reply in replies %}
-                    {% include 'voice_reply_tree.html' %}
-                {% else %}
-                <p data-thread-empty>No voice replies yet. Be the first voice in the thread.</p>
-                {% endfor %}
-            </div>
-        </section>
-
-        {% if clip_suggestions %}
-        <section class="card">
-            <h2>Auto clip suggestions</h2>
-            <div class="insight-grid">
-                {% for clip in clip_suggestions %}
-                <a class="clip-card" href="{{ clip.target_url }}">
-                    <strong>{{ clip.headline }}</strong>
-                    <p>{{ clip.reason }}</p>
-                    <div class="actions">
-                        <span class="ghost">{{ clip.start_second }}s - {{ clip.end_second }}s</span>
-                        <span class="ghost">score {{ clip.score }}</span>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
     </div>
 
-    <div class="modal-backdrop" data-auth-modal>
-        <div class="modal-card">
-            <h3>Sign in before recording</h3>
-            <p class="helper">Voice replies, likes, saves, and follows persist once you are signed in.</p>
-            <div class="actions">
-                <a class="btn" href="/">Sign in</a>
-                <button class="ghost" type="button" data-close-modal>Close</button>
+    <div class="sheet-backdrop" data-sheet-backdrop></div>
+
+    <div class="sheet active" data-reply-sheet>
+        <div class="sheet-card">
+            <div class="sheet-handle"></div>
+            <div class="sheet-scroll">
+                <div class="sheet-header">
+                    <div>
+                        <h2>Voice thread</h2>
+                        <p>Slide this panel, listen to replies, speak back, or drop a quick text comment.</p>
+                    </div>
+                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                </div>
+                <div class="sheet-tabs">
+                    <button class="sheet-tab active" type="button" data-sheet-tab="replies">Replies</button>
+                    <button class="sheet-tab" type="button" data-sheet-tab="comments">Comments</button>
+                </div>
+
+                <section class="sheet-panel active" data-sheet-panel="replies">
+                    <div class="recording-card">
+                        <div class="sheet-header">
+                            <div>
+                                <h2>Reply with your voice</h2>
+                                <p class="helper" data-recorder-status>Tap to record, hold to speak, slide up to lock, or slide left to cancel before preview.</p>
+                            </div>
+                            <button class="control-button" type="button" data-open-comment-tab>Type instead</button>
+                        </div>
+                        <select data-recorder-language>
+                            {% for code, label in locale_options.items() %}
+                            <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="waveform" data-modal-wave></div>
+                        <button class="record-pad" type="button" data-record-pad>
+                            <span data-record-pad-label>Hold to record. Release for preview. Tap for start and stop.</span>
+                        </button>
+                        <div class="recording-hints">
+                            <span>Release: preview before send</span>
+                            <span>Slide up: lock recording</span>
+                            <span>Slide left: cancel capture</span>
+                        </div>
+                        <div class="recording-tools">
+                            <button class="control-button primary" type="button" data-toggle-recording>Start recording</button>
+                            <button class="control-button" type="button" data-stop-recording>Stop</button>
+                            <button class="control-button" type="button" data-open-file-picker>Choose audio file</button>
+                        </div>
+                        <input type="file" accept="audio/*" data-recording-file hidden>
+                        <div class="recording-preview" data-recording-preview-wrapper hidden>
+                            <span class="badge">Preview</span>
+                            <audio controls preload="metadata" data-recording-preview hidden></audio>
+                            <div class="preview-actions">
+                                <button class="reply-submit" type="button" data-submit-recording>Send voice reply</button>
+                                <button class="control-button" type="button" data-delete-recording>Delete preview</button>
+                            </div>
+                        </div>
+                        <details>
+                            <summary>Upload instead of recording</summary>
+                            <form action="/voice/reply" method="post" enctype="multipart/form-data" class="fallback">
+                                <input type="hidden" name="video_id" value="{{ video.id }}">
+                                <input type="number" name="duration" min="0" step="0.1" placeholder="Duration in seconds">
+                                <select name="language_code">
+                                    {% for code, label in locale_options.items() %}
+                                    <option value="{{ code }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="file" name="voice" accept="audio/*" {% if current_user %}required{% endif %} {% if premium_preview_only %}disabled{% endif %}>
+                                <button class="reply-submit" type="submit" {% if premium_preview_only %}disabled{% endif %}>Upload voice reply</button>
+                            </form>
+                        </details>
+                        <div class="upload-status" data-upload-status>
+                            <strong data-upload-status-text>Ready to post.</strong>
+                            <div class="progress-track"><div class="progress-bar" data-upload-progress></div></div>
+                            <div class="sheet-actions">
+                                <button class="control-button" type="button" data-retry-upload disabled>Retry last upload</button>
+                            </div>
+                        </div>
+                        {% if premium_preview_only %}
+                        <div class="panel">
+                            <span class="badge">Premium room</span>
+                            <p>Replies are locked to paying members or subscribers while this premium room is active.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if creator_tiers %}
+                    <div class="panel">
+                        <span class="badge">Creator subscriptions</span>
+                        <div class="sheet-actions">
+                            {% for tier in creator_tiers %}
+                            <button class="ghost {% if tier.active_access %}active{% endif %}" type="button" data-subscribe-button data-tier-id="{{ tier.id }}">{{ tier.tier_name }} · {{ tier.currency }} {{ '%.2f'|format(tier.monthly_price_cents / 100) }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if premium_room %}
+                    <div class="panel" data-premium-room data-room-id="{{ premium_room.id }}">
+                        <span class="badge">{{ premium_room.label }}</span>
+                        <h3>{{ premium_room.title }}</h3>
+                        <p>{{ premium_room.description or 'Premium voice room attached to this thread.' }}</p>
+                        <p class="helper">{{ premium_room.room_type }} · {{ premium_room.participant_count }}/{{ premium_room.participant_cap }} joined{% if premium_room.scheduled_for %} · starts {{ premium_room.scheduled_for }}{% endif %}</p>
+                        {% if premium_preview_only %}
+                        <p class="helper">This thread is showing a preview. Join the room or subscribe to unlock the full conversation.</p>
+                        {% endif %}
+                        <div class="sheet-actions">
+                            {% if premium_room.can_access %}
+                            <button class="sheet-link primary" type="button" data-room-join-button data-room-id="{{ premium_room.id }}">Enter room</button>
+                            {% elif premium_room.room_type == 'subscriber_only' %}
+                            <button class="sheet-link primary" type="button" data-subscribe-button data-tier-id="{{ creator_tiers[0].id if creator_tiers else '' }}">Subscribe to unlock</button>
+                            {% elif premium_room.room_type == 'paid_entry' %}
+                            <button class="sheet-link primary" type="button" data-room-join-button data-room-id="{{ premium_room.id }}">Pay and join</button>
+                            {% else %}
+                            <button class="sheet-link" type="button" disabled>Invite required</button>
+                            {% endif %}
+                            <button class="sheet-link" type="button" data-tip-button data-target-type="premium_room" data-premium-room-id="{{ premium_room.id }}">Tip room host</button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if thread_summary %}
+                    <div class="insight-grid">
+                        <div class="insight-card">
+                            <strong>Conversation Intelligence Core</strong>
+                            <p>{{ thread_summary.summary_text }}</p>
+                        </div>
+                        <div class="insight-card">
+                            <strong>Cluster</strong>
+                            <p>{{ thread_summary.cluster_label }}</p>
+                            <p>controversy {{ thread_summary.controversy_score }} · velocity {{ thread_summary.reply_velocity }}</p>
+                        </div>
+                        <div class="insight-card">
+                            <strong>Participants</strong>
+                            <p>{{ thread_summary.participant_count }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="thread-list" data-thread-list>
+                        {% for reply in replies %}
+                            {% include 'voice_reply_tree.html' %}
+                        {% else %}
+                        <p data-thread-empty>No voice replies yet. Be the first voice in the thread.</p>
+                        {% endfor %}
+                    </div>
+
+                    {% if clip_suggestions %}
+                    <div class="panel">
+                        <h3>Auto clip suggestions</h3>
+                        <p class="helper">AI-picked moments that can spin this conversation wider.</p>
+                    </div>
+                    <div class="clip-grid">
+                        {% for clip in clip_suggestions %}
+                        <a class="clip-card" href="{{ clip.target_url }}">
+                            <strong>{{ clip.headline }}</strong>
+                            <p>{{ clip.reason }}</p>
+                            <div class="sheet-actions">
+                                <span class="ghost">{{ clip.start_second }}s - {{ clip.end_second }}s</span>
+                                <span class="ghost">score {{ clip.score }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </section>
+
+                <section class="sheet-panel" data-sheet-panel="comments">
+                    <div class="panel">
+                        <h3>Quick comments</h3>
+                        <p class="helper">Keep it short here, or switch back to replies for voice-first discussion.</p>
+                        <form class="comment-form" data-comment-form>
+                            <input type="text" name="content" maxlength="280" placeholder="Write a comment..." {% if not current_user %}disabled{% endif %}>
+                            <button class="comment-submit" type="submit" {% if not current_user %}disabled{% endif %}>{% if current_user %}Post comment{% else %}Sign in to comment{% endif %}</button>
+                        </form>
+                    </div>
+                    <div class="comment-list" data-comment-list>
+                        {% for comment in text_comments %}
+                        <div class="comment-card" id="comment-{{ comment.id }}">
+                            <strong>@{{ comment.username }}</strong>
+                            <p>{{ comment.content }}</p>
+                        </div>
+                        {% else %}
+                        <p data-comment-empty>No text comments yet.</p>
+                        {% endfor %}
+                    </div>
+                </section>
             </div>
         </div>
     </div>
 
-    <div class="modal-backdrop" data-recorder-modal>
-        <div class="modal-card">
-            <h3>Record your voice reply</h3>
-            <p class="helper" data-recorder-status>Tap start, speak, then post your reply into the thread.</p>
-            <select data-recorder-language>
-                {% for code, label in locale_options.items() %}
-                <option value="{{ code }}">{{ label }}</option>
-                {% endfor %}
-            </select>
-            <div class="waveform" data-modal-wave></div>
-            <audio controls preload="metadata" data-recording-preview hidden></audio>
-            <input type="file" accept="audio/*" data-recording-file>
-            <div class="actions">
-                <button type="button" data-start-recording>Start recording</button>
-                <button class="ghost" type="button" data-stop-recording>Stop</button>
-                <button type="button" data-submit-recording>Post reply</button>
-                <button class="ghost" type="button" data-close-modal>Cancel</button>
+    <div class="sheet" data-more-sheet>
+        <div class="sheet-card">
+            <div class="sheet-handle"></div>
+            <div class="sheet-scroll">
+                <div class="sheet-header">
+                    <div>
+                        <h2>More actions</h2>
+                        <p>Share, repost, save, report, or copy a direct link.</p>
+                    </div>
+                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                </div>
+                <div class="sheet-menu-list">
+                    <button class="sheet-link primary" type="button" data-more-share>Share</button>
+                    <a class="sheet-link" href="/video/{{ video.id }}" data-more-repost>Repost in thread</a>
+                    <button class="sheet-link" type="button" data-more-send>Send to friend</button>
+                    <button class="sheet-link" type="button" data-more-save>Save</button>
+                    <button class="sheet-link" type="button" data-more-copy>Copy link</button>
+                    <button class="sheet-link" type="button" data-more-hide>Not interested</button>
+                    <a class="sheet-link" href="mailto:support@mv-pulse.local?subject=Report%20video%20{{ video.id }}" data-more-report>Report</a>
+                    <a class="sheet-link" href="{{ video_payload.video_url }}" download data-more-download>Download</a>
+                    {% if current_user and video.creator_id == current_user.id %}
+                    <button class="sheet-link" type="button" data-more-insights>View insights</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sheet" data-auth-sheet>
+        <div class="sheet-card">
+            <div class="sheet-handle"></div>
+            <div class="sheet-scroll">
+                <div class="sheet-header">
+                    <div>
+                        <h2>Sign in before reacting</h2>
+                        <p>Voice replies, likes, saves, and follows persist after you sign in.</p>
+                    </div>
+                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                </div>
+                <div class="sheet-actions">
+                    <a class="sheet-link primary" href="/">Sign in</a>
+                    <a class="sheet-link" href="/feed">Keep browsing</a>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const shell = document.querySelector('.shell');
+        const shell = document.querySelector('.viewer');
         const isAuthenticated = shell?.dataset.authenticated === 'true';
         const videoId = shell?.dataset.videoId;
         const focusedReplyId = shell?.dataset.focusReplyId;
-        const authModal = document.querySelector('[data-auth-modal]');
-        const recorderModal = document.querySelector('[data-recorder-modal]');
+        const detailVideo = document.querySelector('[data-detail-video]');
+        const audioToggle = document.querySelector('[data-video-audio-toggle]');
+        const creatorId = {{ video_payload.creator_id }};
+        const premiumRoomAccessible = {{ 'true' if premium_room and premium_room.can_access else 'false' }};
+
+        const sheetBackdrop = document.querySelector('[data-sheet-backdrop]');
+        const replySheet = document.querySelector('[data-reply-sheet]');
+        const moreSheet = document.querySelector('[data-more-sheet]');
+        const authSheet = document.querySelector('[data-auth-sheet]');
+        let activeSheet = replySheet;
+
         const recorderStatus = document.querySelector('[data-recorder-status]');
         const modalWave = document.querySelector('[data-modal-wave]');
+        const recordPad = document.querySelector('[data-record-pad]');
+        const recordPadLabel = document.querySelector('[data-record-pad-label]');
         const preview = document.querySelector('[data-recording-preview]');
+        const previewWrapper = document.querySelector('[data-recording-preview-wrapper]');
         const fileInput = document.querySelector('[data-recording-file]');
         const languageInput = document.querySelector('[data-recorder-language]');
         const fallbackForm = document.querySelector('.fallback');
@@ -287,15 +1079,23 @@
         const commentForm = document.querySelector('[data-comment-form]');
         const commentInput = commentForm?.querySelector('input[name="content"]');
         const commentList = document.querySelector('[data-comment-list]');
-        const detailVideo = document.querySelector('[data-detail-video]');
-        const creatorId = {{ video_payload.creator_id }};
-        const premiumRoomAccessible = {{ 'true' if premium_room and premium_room.can_access else 'false' }};
+        const firstReplyAudio = () => document.querySelector('[data-thread-list] [data-reply-audio]');
+
         let recorder = null;
         let recorderStream = null;
         let recorderChunks = [];
         let recordedFile = null;
         let currentParentReplyId = '';
         let retryUploadAction = null;
+        let recorderStartedAt = 0;
+        let gestureState = {
+            pointerId: null,
+            startX: 0,
+            startY: 0,
+            locked: false,
+            cancelReady: false,
+            holdActive: false,
+        };
         const listenedReplies = new Set();
 
         const escapeHtml = (value) => String(value || '')
@@ -306,27 +1106,6 @@
             .replace(/'/g, '&#39;');
 
         const createClientToken = () => `reply-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-        const showUploadStatus = (message, tone = 'info', progress = null) => {
-            uploadStatus?.classList.add('visible');
-            uploadStatus?.classList.remove('error', 'success');
-            if (tone === 'error' || tone === 'success') {
-                uploadStatus?.classList.add(tone);
-            }
-            if (uploadStatusText) {
-                uploadStatusText.textContent = message;
-            }
-            if (uploadProgress) {
-                uploadProgress.style.width = progress === null ? '0%' : `${Math.max(0, Math.min(progress, 100))}%`;
-            }
-        };
-
-        const setRetryUpload = (handler) => {
-            retryUploadAction = handler;
-            if (retryUploadButton) {
-                retryUploadButton.disabled = typeof handler !== 'function';
-            }
-        };
 
         const setPending = (button, pending) => {
             if (!button) {
@@ -340,6 +1119,28 @@
             return false;
         };
 
+        const openSheet = (sheet) => {
+            if (!sheet) {
+                return;
+            }
+            sheetBackdrop?.classList.add('active');
+            sheet.classList.add('active');
+            activeSheet = sheet;
+        };
+
+        const closeSheets = () => {
+            [replySheet, moreSheet, authSheet].forEach((sheet) => sheet?.classList.remove('active'));
+            sheetBackdrop?.classList.remove('active');
+            activeSheet = null;
+        };
+
+        document.querySelectorAll('[data-close-sheet]').forEach((button) => {
+            button.addEventListener('click', closeSheets);
+        });
+        sheetBackdrop?.addEventListener('click', closeSheets);
+
+        const authRequired = () => openSheet(authSheet);
+
         const requestJson = async (url, options = {}) => {
             const response = await fetch(url, {
                 ...options,
@@ -351,17 +1152,16 @@
             });
             const payload = await response.json().catch(() => ({}));
             if (response.status === 401) {
-                authModal?.classList.add('active');
-                const authError = new Error(payload.error || 'auth');
-                authError.code = payload.code || 'auth_required';
-                authError.payload = payload;
-                throw authError;
+                const error = new Error(payload.error || 'auth');
+                error.code = payload.code || 'auth_required';
+                authRequired();
+                throw error;
             }
             if (!response.ok) {
-                const requestError = new Error(payload.error || 'request failed');
-                requestError.code = payload.code || 'request_error';
-                requestError.payload = payload;
-                throw requestError;
+                const error = new Error(payload.error || 'request failed');
+                error.code = payload.code || 'request_error';
+                error.payload = payload;
+                throw error;
             }
             return payload;
         };
@@ -389,18 +1189,17 @@
                     }
                 })();
                 if (xhr.status === 401) {
-                    authModal?.classList.add('active');
-                    const authError = new Error(payload.error || 'auth');
-                    authError.code = payload.code || 'auth_required';
-                    authError.payload = payload;
-                    reject(authError);
+                    const error = new Error(payload.error || 'auth');
+                    error.code = payload.code || 'auth_required';
+                    authRequired();
+                    reject(error);
                     return;
                 }
                 if (xhr.status < 200 || xhr.status >= 300) {
-                    const requestError = new Error(payload.error || 'upload failed');
-                    requestError.code = payload.code || 'request_error';
-                    requestError.payload = payload;
-                    reject(requestError);
+                    const error = new Error(payload.error || 'upload failed');
+                    error.code = payload.code || 'request_error';
+                    error.payload = payload;
+                    reject(error);
                     return;
                 }
                 resolve(payload);
@@ -408,6 +1207,27 @@
             xhr.addEventListener('error', () => reject(new Error('network error')));
             xhr.send(formData);
         });
+
+        const showUploadStatus = (message, tone = 'info', progress = null) => {
+            uploadStatus?.classList.add('visible');
+            uploadStatus?.classList.remove('error', 'success');
+            if (tone === 'error' || tone === 'success') {
+                uploadStatus?.classList.add(tone);
+            }
+            if (uploadStatusText) {
+                uploadStatusText.textContent = message;
+            }
+            if (uploadProgress) {
+                uploadProgress.style.width = progress === null ? '0%' : `${Math.max(0, Math.min(progress, 100))}%`;
+            }
+        };
+
+        const setRetryUpload = (handler) => {
+            retryUploadAction = handler;
+            if (retryUploadButton) {
+                retryUploadButton.disabled = typeof handler !== 'function';
+            }
+        };
 
         const updateReplyTotals = (count) => {
             document.querySelectorAll('[data-video-replies-total]').forEach((node) => {
@@ -421,12 +1241,34 @@
             });
         };
 
+        const setToggleButton = (button, active, activeLabel, idleLabel) => {
+            button.classList.toggle('active', active);
+            button.textContent = active ? activeLabel : idleLabel;
+        };
+
+        const updateVideoAudioToggle = (button, video) => {
+            if (!button || !video) {
+                return;
+            }
+            button.textContent = video.muted ? 'Audio off' : 'Audio on';
+            button.classList.toggle('active', !video.muted);
+        };
+
+        const animateLikeBurst = (button) => {
+            if (!button) {
+                return;
+            }
+            button.classList.remove('like-burst');
+            void button.offsetWidth;
+            button.classList.add('like-burst');
+            window.setTimeout(() => button.classList.remove('like-burst'), 430);
+        };
+
         const playbackQueueFrom = (replyCard) => {
             const audios = Array.from(replyCard.querySelectorAll('[data-reply-audio]'));
             if (!audios.length) {
                 return;
             }
-
             audios.forEach((audio, index) => {
                 if (audio.dataset.queueBound === 'true') {
                     return;
@@ -439,7 +1281,6 @@
                     }
                 });
             });
-
             audios[0].play().catch(() => {});
         };
 
@@ -451,84 +1292,11 @@
             if (!target) {
                 return;
             }
+            openSheet(replySheet);
             target.classList.add('focused');
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             playbackQueueFrom(target);
             window.setTimeout(() => target.classList.remove('focused'), 3600);
-        };
-
-        const setToggleButton = (button, active, activeLabel, idleLabel) => {
-            button.classList.toggle('active', active);
-            button.dataset.state = active ? 'true' : 'false';
-            button.textContent = active ? activeLabel : idleLabel;
-        };
-
-        const updateVideoAudioToggle = (button, video) => {
-            if (!button || !video) {
-                return;
-            }
-            button.textContent = video.muted ? 'Unmute video' : 'Mute video';
-            button.classList.toggle('active', !video.muted);
-        };
-
-        const bindVideoAudioToggles = (root = document) => root.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
-            if (button.dataset.bound === 'true') {
-                return;
-            }
-            button.dataset.bound = 'true';
-            const video = button.dataset.targetVideo === 'detail' ? detailVideo : document.getElementById(button.dataset.targetVideo);
-            updateVideoAudioToggle(button, video);
-            button.addEventListener('click', async () => {
-                if (!video) {
-                    return;
-                }
-                video.muted = !video.muted;
-                updateVideoAudioToggle(button, video);
-                if (video.paused) {
-                    video.play().catch(() => {});
-                }
-            });
-            video?.addEventListener('volumechange', () => updateVideoAudioToggle(button, video));
-        });
-
-        const renderReplyCard = (reply) => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'reply-card';
-            wrapper.id = `reply-${reply.id}`;
-            wrapper.dataset.replyCard = 'true';
-            wrapper.dataset.replyId = reply.id;
-            wrapper.innerHTML = `
-                <div class="actions" style="margin-top: 0; margin-bottom: 8px;">
-                    <strong>@${escapeHtml(reply.username)}</strong>
-                    ${reply.supporter_badge ? `<span class="ghost">${escapeHtml(reply.supporter_badge)}</span>` : ''}
-                    <span class="ghost">${escapeHtml(reply.topic_label || 'general')}</span>
-                    <span class="ghost">${escapeHtml(reply.tone_label || 'balanced')}</span>
-                    ${reply.moderation_state && reply.moderation_state !== 'clear' ? `<span class="ghost">${escapeHtml(reply.moderation_state)}</span>` : ''}
-                </div>
-                <p>${escapeHtml(reply.transcript || 'Voice note with no transcript yet.')}</p>
-                <div class="waveform"></div>
-                <audio class="reply-audio" controls preload="metadata" src="${escapeHtml(reply.audio_url)}" data-reply-audio data-reply-id="${reply.id}"></audio>
-                <div class="actions">
-                    <button class="ghost speed-button" type="button" data-rate="1">1x</button>
-                    <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
-                    <button class="ghost ${reply.is_liked ? 'active' : ''}" type="button" data-reply-like-button data-reply-id="${reply.id}" data-liked="${reply.is_liked ? 'true' : 'false'}">❤️ <span data-reply-like-count>${reply.likes_count || 0}</span></button>
-                    <button class="ghost ${reply.is_saved ? 'active' : ''}" type="button" data-reply-save-button data-reply-id="${reply.id}" data-saved="${reply.is_saved ? 'true' : 'false'}">🔖 <span data-reply-save-count>${reply.saves_count || 0}</span></button>
-                    <button class="ghost" type="button" data-tip-button data-target-type="voice_reply" data-voice-reply-id="${reply.id}">Tip creator</button>
-                    <span class="ghost">${escapeHtml((reply.language_code || 'en').toUpperCase())}</span>
-                    <span class="ghost">IQ ${Number(reply.intelligence_score || 0).toFixed(2)}</span>
-                    ${premiumRoomAccessible ? '<span class="ghost">Premium room live</span>' : ''}
-                    <button class="ghost" type="button" data-open-recorder data-parent-reply-id="${reply.id}">Reply</button>
-                </div>
-            `;
-            if (Array.isArray(reply.children) && reply.children.length) {
-                const thread = document.createElement('div');
-                thread.className = 'thread';
-                reply.children.forEach((child) => {
-                    thread.appendChild(renderReplyCard(child));
-                });
-                wrapper.appendChild(thread);
-            }
-            return wrapper;
         };
 
         const renderTextCommentCard = (comment) => {
@@ -550,6 +1318,46 @@
             const commentNode = renderTextCommentCard(comment);
             commentList.appendChild(commentNode);
             commentNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        const renderReplyCard = (reply) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'reply-card';
+            wrapper.id = `reply-${reply.id}`;
+            wrapper.dataset.replyCard = 'true';
+            wrapper.dataset.replyId = reply.id;
+            wrapper.innerHTML = `
+                <div class="reply-actions" style="margin-top: 0; margin-bottom: 8px;">
+                    <strong>@${escapeHtml(reply.username)}</strong>
+                    ${reply.supporter_badge ? `<span class="ghost">${escapeHtml(reply.supporter_badge)}</span>` : ''}
+                    <span class="ghost">${escapeHtml(reply.topic_label || 'general')}</span>
+                    <span class="ghost">${escapeHtml(reply.tone_label || 'balanced')}</span>
+                    ${reply.moderation_state && reply.moderation_state !== 'clear' ? `<span class="ghost">${escapeHtml(reply.moderation_state)}</span>` : ''}
+                </div>
+                <p>${escapeHtml(reply.transcript || 'Voice note with no transcript yet.')}</p>
+                <div class="waveform"></div>
+                <audio class="reply-audio" controls preload="metadata" src="${escapeHtml(reply.audio_url)}" data-reply-audio data-reply-id="${reply.id}"></audio>
+                <div class="reply-actions">
+                    <button class="ghost speed-button" type="button" data-rate="1">1x</button>
+                    <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
+                    <button class="ghost ${reply.is_liked ? 'active' : ''}" type="button" data-reply-like-button data-reply-id="${reply.id}" data-liked="${reply.is_liked ? 'true' : 'false'}">Like <span data-reply-like-count>${reply.likes_count || 0}</span></button>
+                    <button class="ghost ${reply.is_saved ? 'active' : ''}" type="button" data-reply-save-button data-reply-id="${reply.id}" data-saved="${reply.is_saved ? 'true' : 'false'}">Save <span data-reply-save-count>${reply.saves_count || 0}</span></button>
+                    <button class="ghost" type="button" data-tip-button data-target-type="voice_reply" data-voice-reply-id="${reply.id}">Tip creator</button>
+                    <span class="ghost">${escapeHtml((reply.language_code || 'en').toUpperCase())}</span>
+                    <span class="ghost">IQ ${Number(reply.intelligence_score || 0).toFixed(2)}</span>
+                    ${premiumRoomAccessible ? '<span class="ghost">Premium room live</span>' : ''}
+                    <button class="ghost" type="button" data-open-recorder data-parent-reply-id="${reply.id}">Reply</button>
+                </div>
+            `;
+            if (Array.isArray(reply.children) && reply.children.length) {
+                const thread = document.createElement('div');
+                thread.className = 'thread';
+                reply.children.forEach((child) => {
+                    thread.appendChild(renderReplyCard(child));
+                });
+                wrapper.appendChild(thread);
+            }
+            return wrapper;
         };
 
         const attachReplyToThread = (reply) => {
@@ -580,6 +1388,104 @@
             window.setTimeout(() => replyNode.classList.remove('focused'), 3600);
         };
 
+        const assignRecordedFile = (file) => {
+            recordedFile = file;
+            if (!recordedFile) {
+                preview.hidden = true;
+                previewWrapper.hidden = true;
+                preview.removeAttribute('src');
+                return;
+            }
+            preview.src = URL.createObjectURL(recordedFile);
+            preview.hidden = false;
+            previewWrapper.hidden = false;
+        };
+
+        const updateRecordPadState = (stateText) => {
+            if (recordPadLabel) {
+                recordPadLabel.textContent = stateText;
+            }
+        };
+
+        const resetGestureState = () => {
+            gestureState = {
+                pointerId: null,
+                startX: 0,
+                startY: 0,
+                locked: false,
+                cancelReady: false,
+                holdActive: false,
+            };
+            recordPad?.classList.remove('locked', 'cancel-ready', 'active');
+        };
+
+        const startRecording = async ({ statusText } = {}) => {
+            if (!navigator.mediaDevices || !window.MediaRecorder) {
+                recorderStatus.textContent = 'This browser cannot record audio. Upload a file instead.';
+                return false;
+            }
+            if (recorder && recorder.state !== 'inactive') {
+                return true;
+            }
+            try {
+                recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorderChunks = [];
+                recorder = new MediaRecorder(recorderStream);
+                recorder.addEventListener('dataavailable', (event) => {
+                    if (event.data.size > 0) {
+                        recorderChunks.push(event.data);
+                    }
+                });
+                recorder.addEventListener('stop', () => {
+                    const blob = new Blob(recorderChunks, { type: recorder?.mimeType || 'audio/webm' });
+                    assignRecordedFile(new File([blob], 'voice-reply.webm', { type: blob.type }));
+                    modalWave?.classList.remove('recording');
+                    recorderStream?.getTracks().forEach((track) => track.stop());
+                    recorderStream = null;
+                    recorder = null;
+                }, { once: true });
+                recorder.start();
+                recorderStartedAt = Date.now();
+                modalWave?.classList.add('recording');
+                recordPad?.classList.add('active');
+                recorderStatus.textContent = statusText || 'Recording... speak now.';
+                updateRecordPadState('Recording now. Release for preview, slide up to lock, slide left to cancel.');
+                return true;
+            } catch (error) {
+                recorderStatus.textContent = 'Microphone access failed. Upload a file instead.';
+                return false;
+            }
+        };
+
+        const stopRecording = ({ discard = false, statusText = null } = {}) => {
+            if (recorder && recorder.state !== 'inactive') {
+                recorder.addEventListener('stop', () => {
+                    modalWave?.classList.remove('recording');
+                    recordPad?.classList.remove('active', 'locked', 'cancel-ready');
+                    if (discard) {
+                        assignRecordedFile(null);
+                        recorderStatus.textContent = 'Recording cancelled.';
+                        updateRecordPadState('Hold to record. Release for preview. Tap for start and stop.');
+                        return;
+                    }
+                    const elapsed = Math.max(0, (Date.now() - recorderStartedAt) / 1000);
+                    if (statusText) {
+                        recorderStatus.textContent = statusText;
+                    } else {
+                        recorderStatus.textContent = `Preview ready. ${elapsed.toFixed(1)}s captured.`;
+                    }
+                    updateRecordPadState('Preview ready. Send it, delete it, or record again.');
+                }, { once: true });
+                if (discard) {
+                    recorderChunks = [];
+                }
+                recorder.stop();
+            } else if (discard) {
+                assignRecordedFile(null);
+            }
+            resetGestureState();
+        };
+
         const postVoiceReply = async ({ file, languageCode, duration, parentReplyId = '', sourceButton = null, resetInput = null }) => {
             if (!file) {
                 showUploadStatus('Choose or record an audio file before posting.', 'error', 0);
@@ -607,6 +1513,8 @@
                 if (typeof resetInput === 'function') {
                     resetInput();
                 }
+                openSheet(replySheet);
+                openReplyTab('replies');
                 return payload;
             };
 
@@ -615,11 +1523,10 @@
                 if (sourceButton && setPending(sourceButton, true)) {
                     return;
                 }
-                const payload = await runUpload();
-                return payload;
+                return await runUpload();
             } catch (error) {
                 showUploadStatus(error.message === 'auth' ? 'Your session expired. Sign in again to post.' : (error.message || 'Upload failed. Retry when your connection stabilizes.'), 'error', 0);
-                if (error.message !== 'auth') {
+                if (error.code !== 'auth_required') {
                     console.error(error);
                 }
             } finally {
@@ -629,22 +1536,59 @@
             }
         };
 
-        const closeModals = () => {
-            authModal?.classList.remove('active');
-            recorderModal?.classList.remove('active');
+        const openReplyTab = (tab) => {
+            document.querySelectorAll('[data-sheet-tab]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.sheetTab === tab);
+            });
+            document.querySelectorAll('[data-sheet-panel]').forEach((panel) => {
+                panel.classList.toggle('active', panel.dataset.sheetPanel === tab);
+            });
+            if (tab === 'replies') {
+                const previewAudio = firstReplyAudio();
+                if (previewAudio) {
+                    previewAudio.preload = 'auto';
+                }
+            }
         };
 
-        document.querySelectorAll('[data-close-modal]').forEach((button) => {
-            button.addEventListener('click', closeModals);
+        document.querySelectorAll('[data-sheet-tab]').forEach((button) => {
+            button.addEventListener('click', () => {
+                openReplyTab(button.dataset.sheetTab);
+                openSheet(replySheet);
+            });
         });
 
-        [authModal, recorderModal].forEach((modal) => {
-            modal?.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    closeModals();
+        document.querySelector('[data-open-comment-tab]')?.addEventListener('click', () => {
+            openReplyTab('comments');
+            openSheet(replySheet);
+            commentInput?.focus();
+        });
+
+        document.querySelectorAll('[data-open-reply-sheet]').forEach((button) => {
+            button.addEventListener('click', () => {
+                openReplyTab(button.dataset.targetTab || 'replies');
+                openSheet(replySheet);
+                if (button.dataset.targetTab === 'replies') {
+                    firstReplyAudio()?.play().catch(() => {});
                 }
             });
         });
+
+        document.querySelector('[data-open-more-sheet]')?.addEventListener('click', () => {
+            openSheet(moreSheet);
+        });
+
+        audioToggle?.addEventListener('click', async () => {
+            if (!detailVideo) {
+                return;
+            }
+            detailVideo.muted = !detailVideo.muted;
+            updateVideoAudioToggle(audioToggle, detailVideo);
+            if (detailVideo.paused) {
+                detailVideo.play().catch(() => {});
+            }
+        });
+        updateVideoAudioToggle(audioToggle, detailVideo);
 
         const bindVideoLikeButtons = (root = document) => root.querySelectorAll('[data-video-like-button]').forEach((button) => {
             if (button.dataset.bound === 'true') {
@@ -655,7 +1599,7 @@
                 if (setPending(button, true)) {
                     return;
                 }
-                const countNode = button.querySelector('[data-video-like-count]');
+                const countNode = document.querySelector('[data-video-like-count]');
                 const previous = button.classList.contains('active');
                 const previousCount = Number(countNode?.textContent || '0');
                 button.classList.toggle('active', !previous);
@@ -664,6 +1608,9 @@
                     const payload = await requestJson(`/api/videos/${videoId}/like`, { method: 'POST' });
                     button.classList.toggle('active', payload.liked);
                     countNode.textContent = payload.likes;
+                    if (payload.liked) {
+                        animateLikeBurst(button);
+                    }
                 } catch (error) {
                     button.classList.toggle('active', previous);
                     countNode.textContent = previousCount;
@@ -685,7 +1632,7 @@
                 if (setPending(button, true)) {
                     return;
                 }
-                const countNode = button.querySelector('[data-video-save-count]');
+                const countNode = document.querySelector('[data-video-save-count]');
                 const previous = button.classList.contains('active');
                 const previousCount = Number(countNode?.textContent || '0');
                 button.classList.toggle('active', !previous);
@@ -706,6 +1653,31 @@
             });
         });
 
+        const performShare = async (trigger = null) => {
+            const countNode = document.querySelector('[data-video-share-count]');
+            const previousCount = Number(countNode?.textContent || '0');
+            countNode.textContent = previousCount + 1;
+            try {
+                if (navigator.share) {
+                    navigator.share({ url: window.location.href }).catch(() => {});
+                } else if (navigator.clipboard) {
+                    navigator.clipboard.writeText(window.location.href).catch(() => {});
+                }
+                const payload = await requestJson(`/api/videos/${videoId}/share`, { method: 'POST' });
+                countNode.textContent = payload.shares_count;
+            } catch (error) {
+                countNode.textContent = previousCount;
+                if (error.code !== 'auth_required') {
+                    console.error(error);
+                }
+                throw error;
+            } finally {
+                if (trigger) {
+                    setPending(trigger, false);
+                }
+            }
+        };
+
         const bindVideoShareButtons = (root = document) => root.querySelectorAll('[data-video-share-button]').forEach((button) => {
             if (button.dataset.bound === 'true') {
                 return;
@@ -715,24 +1687,7 @@
                 if (setPending(button, true)) {
                     return;
                 }
-                const countNode = button.querySelector('[data-video-share-count]');
-                const previousCount = Number(countNode?.textContent || '0');
-                countNode.textContent = previousCount + 1;
-                try {
-                    const shareUrl = window.location.href;
-                    if (navigator.share) {
-                        navigator.share({ url: shareUrl }).catch(() => {});
-                    } else if (navigator.clipboard) {
-                        navigator.clipboard.writeText(shareUrl).catch(() => {});
-                    }
-                    const payload = await requestJson(`/api/videos/${videoId}/share`, { method: 'POST' });
-                    countNode.textContent = payload.shares_count;
-                } catch (error) {
-                    countNode.textContent = previousCount;
-                    console.error(error);
-                } finally {
-                    setPending(button, false);
-                }
+                await performShare(button).catch(() => {});
             });
         });
 
@@ -774,7 +1729,7 @@
             button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
                 if (!isAuthenticated) {
-                    authModal?.classList.add('active');
+                    authRequired();
                     return;
                 }
                 if (setPending(button, true)) {
@@ -789,7 +1744,6 @@
                     });
                     button.classList.add('active');
                     button.textContent = `${payload.tier_name} active`;
-                    window.location.reload();
                 } catch (error) {
                     if (error.code !== 'auth_required') {
                         console.error(error);
@@ -809,9 +1763,8 @@
                 if (setPending(button, true)) {
                     return;
                 }
-                const roomId = button.dataset.roomId;
                 try {
-                    await requestJson(`/api/rooms/${roomId}/join`, { method: 'POST' });
+                    await requestJson(`/api/rooms/${button.dataset.roomId}/join`, { method: 'POST' });
                     window.location.reload();
                 } catch (error) {
                     if (error.code !== 'auth_required') {
@@ -830,7 +1783,7 @@
             button.dataset.bound = 'true';
             button.addEventListener('click', async () => {
                 if (!isAuthenticated) {
-                    authModal?.classList.add('active');
+                    authRequired();
                     return;
                 }
                 if (setPending(button, true)) {
@@ -957,25 +1910,6 @@
             }, { once: true });
         });
 
-        const assignRecordedFile = (file) => {
-            recordedFile = file;
-            if (!recordedFile) {
-                preview.hidden = true;
-                preview.removeAttribute('src');
-                return;
-            }
-            preview.src = URL.createObjectURL(recordedFile);
-            preview.hidden = false;
-        };
-
-        fileInput?.addEventListener('change', () => {
-            const [file] = fileInput.files || [];
-            if (file) {
-                assignRecordedFile(file);
-                recorderStatus.textContent = 'Audio file ready to post.';
-            }
-        });
-
         const bindOpenRecorderButtons = (root = document) => root.querySelectorAll('[data-open-recorder]').forEach((button) => {
             if (button.dataset.bound === 'true') {
                 return;
@@ -984,10 +1918,12 @@
             button.addEventListener('click', () => {
                 currentParentReplyId = button.dataset.parentReplyId || '';
                 if (!isAuthenticated) {
-                    authModal?.classList.add('active');
+                    authRequired();
                     return;
                 }
-                recorderModal?.classList.add('active');
+                openReplyTab('replies');
+                openSheet(replySheet);
+                recorderStatus.textContent = currentParentReplyId ? 'Replying inside a thread. Record your voice note.' : 'Tap to record, hold to speak, slide up to lock, or slide left to cancel before preview.';
             });
         });
 
@@ -1008,7 +1944,6 @@
             bindVideoLikeButtons(root);
             bindVideoSaveButtons(root);
             bindVideoShareButtons(root);
-            bindVideoAudioToggles(root);
             bindFollowButtons(root);
             bindSubscribeButtons(root);
             bindRoomJoinButtons(root);
@@ -1020,53 +1955,126 @@
             bindSpeedButtons(root);
         };
 
-        if (window.location.hash === '#record' && isAuthenticated) {
-            recorderModal?.classList.add('active');
+        if (window.location.hash === '#record') {
+            openReplyTab('replies');
+            openSheet(replySheet);
+        } else if (window.location.hash === '#comments') {
+            openReplyTab('comments');
+            openSheet(replySheet);
         }
 
         bindInteractiveControls();
         focusReplyThread();
 
-        document.querySelector('[data-start-recording]')?.addEventListener('click', async () => {
-            if (!navigator.mediaDevices || !window.MediaRecorder) {
-                recorderStatus.textContent = 'This browser cannot record audio. Upload a file instead.';
+        detailVideo?.play().catch(() => {});
+
+        fileInput?.addEventListener('change', () => {
+            const [file] = fileInput.files || [];
+            if (file) {
+                assignRecordedFile(file);
+                recorderStatus.textContent = 'Audio file ready to preview and send.';
+                updateRecordPadState('Preview loaded. Send it, delete it, or record again.');
+            }
+        });
+
+        document.querySelector('[data-open-file-picker]')?.addEventListener('click', () => {
+            fileInput?.click();
+        });
+
+        document.querySelector('[data-toggle-recording]')?.addEventListener('click', async () => {
+            if (!isAuthenticated) {
+                authRequired();
                 return;
             }
-
-            try {
-                recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                recorderChunks = [];
-                recorder = new MediaRecorder(recorderStream);
-                recorder.addEventListener('dataavailable', (event) => {
-                    if (event.data.size > 0) {
-                        recorderChunks.push(event.data);
-                    }
-                });
-                recorder.addEventListener('stop', () => {
-                    const blob = new Blob(recorderChunks, { type: recorder?.mimeType || 'audio/webm' });
-                    assignRecordedFile(new File([blob], 'voice-reply.webm', { type: blob.type }));
-                    recorderStatus.textContent = 'Recording captured. Review and post when ready.';
-                    modalWave?.classList.remove('recording');
-                    recorderStream?.getTracks().forEach((track) => track.stop());
-                });
-                recorder.start();
-                modalWave?.classList.add('recording');
-                recorderStatus.textContent = 'Recording... tap stop when finished.';
-            } catch (error) {
-                recorderStatus.textContent = 'Microphone access failed. Upload a file instead.';
+            if (recorder && recorder.state !== 'inactive') {
+                stopRecording({ statusText: 'Preview ready. Review before sending.' });
+                return;
             }
+            currentParentReplyId = currentParentReplyId || '';
+            await startRecording({ statusText: 'Recording... tap stop when finished.' });
         });
 
         document.querySelector('[data-stop-recording]')?.addEventListener('click', () => {
-            if (recorder && recorder.state !== 'inactive') {
-                recorder.stop();
+            stopRecording({ statusText: 'Preview ready. Review before sending.' });
+        });
+
+        document.querySelector('[data-delete-recording]')?.addEventListener('click', () => {
+            assignRecordedFile(null);
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            recorderStatus.textContent = 'Preview deleted. Record again or choose another file.';
+            updateRecordPadState('Hold to record. Release for preview. Tap for start and stop.');
+        });
+
+        recordPad?.addEventListener('pointerdown', async (event) => {
+            if (!isAuthenticated) {
+                authRequired();
+                return;
+            }
+            event.preventDefault();
+            gestureState.pointerId = event.pointerId;
+            gestureState.startX = event.clientX;
+            gestureState.startY = event.clientY;
+            gestureState.locked = false;
+            gestureState.cancelReady = false;
+            gestureState.holdActive = true;
+            recordPad.setPointerCapture(event.pointerId);
+            currentParentReplyId = currentParentReplyId || '';
+            await startRecording({ statusText: 'Hold and speak. Release for preview.' });
+        });
+
+        recordPad?.addEventListener('pointermove', (event) => {
+            if (!gestureState.holdActive || gestureState.pointerId !== event.pointerId) {
+                return;
+            }
+            const dx = event.clientX - gestureState.startX;
+            const dy = event.clientY - gestureState.startY;
+            if (dy < -70) {
+                gestureState.locked = true;
+                recordPad.classList.add('locked');
+                recorderStatus.textContent = 'Recording locked. Tap stop when you are done.';
+                updateRecordPadState('Recording locked. Keep speaking or tap stop for preview.');
+            }
+            if (dx < -90) {
+                gestureState.cancelReady = true;
+                recordPad.classList.add('cancel-ready');
+                recorderStatus.textContent = 'Release now to cancel this take.';
+                updateRecordPadState('Release now to cancel.');
+            } else if (!gestureState.locked) {
+                gestureState.cancelReady = false;
+                recordPad.classList.remove('cancel-ready');
             }
         });
+
+        const handleRecordPadRelease = (event) => {
+            if (!gestureState.holdActive || gestureState.pointerId !== event.pointerId) {
+                return;
+            }
+            recordPad.releasePointerCapture(event.pointerId);
+            const shouldCancel = gestureState.cancelReady;
+            const shouldStayLocked = gestureState.locked;
+            gestureState.holdActive = false;
+            if (shouldCancel) {
+                stopRecording({ discard: true });
+                return;
+            }
+            if (shouldStayLocked) {
+                recorderStatus.textContent = 'Recording locked. Tap stop when you are done.';
+                updateRecordPadState('Recording locked. Tap stop for preview.');
+                recordPad.classList.remove('cancel-ready');
+                return;
+            }
+            stopRecording({ statusText: 'Preview ready. Review before sending.' });
+        };
+
+        recordPad?.addEventListener('pointerup', handleRecordPadRelease);
+        recordPad?.addEventListener('pointercancel', handleRecordPadRelease);
 
         fallbackForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!isAuthenticated) {
-                authModal?.classList.add('active');
+                authRequired();
                 return;
             }
             const submitButton = fallbackForm.querySelector('button[type="submit"]');
@@ -1074,7 +2082,7 @@
                 file: fallbackFileInput?.files?.[0],
                 languageCode: fallbackLanguageInput?.value || 'en',
                 duration: fallbackDurationInput?.value || '0',
-                parentReplyId: '',
+                parentReplyId: currentParentReplyId,
                 sourceButton: submitButton,
                 resetInput: () => fallbackForm.reset(),
             });
@@ -1083,7 +2091,7 @@
         commentForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!isAuthenticated) {
-                authModal?.classList.add('active');
+                authRequired();
                 return;
             }
             const submitButton = commentForm.querySelector('button[type="submit"]');
@@ -1104,6 +2112,8 @@
                 attachTextComment(payload.comment);
                 updateTextCommentTotals(payload.comments_count || 0);
                 commentForm.reset();
+                openReplyTab('comments');
+                openSheet(replySheet);
             } catch (error) {
                 if (error.code !== 'auth_required') {
                     console.error(error);
@@ -1124,12 +2134,11 @@
                 recorderStatus.textContent = 'Record or choose an audio file before posting.';
                 return;
             }
-
             const submitButton = document.querySelector('[data-submit-recording]');
             const payload = await postVoiceReply({
                 file: recordedFile,
                 languageCode: languageInput?.value || 'en',
-                duration: '0',
+                duration: ((Date.now() - recorderStartedAt) / 1000).toFixed(1),
                 parentReplyId: currentParentReplyId,
                 sourceButton: submitButton,
                 resetInput: () => {
@@ -1137,14 +2146,86 @@
                     if (fileInput) {
                         fileInput.value = '';
                     }
-                    recorderStatus.textContent = 'Tap start, speak, then post your reply into the thread.';
-                    closeModals();
+                    currentParentReplyId = '';
+                    recorderStatus.textContent = 'Tap to record, hold to speak, slide up to lock, or slide left to cancel before preview.';
+                    updateRecordPadState('Hold to record. Release for preview. Tap for start and stop.');
                 },
             });
             if (payload) {
                 recorderStatus.textContent = 'Reply posted into the thread.';
             }
         });
+
+        document.querySelector('[data-more-share]')?.addEventListener('click', async () => {
+            await performShare(document.querySelector('[data-more-share]')).catch(() => {});
+        });
+
+        document.querySelector('[data-more-save]')?.addEventListener('click', async () => {
+            const button = document.querySelector('[data-video-save-button]');
+            button?.click();
+        });
+
+        document.querySelector('[data-more-copy]')?.addEventListener('click', async () => {
+            if (!navigator.clipboard) {
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                document.querySelector('[data-more-copy]').textContent = 'Copied';
+                window.setTimeout(() => {
+                    document.querySelector('[data-more-copy]').textContent = 'Copy link';
+                }, 1600);
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        document.querySelector('[data-more-send]')?.addEventListener('click', async () => {
+            if (navigator.share) {
+                navigator.share({ url: window.location.href, title: document.title }).catch(() => {});
+                return;
+            }
+            window.location.href = `mailto:?subject=${encodeURIComponent(document.title)}&body=${encodeURIComponent(window.location.href)}`;
+        });
+
+        document.querySelector('[data-more-hide]')?.addEventListener('click', () => {
+            const button = document.querySelector('[data-more-hide]');
+            button.textContent = 'Hidden for now';
+            button.disabled = true;
+        });
+
+        document.querySelector('[data-more-insights]')?.addEventListener('click', () => {
+            closeSheets();
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        });
+
+        const bindHoldMenus = () => {
+            const holdButtons = document.querySelectorAll('[data-video-share-button], [data-open-more-sheet], [data-video-save-button], [data-video-like-button]');
+            holdButtons.forEach((button) => {
+                let holdTimer = null;
+                button.addEventListener('pointerdown', () => {
+                    holdTimer = window.setTimeout(() => {
+                        if (button.hasAttribute('data-video-share-button') || button.hasAttribute('data-open-more-sheet')) {
+                            openSheet(moreSheet);
+                        } else if (button.hasAttribute('data-video-save-button')) {
+                            document.querySelector('[data-more-save]')?.click();
+                        } else if (button.hasAttribute('data-video-like-button')) {
+                            animateLikeBurst(button);
+                        }
+                    }, 520);
+                });
+                ['pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => {
+                    button.addEventListener(eventName, () => {
+                        if (holdTimer) {
+                            window.clearTimeout(holdTimer);
+                            holdTimer = null;
+                        }
+                    });
+                });
+            });
+        };
+
+        bindHoldMenus();
     </script>
 </body>
 </html>

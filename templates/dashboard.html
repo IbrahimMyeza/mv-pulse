@@ -6,447 +6,888 @@
     <title>Umbono Wami</title>
     <style>
         :root {
-            --bg: #0d1117;
-            --panel: rgba(17, 24, 32, 0.92);
-            --panel-soft: rgba(255, 255, 255, 0.06);
+            --bg: #05070a;
+            --bg-soft: #11161e;
+            --panel: rgba(9, 13, 19, 0.88);
+            --panel-strong: rgba(7, 10, 16, 0.96);
+            --line: rgba(255, 255, 255, 0.1);
             --text: #f5f7fa;
-            --muted: #99a7b6;
-            --accent: #1bd1a5;
-            --accent-2: #ff8f5a;
-            --line: rgba(255, 255, 255, 0.08);
-            --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            --muted: #a6b0bc;
+            --accent: #18d4ab;
+            --accent-warm: #ff8756;
+            --danger: #ff6b6b;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         }
 
         * { box-sizing: border-box; }
+
+        html {
+            background: var(--bg);
+            scroll-behavior: smooth;
+        }
+
         body {
             margin: 0;
-            font-family: "Segoe UI", sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(circle at top left, rgba(27, 209, 165, 0.18), transparent 25%),
-                radial-gradient(circle at top right, rgba(255, 143, 90, 0.15), transparent 24%),
-                linear-gradient(180deg, #0d1117 0%, #121923 100%);
             min-height: 100vh;
-            padding: 14px 14px 96px;
+            color: var(--text);
+            font-family: "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 26%),
+                radial-gradient(circle at top right, rgba(255, 135, 86, 0.16), transparent 30%),
+                linear-gradient(180deg, #030507 0%, #09111a 50%, #030507 100%);
         }
 
-        a { color: inherit; text-decoration: none; }
-        button, input, textarea, select { font: inherit; }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
 
-        .app { max-width: 1180px; margin: 0 auto; }
-        .hero, .card, .feed-card, .reply-card, .profile-card {
+        button,
+        input,
+        textarea,
+        select {
+            font: inherit;
+        }
+
+        .app {
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            position: fixed;
+            inset: 0 0 auto 0;
+            z-index: 25;
+            padding: 14px 14px 0;
+            pointer-events: none;
+        }
+
+        .topbar-inner {
+            width: min(1180px, 100%);
+            margin: 0 auto;
             border-radius: 24px;
-            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(180deg, rgba(8, 11, 16, 0.92), rgba(8, 11, 16, 0.72));
+            backdrop-filter: blur(18px);
             box-shadow: var(--shadow);
-            border: 1px solid var(--line);
-        }
-
-        .hero {
-            padding: 20px;
-            margin-bottom: 14px;
-            display: grid;
-            gap: 14px;
-        }
-
-        .hero-top {
             display: flex;
+            align-items: center;
             justify-content: space-between;
             gap: 12px;
-            align-items: start;
-            flex-wrap: wrap;
+            padding: 14px 16px;
+            pointer-events: auto;
+        }
+
+        .brand-block {
+            display: grid;
+            gap: 4px;
         }
 
         .eyebrow {
             color: var(--accent);
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.82rem;
+            font-size: 0.74rem;
+            font-weight: 700;
         }
 
-        .hero h1 { margin: 8px 0; font-size: clamp(2rem, 7vw, 3.2rem); }
-        .hero p { margin: 0; color: var(--muted); line-height: 1.5; }
+        .brand-title {
+            font-size: 1rem;
+            font-weight: 700;
+        }
 
-        .hero-actions, .chip-row, .stats-row, .inline-actions, .tabbar, .video-action-row { display: flex; gap: 10px; flex-wrap: wrap; }
-        .chip, .action, .pill {
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .topbar-actions,
+        .inline-row,
+        .rail-action-label,
+        .sheet-actions,
+        .meta-row,
+        .stats-row,
+        .secondary-nav,
+        .actions-row,
+        .chip-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .pill,
+        .chip,
+        .ghost,
+        .stat-pill,
+        .tab-link,
+        .action-link,
+        .rail-button,
+        .sheet-link,
+        .menu-button,
+        .submit {
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        .action-link,
+        .submit,
+        .sheet-link {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 999px;
-            padding: 10px 14px;
-            background: var(--panel-soft);
-            border: 1px solid var(--line);
+            min-height: 44px;
+            padding: 0 16px;
+            cursor: pointer;
         }
 
-        .action.primary {
-            background: linear-gradient(135deg, var(--accent) 0%, #2ab6ef 100%);
-            color: #05111b;
+        .action-link.primary,
+        .submit,
+        .sheet-link.primary,
+        .rail-button.active {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            color: #061018;
             font-weight: 700;
         }
 
-        .pill { color: var(--muted); }
-        .layout { display: grid; gap: 14px; }
-        .screen { display: none; gap: 14px; }
-        .screen.active { display: grid; }
-        .section-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-        .section-title h2 { margin: 0; font-size: 1.2rem; }
-        .section-title p { margin: 4px 0 0; color: var(--muted); }
+        .pill,
+        .chip,
+        .stat-pill,
+        .tab-link {
+            padding: 8px 12px;
+            font-size: 0.88rem;
+        }
 
-        .feed-stack { display: grid; gap: 14px; }
-        .feed-card {
-            overflow: hidden;
+        .chip,
+        .stat-pill {
+            color: var(--muted);
+        }
+
+        .screen {
+            display: none;
+            width: min(1180px, 100%);
+            margin: 0 auto;
+            padding: 92px 14px 120px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .feed-shell {
             display: grid;
-            min-height: min(88vh, 760px);
+            gap: 18px;
         }
 
-        .video-shell {
+        .feed-stage {
+            display: grid;
+            gap: 18px;
+        }
+
+        .reel-slide,
+        .thread-slide,
+        .panel,
+        .profile-panel,
+        .list-card,
+        .reply-card {
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(10, 14, 20, 0.88);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .reel-slide,
+        .thread-slide {
             position: relative;
-            background: #080c12;
-            min-height: 62vh;
+            min-height: min(100svh, 920px);
+            scroll-snap-align: start;
         }
 
-        .video-shell video {
+        .feed-stage {
+            scroll-snap-type: y mandatory;
+        }
+
+        .reel-video,
+        .thread-slide-backdrop {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            background: #080c12;
+            background: #05070a;
         }
 
-        .video-overlay {
+        .thread-slide-backdrop {
+            background:
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.25), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(255, 135, 86, 0.25), transparent 32%),
+                linear-gradient(180deg, #09111a 0%, #05070a 100%);
+        }
+
+        .reel-shade {
             position: absolute;
-            inset: auto 0 0 0;
-            padding: 18px;
-            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.86) 88%);
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(4, 6, 10, 0.28) 0%, rgba(4, 6, 10, 0.18) 22%, rgba(4, 6, 10, 0.5) 55%, rgba(4, 6, 10, 0.92) 100%),
+                radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.08), transparent 24%);
+            pointer-events: none;
+        }
+
+        .reel-top,
+        .reel-bottom,
+        .thread-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .reel-top {
+            padding: 22px 18px 0;
             display: flex;
             justify-content: space-between;
-            gap: 12px;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .creator-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(5, 8, 12, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+        }
+
+        .creator-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 700;
+        }
+
+        .creator-meta {
+            display: grid;
+            gap: 2px;
+        }
+
+        .creator-meta strong {
+            font-size: 0.96rem;
+        }
+
+        .creator-meta span {
+            color: rgba(245, 247, 250, 0.78);
+            font-size: 0.84rem;
+        }
+
+        .reel-bottom {
+            min-height: 100%;
+            display: grid;
+            align-items: end;
+            padding: 0 18px 24px;
+        }
+
+        .reel-bottom-inner {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 16px;
             align-items: end;
         }
 
-        .video-meta { max-width: min(74%, 720px); }
-        .video-meta h3 { margin: 0 0 8px; font-size: 1.22rem; }
-        .video-meta p { margin: 0 0 10px; color: rgba(245, 247, 250, 0.86); line-height: 1.5; }
-        .video-stats { display: flex; gap: 10px; flex-wrap: wrap; color: #dfe6ee; font-size: 0.92rem; }
-
-        .side-actions {
+        .reel-copy {
             display: grid;
-            gap: 10px;
-            justify-items: end;
+            gap: 12px;
+            max-width: 720px;
         }
 
-        .icon-button {
-            width: 54px;
-            height: 54px;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(12, 18, 24, 0.72);
-            color: var(--text);
+        .reel-copy h2,
+        .thread-copy h2,
+        .panel h3,
+        .profile-panel h3,
+        .list-card h3 {
+            margin: 0;
+        }
+
+        .reel-copy h2 {
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+        }
+
+        .reel-copy p,
+        .thread-copy p,
+        .meta-copy,
+        .panel p,
+        .profile-panel p,
+        .reply-card p,
+        .list-card p {
+            margin: 0;
+            color: rgba(245, 247, 250, 0.82);
+            line-height: 1.5;
+        }
+
+        .reel-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 0.92rem;
+        }
+
+        .rail {
+            display: grid;
+            gap: 12px;
+            justify-items: center;
+            width: 82px;
+        }
+
+        .rail-action {
+            display: grid;
+            gap: 6px;
+            justify-items: center;
+        }
+
+        .rail-button {
+            width: 62px;
+            height: 62px;
             display: grid;
             place-items: center;
             cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            backdrop-filter: blur(14px);
+            background: rgba(7, 10, 16, 0.72);
+            position: relative;
+            overflow: hidden;
         }
 
-        .sound-button {
-            width: auto;
-            min-width: 74px;
-            height: auto;
-            padding: 10px 12px;
-            font-size: 0.85rem;
-            line-height: 1.1;
-        }
-
-        .icon-button.active,
-        .ghost.active,
-        .submit.alt {
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #09121a;
+        .rail-button.voice-primary {
+            width: 70px;
+            height: 70px;
             border-color: transparent;
+            background: linear-gradient(135deg, rgba(24, 212, 171, 0.96) 0%, rgba(255, 135, 86, 0.96) 100%);
+            color: #061018;
+            box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.42);
+            animation: rail-glow 1.8s infinite;
+            font-weight: 800;
+        }
+
+        .rail-button.like-burst::after {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.86);
+            animation: like-burst 0.42s ease-out;
+        }
+
+        .rail-action-label {
+            flex-direction: column;
+            gap: 2px;
+            text-align: center;
+            font-size: 0.78rem;
+            color: rgba(245, 247, 250, 0.82);
+        }
+
+        .rail-action-label strong {
+            font-size: 0.92rem;
+            color: var(--text);
+        }
+
+        .thread-content {
+            min-height: 100%;
+            padding: 28px;
+            display: grid;
+            align-content: end;
+            gap: 18px;
+            background: linear-gradient(180deg, rgba(5, 7, 10, 0.12) 0%, rgba(5, 7, 10, 0.92) 100%);
+        }
+
+        .thread-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(24, 212, 171, 0.32);
+            background: rgba(24, 212, 171, 0.14);
             font-weight: 700;
         }
 
-        .video-footer {
-            padding: 16px 18px 18px;
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 0 rgba(24, 212, 171, 0.45);
+            animation: pulse 1.6s infinite;
+        }
+
+        .thread-grid,
+        .secondary-grid,
+        .profile-grid,
+        .reply-list,
+        .notification-list,
+        .project-list,
+        .profile-video-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .secondary-grid,
+        .profile-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .panel,
+        .profile-panel,
+        .list-card {
+            padding: 20px;
+            display: grid;
+            gap: 14px;
+        }
+
+        form {
             display: grid;
             gap: 12px;
         }
 
-        .video-action-row {
-            align-items: center;
-        }
-
-        .video-action-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border-radius: 999px;
-            padding: 10px 14px;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            cursor: pointer;
-        }
-
-        .video-action-button strong,
-        .video-action-button small {
-            color: inherit;
-            font: inherit;
-        }
-
-        .card, .reply-card, .profile-card { padding: 18px; }
-        .card p, .reply-card p, .profile-card p, .meta { color: var(--muted); line-height: 1.5; }
-        .grid { display: grid; gap: 14px; }
-        .two-up { grid-template-columns: 1fr; }
-
-        form { display: grid; gap: 12px; }
-        input, textarea, select {
+        input,
+        textarea,
+        select {
             width: 100%;
-            padding: 14px 16px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text);
-            border: 1px solid var(--line);
-        }
-
-        textarea { min-height: 92px; resize: vertical; }
-        .submit {
-            border: 0;
             border-radius: 18px;
-            padding: 14px 16px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #09121a;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .thread-list, .notification-list, .profile-video-list, .project-list { display: grid; gap: 12px; }
-        .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-        .insight-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.04); display: grid; gap: 8px; }
-        .reply-card audio { width: 100%; margin-top: 10px; }
-        .reply-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-        .speed-button, .thread-link, .ghost {
-            padding: 8px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--line);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.05);
             color: var(--text);
-            cursor: pointer;
+            padding: 14px 16px;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .reply-card,
+        .notification-item,
+        .project-item,
+        .profile-video-item,
+        .insight-card {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .waveform {
-            height: 56px;
-            border-radius: 16px;
-            background: linear-gradient(90deg,
-                rgba(27, 209, 165, 0.18) 0%,
-                rgba(27, 209, 165, 0.42) 12%,
-                rgba(255, 143, 90, 0.24) 24%,
-                rgba(27, 209, 165, 0.5) 36%,
-                rgba(255, 255, 255, 0.12) 48%,
-                rgba(27, 209, 165, 0.42) 60%,
-                rgba(255, 143, 90, 0.24) 72%,
-                rgba(27, 209, 165, 0.5) 84%,
-                rgba(27, 209, 165, 0.18) 100%);
+            height: 58px;
+            border-radius: 18px;
             position: relative;
             overflow: hidden;
+            background: linear-gradient(90deg,
+                rgba(24, 212, 171, 0.12) 0%,
+                rgba(24, 212, 171, 0.46) 15%,
+                rgba(255, 135, 86, 0.24) 30%,
+                rgba(255, 255, 255, 0.08) 45%,
+                rgba(24, 212, 171, 0.4) 60%,
+                rgba(255, 135, 86, 0.22) 80%,
+                rgba(24, 212, 171, 0.14) 100%);
         }
 
         .waveform::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.08) 10px, rgba(255,255,255,0.08) 12px);
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255, 255, 255, 0.08) 10px, rgba(255, 255, 255, 0.08) 12px);
         }
 
-        .nested { margin-left: 18px; border-left: 1px solid var(--line); padding-left: 12px; }
-        .notification-item, .project-item, .profile-video-item { padding: 14px; border-radius: 18px; background: rgba(255, 255, 255, 0.04); }
-        .creator-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .follow-button { min-width: 110px; }
-        .modal-backdrop {
+        audio {
+            width: 100%;
+        }
+
+        .bottom-nav {
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.72);
-            display: none;
+            left: 50%;
+            bottom: 14px;
+            transform: translateX(-50%);
+            z-index: 24;
+            width: min(900px, calc(100% - 24px));
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(7, 10, 16, 0.92);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px;
+        }
+
+        .tab-link {
+            flex: 1;
+            text-align: center;
+            min-height: 50px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            z-index: 30;
         }
-        .modal-backdrop.active { display: flex; }
-        .modal-card {
-            width: min(460px, 100%);
-            border-radius: 24px;
-            background: #101720;
-            border: 1px solid var(--line);
-            box-shadow: var(--shadow);
-            padding: 20px;
-            display: grid;
-            gap: 12px;
+
+        .tab-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text);
         }
-        .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .assist-text { color: var(--muted); font-size: 0.95rem; }
+
         .badge {
             min-width: 22px;
             height: 22px;
             padding: 0 7px;
             border-radius: 999px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            color: #061018;
+            font-size: 0.76rem;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-            color: #09121a;
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-        .tab-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .thread-card {
-            padding: 18px;
-            display: grid;
-            gap: 16px;
-            background:
-                radial-gradient(circle at top left, rgba(27, 209, 165, 0.18), transparent 26%),
-                radial-gradient(circle at bottom right, rgba(255, 143, 90, 0.18), transparent 28%),
-                rgba(17, 24, 32, 0.96);
-        }
-        .thread-card-header { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
-        .thread-glow {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: rgba(27, 209, 165, 0.12);
-            border: 1px solid rgba(27, 209, 165, 0.26);
-            color: #b9fff2;
-            font-weight: 700;
-        }
-        .thread-pulse {
-            width: 16px;
-            height: 16px;
-            border-radius: 999px;
-            background: var(--accent);
-            box-shadow: 0 0 0 rgba(27, 209, 165, 0.45);
-            animation: thread-pulse 1.6s infinite;
-        }
-        .thread-meta { display: flex; gap: 10px; flex-wrap: wrap; }
-        .participant-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .participant-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.82rem;
-            font-weight: 700;
-        }
-        .thread-card h3 { margin: 0; font-size: 1.28rem; }
-        .thread-card p { margin: 0; }
-        .premium-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: rgba(255, 216, 92, 0.12);
-            color: #ffe59b;
-            border: 1px solid rgba(255, 216, 92, 0.22);
-            font-weight: 700;
-        }
-        .premium-stack { display: grid; gap: 10px; }
-        @keyframes thread-pulse {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(27, 209, 165, 0.45); }
-            70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(27, 209, 165, 0); }
-            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(27, 209, 165, 0); }
         }
 
-        .tabbar {
+        .sheet-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.66);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.22s ease;
+            z-index: 38;
+        }
+
+        .sheet-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sheet {
             position: fixed;
             left: 50%;
-            bottom: 12px;
-            transform: translateX(-50%);
-            width: min(760px, calc(100% - 24px));
-            justify-content: space-between;
-            padding: 10px;
-            border-radius: 22px;
-            background: rgba(9, 14, 20, 0.92);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: var(--shadow);
+            bottom: 0;
+            width: min(640px, 100%);
+            max-height: min(82vh, 760px);
+            transform: translate(-50%, calc(100% + 24px));
+            transition: transform 0.24s ease;
+            z-index: 39;
+            padding: 0 12px 12px;
         }
 
-        .tabbar a {
-            flex: 1;
-            text-align: center;
-            padding: 10px 6px;
-            border-radius: 16px;
+        .sheet.active {
+            transform: translate(-50%, 0);
+        }
+
+        .sheet-card {
+            border-radius: 28px 28px 0 0;
+            background: rgba(7, 10, 16, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: grid;
+            max-height: min(82vh, 760px);
+        }
+
+        .sheet-handle {
+            width: 64px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            margin: 12px auto 0;
+        }
+
+        .sheet-body {
+            padding: 16px 18px 20px;
+            overflow: auto;
+            display: grid;
+            gap: 14px;
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .sheet-header h3,
+        .sheet-header p {
+            margin: 0;
+        }
+
+        .sheet-close,
+        .menu-button {
+            min-width: 44px;
+            min-height: 44px;
+            cursor: pointer;
+        }
+
+        .insight-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .meta-copy {
             color: var(--muted);
         }
 
-        .tabbar a.active {
-            background: rgba(255,255,255,0.08);
-            color: var(--text);
+        .modal-card {
+            width: min(460px, 100%);
+            border-radius: 28px;
+            background: rgba(7, 10, 16, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            display: grid;
+            gap: 12px;
         }
 
-        @media (min-width: 820px) {
-            .two-up { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.76);
+            padding: 20px;
+            z-index: 45;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.45); }
+            70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(24, 212, 171, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(24, 212, 171, 0); }
+        }
+
+        @keyframes rail-glow {
+            0% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.42); }
+            70% { box-shadow: 0 0 0 16px rgba(24, 212, 171, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0); }
+        }
+
+        @keyframes like-burst {
+            0% { opacity: 0.9; transform: scale(0.4); }
+            100% { opacity: 0; transform: scale(1.8); }
+        }
+
+        @media (max-width: 840px) {
+            .topbar-inner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .reel-bottom-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .rail {
+                width: 100%;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                justify-items: stretch;
+            }
+
+            .rail-action {
+                justify-items: center;
+            }
+
+            .rail-button {
+                width: 100%;
+                max-width: 72px;
+                margin: 0 auto;
+            }
+
+            .screen {
+                padding-top: 112px;
+            }
+
+            .bottom-nav {
+                width: calc(100% - 18px);
+                left: 9px;
+                transform: none;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app" data-authenticated="{{ 'true' if current_user else 'false' }}" data-login-url="/" data-current-user-id="{{ current_user.id if current_user else '' }}">
-        <header class="hero">
-            <div class="hero-top">
-                <div>
-                    <div class="eyebrow">Umbono Wami / My View</div>
-                    <h1>Voice-first short video.</h1>
-                    <p>Scroll the For You feed, open a video, and reply with voice notes instead of text comments. Built on the existing MV Pulse production stack and ready for English plus isiZulu growth.</p>
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="brand-block">
+                    <span class="eyebrow">Umbono Wami</span>
+                    <span class="brand-title">Watch. React. Speak. Continue the conversation.</span>
+                    <span class="brand-subtitle">Voice-first short video on the existing MV Pulse stack.</span>
                 </div>
-                <div class="hero-actions">
+                <div class="topbar-actions">
+                    {% if active_thread_summary %}
+                    <span class="pill">CIC live · {{ active_thread_summary.cluster_label }}</span>
+                    {% endif %}
                     {% if current_user %}
                     <span class="chip">@{{ current_user.username }}</span>
-                    <a class="action" href="/logout">Log out</a>
+                    <a class="action-link" href="/logout">Log out</a>
                     {% else %}
-                    <a class="action" href="/">Sign in</a>
+                    <a class="action-link" href="/">Sign in</a>
                     {% endif %}
-                    <a class="action primary" href="/upload">Upload</a>
+                    <a class="action-link primary" href="/upload">Upload</a>
                 </div>
-            </div>
-            <div class="chip-row">
-                {% for code, label in locale_options.items() %}
-                <span class="pill">{{ code|upper }} · {{ label }}</span>
-                {% endfor %}
-                <span class="pill">Voice replies are the main discussion layer</span>
-                {% if active_thread_summary %}
-                <span class="pill">CIC live · {{ active_thread_summary.cluster_label }}</span>
-                {% endif %}
             </div>
         </header>
 
-        <main class="layout">
-            <section class="screen {% if active_tab == 'home' %}active{% endif %}" data-screen="home">
-                <div class="section-title">
-                    <div>
-                        <h2>{{ ui_copy.feed_title.en }} Feed</h2>
-                        <p>For You ranking powered by the existing AI ranking stack.</p>
-                    </div>
+        <main class="screen {% if active_tab == 'home' %}active{% endif %}" data-screen="home">
+            <section class="feed-shell">
+                <div class="feed-stage">
+                    {% for item in feed_items %}
+                    {% if item.kind == 'hot_thread' %}
+                    <article class="thread-slide" id="thread-card-{{ item.highlighted_reply_id or item.reel_id }}">
+                        <div class="thread-slide-backdrop"></div>
+                        <div class="thread-content">
+                            <span class="thread-kicker"><span class="pulse-dot"></span> Hot voice thread</span>
+                            <div class="thread-copy">
+                                <h2><a href="{{ item.target_url }}">{{ item.title }}</a></h2>
+                                <p>{{ item.caption }}</p>
+                            </div>
+                            <div class="chip-row">
+                                <span class="stat-pill">heat {{ item.heat_score }}</span>
+                                <span class="stat-pill">{{ item.reply_count }} replies</span>
+                                <span class="stat-pill">depth {{ item.reply_depth }}</span>
+                                <span class="stat-pill">@{{ item.creator }}</span>
+                                {% if item.premium_room %}
+                                <span class="stat-pill">{{ item.premium_room.label }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="sheet-actions">
+                                <a class="sheet-link primary" href="{{ item.target_url }}">Open voice subtree</a>
+                                <a class="sheet-link" href="/video/{{ item.video_id }}">Open full reel</a>
+                                {% if item.premium_room %}
+                                <a class="sheet-link" href="{{ item.premium_room.target_url }}">{{ item.premium_room.upgrade_cta or 'Join premium room' }}</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                    {% else %}
+                    {% set video = item %}
+                    <article class="reel-slide" id="video-{{ video.id }}">
+                        <video class="reel-video autoplay-video" id="feed-video-{{ video.id }}" src="{{ video.video_url }}" muted loop playsinline preload="metadata"></video>
+                        <div class="reel-shade"></div>
+                        <div class="reel-top">
+                            <div class="creator-pill">
+                                <span class="creator-avatar">{{ (video.creator or 'U')[:1]|upper }}</span>
+                                <div class="creator-meta">
+                                    <strong>
+                                        {% if video.creator_username %}
+                                        <a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a>
+                                        {% else %}
+                                        @{{ video.creator }}
+                                        {% endif %}
+                                    </strong>
+                                    <span>{{ video.region }} · {{ video.topic }} · {{ video.language_label }}</span>
+                                </div>
+                            </div>
+                            <div class="chip-row">
+                                {% if video.thread_summary %}
+                                <span class="pill">{{ video.thread_summary.cluster_label }}</span>
+                                {% endif %}
+                                {% if video.premium_room %}
+                                <span class="pill">{{ video.premium_room.label }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="reel-bottom">
+                            <div class="reel-bottom-inner">
+                                <div class="reel-copy">
+                                    <h2><a href="/video/{{ video.id }}">{{ video.title }}</a></h2>
+                                    <p>{{ video.caption }}</p>
+                                    <div class="reel-meta">
+                                        <span>{{ video.views }} views</span>
+                                        <span>{{ video.voice_replies }} voice replies</span>
+                                        <span>{{ video.text_comments_count }} comments</span>
+                                        <span>debate {{ video.debate_score }}</span>
+                                        <span>intelligence {{ video.intelligence_score }}</span>
+                                    </div>
+                                    <div class="chip-row">
+                                        <span class="pill">#{{ video.topic|replace(' ', '') }}</span>
+                                        <span class="pill">#{{ video.region|replace(' ', '') }}</span>
+                                        <span class="pill">Original sound</span>
+                                    </div>
+                                    {% if video.thread_summary %}
+                                    <p class="meta-copy">{{ video.thread_summary.summary_text }}</p>
+                                    {% endif %}
+                                    <div class="actions-row">
+                                        <a class="action-link" href="/video/{{ video.id }}">Open thread</a>
+                                        <a class="action-link" href="{{ video.video_url }}" download>Download</a>
+                                        {% if video.creator_username %}
+                                        <a class="action-link" href="/profile/{{ video.creator_username }}">Creator page</a>
+                                        {% endif %}
+                                        {% if video.can_follow_creator %}
+                                        <button class="action-link {% if video.creator_is_followed %}primary{% endif %}" type="button" data-follow-button data-target-user-id="{{ video.creator_id }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}">{% if video.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="rail">
+                                    <div class="rail-action">
+                                        <button class="rail-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">Like</button>
+                                        <div class="rail-action-label"><strong data-video-like-count>{{ video.likes }}</strong><span>Like</span></div>
+                                    </div>
+                                    <div class="rail-action">
+                                        <button class="rail-button" type="button" data-open-feed-voice-sheet data-open-feed-comments data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">Reply</button>
+                                        <div class="rail-action-label"><strong>{{ video.text_comments_count }}</strong><span>Reply</span></div>
+                                    </div>
+                                    <div class="rail-action">
+                                        <button class="rail-button voice-primary" type="button" data-open-feed-voice-sheet data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">Voice</button>
+                                        <div class="rail-action-label"><strong>{{ video.voice_replies }}</strong><span>Voice</span></div>
+                                    </div>
+                                    <div class="rail-action">
+                                        <button class="rail-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">Save</button>
+                                        <div class="rail-action-label"><strong data-video-save-count>{{ video.saves_count }}</strong><span>Save</span></div>
+                                    </div>
+                                    <div class="rail-action">
+                                        <button class="rail-button" type="button" data-video-share-button data-video-id="{{ video.id }}">Share</button>
+                                        <div class="rail-action-label"><strong data-video-share-count>{{ video.shares_count }}</strong><span>Share</span></div>
+                                    </div>
+                                    <div class="rail-action">
+                                        <button class="rail-button" type="button" data-open-more-menu data-video-id="{{ video.id }}" data-video-url="/video/{{ video.id }}" data-download-url="{{ video.video_url }}">More</button>
+                                        <div class="rail-action-label"><strong>Menu</strong><span>More</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    {% endif %}
+                    {% else %}
+                    <article class="panel">
+                        <h3>No videos yet</h3>
+                        <p>Upload the first Umbono Wami clip and seed the voice thread.</p>
+                    </article>
+                    {% endfor %}
                 </div>
-                <div class="grid two-up">
-                    <article class="card">
-                        <h3>Conversation Radar</h3>
+
+                <div class="secondary-grid">
+                    <article class="panel">
+                        <h3>Conversation radar</h3>
+                        <p>Search the existing ranking and conversation intelligence signals without leaving the feed.</p>
                         <form action="/feed" method="get">
                             <input type="text" name="q" value="{{ discovery_query }}" placeholder="Search politics, football, religion, funny debates...">
-                            <div class="grid two-up">
-                                <input type="text" name="topic" value="{{ discovery_topic }}" placeholder="Topic label">
-                                <input type="text" name="tone" value="{{ discovery_tone }}" placeholder="Tone label">
-                            </div>
+                            <input type="text" name="topic" value="{{ discovery_topic }}" placeholder="Topic label">
+                            <input type="text" name="tone" value="{{ discovery_tone }}" placeholder="Tone label">
                             <button class="submit" type="submit">Search conversation intelligence</button>
                         </form>
                     </article>
-                    <article class="card">
-                        <h3>Active Thread Intelligence</h3>
+                    <article class="panel">
+                        <h3>Live thread intelligence</h3>
                         {% if active_thread_summary %}
                         <div class="insight-grid">
                             <div class="insight-card">
@@ -468,304 +909,213 @@
                         {% endif %}
                     </article>
                 </div>
+
                 {% if discovery_results %}
-                <article class="card">
-                    <h3>Discovery Results</h3>
-                    <div class="thread-list">
-                        {% for result in discovery_results %}
-                        <a class="reply-card" href="{{ result.target_url }}">
-                            <strong>{{ result.cluster_label }}</strong>
-                            <p>{{ result.summary_text }}</p>
-                            <div class="reply-actions">
-                                {% if result.tone_label %}<span class="ghost">{{ result.tone_label }}</span>{% endif %}
-                                <span class="ghost">controversy {{ result.controversy_score }}</span>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </article>
+                <section class="reply-list">
+                    {% for result in discovery_results %}
+                    <a class="reply-card" href="{{ result.target_url }}">
+                        <strong>{{ result.cluster_label }}</strong>
+                        <p>{{ result.summary_text }}</p>
+                        <div class="meta-row">
+                            {% if result.tone_label %}<span class="pill">{{ result.tone_label }}</span>{% endif %}
+                            <span class="pill">controversy {{ result.controversy_score }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </section>
                 {% endif %}
-                <div class="feed-stack">
-                    {% for item in feed_items %}
-                    {% if item.kind == 'hot_thread' %}
-                    <article class="feed-card thread-card" id="thread-card-{{ item.highlighted_reply_id or item.reel_id }}">
-                        <div class="thread-card-header">
-                            <div>
-                                <div class="thread-glow"><span class="thread-pulse"></span> People are talking about this right now 🎙️</div>
-                                <h3><a href="{{ item.target_url }}">{{ item.title }}</a></h3>
-                                <p>{{ item.cta_text }}</p>
-                            </div>
-                            <div class="thread-meta">
-                                <span class="pill">heat {{ item.heat_score }}</span>
-                                <span class="pill">{{ item.reply_count }} replies</span>
-                                <span class="pill">depth {{ item.reply_depth }}</span>
-                            </div>
-                        </div>
-                        <p>{{ item.caption }}</p>
-                        <div class="participant-row">
-                            {% for participant in item.top_participants %}
-                            <span class="participant-avatar" title="@{{ participant.username }}">{{ participant.initials }}</span>
-                            {% endfor %}
-                            <span class="pill">@{{ item.creator }}</span>
-                            {% if item.premium_room %}
-                            <span class="premium-pill">{{ item.premium_room.label }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="inline-actions">
-                            <a class="action primary" href="{{ item.target_url }}">Jump into hot subtree</a>
-                            <a class="action" href="/video/{{ item.video_id }}">Open full reel</a>
-                            {% if item.premium_room %}
-                            <a class="action" href="{{ item.premium_room.target_url }}">{{ item.premium_room.upgrade_cta or 'Join Premium Room' }}</a>
-                            {% endif %}
-                        </div>
-                    </article>
-                    {% else %}
-                    {% set video = item %}
-                    <article class="feed-card" id="video-{{ video.id }}">
-                        <div class="video-shell">
-                            <video class="autoplay-video" id="feed-video-{{ video.id }}" src="{{ video.video_url }}" muted loop playsinline controls preload="metadata"></video>
-                            <div class="video-overlay">
-                                <div class="video-meta">
-                                    <div class="creator-row">
-                                        <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
-                                    </div>
-                                    <p>{{ video.caption }}</p>
-                                    <div class="video-stats">
-                                        {% if video.creator_username %}
-                                        <span><a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a></span>
-                                        {% else %}
-                                        <span>@{{ video.creator }}</span>
-                                        {% endif %}
-                                        <span>{{ video.region }}</span>
-                                        <span>{{ video.topic }}</span>
-                                        <span>{{ video.language_label }}</span>
-                                        {% if video.thread_summary %}
-                                        <span class="pill">{{ video.thread_summary.cluster_label }}</span>
-                                        {% endif %}
-                                        {% if video.premium_room %}
-                                        <span class="premium-pill">{{ video.premium_room.label }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="side-actions">
-                                    <button class="icon-button sound-button" type="button" data-video-audio-toggle data-target-video="feed-video-{{ video.id }}">Sound off</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="video-footer">
-                            <div class="stats-row">
-                                <span class="pill">{{ video.views }} views</span>
-                                <span class="pill">{{ video.voice_replies }} voice replies</span>
-                                <span class="pill">debate {{ video.debate_score }}</span>
-                                <span class="pill">intelligence {{ video.intelligence_score }}</span>
-                                {% if video.creator_id %}
-                                <span class="pill" data-followers-for="{{ video.creator_id }}">{{ video.creator_followers_count }} followers</span>
-                                {% endif %}
-                            </div>
-                            {% if video.thread_summary %}
-                            <p class="assist-text">{{ video.thread_summary.summary_text }}</p>
-                            {% endif %}
-                            <div class="video-action-row">
-                                <button class="video-action-button like-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">Like <strong data-video-like-count>{{ video.likes }}</strong></button>
-                                <button class="video-action-button save-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">Save <strong data-video-save-count>{{ video.saves_count }}</strong></button>
-                                <button class="video-action-button share-button" type="button" data-video-share-button data-video-id="{{ video.id }}">Share <strong data-video-share-count>{{ video.shares_count }}</strong></button>
-                                <a class="video-action-button" href="/video/{{ video.id }}#comments">Comment <strong>{{ video.text_comments_count }}</strong></a>
-                                <a class="video-action-button" href="{{ video.video_url }}" download>Download</a>
-                                {% if video.can_follow_creator %}
-                                <button
-                                    class="video-action-button follow-button {% if video.creator_is_followed %}active{% endif %}"
-                                    type="button"
-                                    data-follow-button
-                                    data-target-user-id="{{ video.creator_id }}"
-                                    data-target-username="{{ video.creator_username }}"
-                                    data-following="{{ 'true' if video.creator_is_followed else 'false' }}"
-                                >{% if video.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
-                                {% endif %}
-                                {% if video.creator_username %}
-                                <a class="video-action-button" href="/profile/{{ video.creator_username }}">Creator page</a>
-                                {% endif %}
-                            </div>
-                            <div class="inline-actions">
-                                <a class="action" href="/video/{{ video.id }}">Open threaded voice discussion</a>
-                                {% if video.premium_room %}
-                                <a class="action primary" href="{{ video.premium_room.target_url }}">{{ video.premium_room.upgrade_cta or 'Join Premium Room' }}</a>
-                                {% endif %}
-                                {% if current_user %}
-                                <a class="action" href="/profile/{{ current_user.username }}">Your profile</a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </article>
-                    {% endif %}
-                    {% else %}
-                    <article class="card"><p>No videos yet. Upload the first Umbono Wami clip.</p></article>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="screen {% if active_tab == 'upload' %}active{% endif %}" data-screen="upload">
-                <div class="section-title">
-                    <div>
-                        <h2>Upload</h2>
-                        <p>Post a short video and seed the next voice discussion.</p>
-                    </div>
-                </div>
-                <div class="grid two-up">
-                    <article class="card">
-                        <form action="/upload" method="post" enctype="multipart/form-data">
-                            <input type="text" name="title" placeholder="Video title" required>
-                            <textarea name="caption" placeholder="Add a caption in English or isiZulu"></textarea>
-                            <div class="grid two-up">
-                                <input type="text" name="topic" placeholder="Topic e.g. music, campus, politics">
-                                <input type="text" name="region" placeholder="Region e.g. Durban">
-                            </div>
-                            <select name="language_code">
-                                {% for code, label in locale_options.items() %}
-                                <option value="{{ code }}">{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                            <input type="file" name="video" accept="video/*" required>
-                            <button class="submit" type="submit">Upload video</button>
-                        </form>
-                    </article>
-                    <article class="card">
-                        <h3>Saved drafts</h3>
-                        <div class="project-list">
-                            {% for project in saved_projects %}
-                            <div class="project-item">
-                                <strong>{{ project.title }}</strong>
-                                <p>{{ project.kind }} · {{ project.status }}</p>
-                            </div>
-                            {% else %}
-                            <div class="project-item">No saved drafts yet. Use the existing creator project system to prepare uploads.</div>
-                            {% endfor %}
-                        </div>
-                    </article>
-                </div>
-            </section>
-
-            <section class="screen {% if active_tab == 'replies' %}active{% endif %}" data-screen="replies">
-                <div class="section-title">
-                    <div>
-                        <h2>Replies</h2>
-                        <p>Recent voice-note threads and inline playback.</p>
-                    </div>
-                </div>
-                <div class="thread-list">
-                    {% for reply in recent_voice_threads %}
-                    <article class="reply-card">
-                        <strong>@{{ reply.username }}</strong>
-                        <p>{{ reply.transcript or 'Voice note with no transcript yet.' }}</p>
-                        <div class="waveform"></div>
-                        <audio controls preload="metadata" src="{{ reply.audio_url }}"></audio>
-                        <div class="reply-actions">
-                            <button class="speed-button" data-rate="1">1x</button>
-                            <button class="speed-button" data-rate="1.5">1.5x</button>
-                            <a class="thread-link" href="/video/{{ reply.video_id }}">Open thread</a>
-                        </div>
-                    </article>
-                    {% else %}
-                    <article class="card"><p>No voice replies yet.</p></article>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="screen {% if active_tab == 'notifications' %}active{% endif %}" data-screen="notifications">
-                <div class="section-title">
-                    <div>
-                        <h2>Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</h2>
-                        <p>Follow events, voice replies, and thread activity.</p>
-                    </div>
-                </div>
-                <div class="notification-list">
-                    {% set group_labels = {'today': 'Today', 'this_week': 'This week', 'older': 'Older'} %}
-                    {% for group_key, label in group_labels.items() %}
-                        {% set items = notification_groups[group_key] %}
-                        {% if items %}
-                        <article class="card">
-                            <h3>{{ label }}</h3>
-                            <div class="notification-list">
-                                {% for item in items %}
-                                <a class="notification-item" href="{{ item.target_url }}">
-                                    <strong>{{ item.message }}</strong>
-                                    <p>{{ item.kind }} · {{ item.created_at }}</p>
-                                </a>
-                                {% endfor %}
-                            </div>
-                        </article>
-                        {% endif %}
-                    {% endfor %}
-                    {% if not notification_groups.today and not notification_groups.this_week and not notification_groups.older %}
-                    <article class="card"><p>No notifications yet.</p></article>
-                    {% endif %}
-                </div>
-            </section>
-
-            <section class="screen {% if active_tab == 'profile' %}active{% endif %}" data-screen="profile">
-                <div class="section-title">
-                    <div>
-                        <h2>Profile</h2>
-                        <p>Creator stats, posted videos, and social graph.</p>
-                    </div>
-                </div>
-                <div class="grid two-up">
-                    <article class="profile-card">
-                        {% if profile_user %}
-                        <h3>@{{ profile_user.username }}</h3>
-                        <p>{{ profile_stats.followers }} followers · {{ profile_stats.following }} following</p>
-                        <p>{{ profile_stats.videos }} videos · {{ profile_stats.replies }} voice replies</p>
-                        <p>Creator score {{ profile_stats.creator_score }}</p>
-                        {% if current_user and profile_user and current_user.username != profile_user.username %}
-                        <button
-                            class="submit alt follow-button {% if is_following_profile %}active{% endif %}"
-                            type="button"
-                            data-follow-button
-                            data-target-user-id="{{ profile_user.id }}"
-                            data-target-username="{{ profile_user.username }}"
-                            data-following="{{ 'true' if is_following_profile else 'false' }}"
-                        >{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
-                        {% endif %}
-                        {% else %}
-                        <p>Sign in to unlock your creator profile.</p>
-                        {% endif %}
-                    </article>
-                    <article class="profile-card">
-                        <h3>Posted videos</h3>
-                        <div class="profile-video-list">
-                            {% for video in profile_videos %}
-                            <div class="profile-video-item">
-                                <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
-                                <p>{{ video.voice_replies }} voice replies · {{ video.likes }} likes</p>
-                            </div>
-                            {% else %}
-                            <div class="profile-video-item">No posted videos yet.</div>
-                            {% endfor %}
-                        </div>
-                    </article>
-                </div>
             </section>
         </main>
 
-        <nav class="tabbar" aria-label="Bottom navigation">
-            <a href="/feed" class="{% if active_tab == 'home' %}active{% endif %}">Home</a>
-            <a href="/upload" class="{% if active_tab == 'upload' %}active{% endif %}">Upload</a>
-            <a href="/feed#replies" class="{% if active_tab == 'replies' %}active{% endif %}">Replies</a>
-            <a href="/notifications" class="{% if active_tab == 'notifications' %}active{% endif %}"><span class="tab-pill">Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</span></a>
+        <main class="screen {% if active_tab == 'upload' %}active{% endif %}" data-screen="upload">
+            <div class="secondary-grid">
+                <article class="panel">
+                    <h3>Upload</h3>
+                    <p>Post a short video and seed the next voice discussion.</p>
+                    <form action="/upload" method="post" enctype="multipart/form-data">
+                        <input type="text" name="title" placeholder="Video title" required>
+                        <textarea name="caption" placeholder="Add a caption in English or isiZulu"></textarea>
+                        <input type="text" name="topic" placeholder="Topic">
+                        <input type="text" name="region" placeholder="Region">
+                        <select name="language_code">
+                            {% for code, label in locale_options.items() %}
+                            <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="file" name="video" accept="video/*" required>
+                        <button class="submit" type="submit">Upload video</button>
+                    </form>
+                </article>
+                <article class="panel">
+                    <h3>Saved drafts</h3>
+                    <div class="project-list">
+                        {% for project in saved_projects %}
+                        <div class="project-item">
+                            <strong>{{ project.title }}</strong>
+                            <p>{{ project.kind }} · {{ project.status }}</p>
+                        </div>
+                        {% else %}
+                        <div class="project-item">No saved drafts yet.</div>
+                        {% endfor %}
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <main class="screen {% if active_tab == 'replies' %}active{% endif %}" data-screen="replies">
+            <section class="reply-list">
+                {% for reply in recent_voice_threads %}
+                <article class="reply-card">
+                    <strong>@{{ reply.username }}</strong>
+                    <p>{{ reply.transcript or 'Voice note with no transcript yet.' }}</p>
+                    <div class="waveform"></div>
+                    <audio controls preload="metadata" src="{{ reply.audio_url }}"></audio>
+                    <div class="sheet-actions">
+                        <button class="ghost speed-button" type="button" data-rate="1">1x</button>
+                        <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
+                        <a class="sheet-link" href="/video/{{ reply.video_id }}">Open thread</a>
+                    </div>
+                </article>
+                {% else %}
+                <article class="panel">
+                    <h3>No voice replies yet</h3>
+                    <p>The first replies will surface here with inline playback.</p>
+                </article>
+                {% endfor %}
+            </section>
+        </main>
+
+        <main class="screen {% if active_tab == 'notifications' %}active{% endif %}" data-screen="notifications">
+            <section class="notification-list">
+                {% set group_labels = {'today': 'Today', 'this_week': 'This week', 'older': 'Older'} %}
+                {% for group_key, label in group_labels.items() %}
+                    {% set items = notification_groups[group_key] %}
+                    {% if items %}
+                    <article class="panel">
+                        <h3>{{ label }}</h3>
+                        <div class="notification-list">
+                            {% for item in items %}
+                            <a class="notification-item" href="{{ item.target_url }}">
+                                <strong>{{ item.message }}</strong>
+                                <p>{{ item.kind }} · {{ item.created_at }}</p>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </article>
+                    {% endif %}
+                {% endfor %}
+                {% if not notification_groups.today and not notification_groups.this_week and not notification_groups.older %}
+                <article class="panel">
+                    <h3>No notifications yet</h3>
+                    <p>Follow events, voice replies, and thread activity will land here.</p>
+                </article>
+                {% endif %}
+            </section>
+        </main>
+
+        <main class="screen {% if active_tab == 'profile' %}active{% endif %}" data-screen="profile">
+            <div class="profile-grid">
+                <article class="profile-panel">
+                    {% if profile_user %}
+                    <h3>@{{ profile_user.username }}</h3>
+                    <p>{{ profile_stats.followers }} followers · {{ profile_stats.following }} following</p>
+                    <p>{{ profile_stats.videos }} videos · {{ profile_stats.replies }} voice replies</p>
+                    <p>Creator score {{ profile_stats.creator_score }}</p>
+                    {% if current_user and profile_user and current_user.username != profile_user.username %}
+                    <button class="submit {% if is_following_profile %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ profile_user.id }}" data-following="{{ 'true' if is_following_profile else 'false' }}">{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
+                    {% endif %}
+                    {% else %}
+                    <h3>Profile</h3>
+                    <p>Sign in to unlock your creator profile.</p>
+                    {% endif %}
+                </article>
+                <article class="profile-panel">
+                    <h3>Posted videos</h3>
+                    <div class="profile-video-list">
+                        {% for video in profile_videos %}
+                        <div class="profile-video-item">
+                            <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
+                            <p>{{ video.voice_replies }} voice replies · {{ video.likes }} likes</p>
+                        </div>
+                        {% else %}
+                        <div class="profile-video-item">No posted videos yet.</div>
+                        {% endfor %}
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Bottom navigation">
+            <a href="/feed" class="tab-link {% if active_tab == 'home' %}active{% endif %}">Home</a>
+            <a href="/upload" class="tab-link {% if active_tab == 'upload' %}active{% endif %}">Upload</a>
+            <a href="/feed#replies" class="tab-link {% if active_tab == 'replies' %}active{% endif %}">Replies</a>
+            <a href="/notifications" class="tab-link {% if active_tab == 'notifications' %}active{% endif %}">Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</a>
             {% if current_user %}
-            <a href="/profile/{{ current_user.username }}" class="{% if active_tab == 'profile' %}active{% endif %}">Profile</a>
+            <a href="/profile/{{ current_user.username }}" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">Profile</a>
             {% else %}
-            <a href="/" class="{% if active_tab == 'profile' %}active{% endif %}">Profile</a>
+            <a href="/" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">Profile</a>
             {% endif %}
         </nav>
     </div>
 
+    <div class="sheet-backdrop" data-sheet-backdrop></div>
+
+    <div class="sheet" data-feed-voice-sheet>
+        <div class="sheet-card">
+            <div class="sheet-handle"></div>
+            <div class="sheet-body">
+                <div class="sheet-header">
+                    <div>
+                        <h3 data-sheet-title>Voice thread</h3>
+                        <p class="meta-copy" data-sheet-summary>Open the full video page to speak and continue the conversation.</p>
+                    </div>
+                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                </div>
+                <div class="chip-row">
+                    <span class="pill" data-sheet-replies>0 voice replies</span>
+                    <span class="pill" data-sheet-comments>0 comments</span>
+                </div>
+                <div class="sheet-actions">
+                    <a class="sheet-link primary" href="/feed" data-sheet-open-thread>Open thread</a>
+                    <a class="sheet-link" href="/feed" data-sheet-record>Speak now</a>
+                    <a class="sheet-link" href="/feed" data-sheet-download download>Download</a>
+                    <a class="sheet-link" href="/feed" data-sheet-profile hidden>Creator page</a>
+                    <button class="sheet-link" type="button" data-sheet-follow hidden>Follow creator</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sheet" data-more-sheet>
+        <div class="sheet-card">
+            <div class="sheet-handle"></div>
+            <div class="sheet-body">
+                <div class="sheet-header">
+                    <div>
+                        <h3>More actions</h3>
+                        <p class="meta-copy">Share, repost, save, report, or copy a direct link.</p>
+                    </div>
+                    <button class="menu-button" type="button" data-close-sheet>Close</button>
+                </div>
+                <div class="sheet-actions">
+                    <button class="sheet-link primary" type="button" data-more-share>Share</button>
+                    <a class="sheet-link" href="/feed" data-more-repost>Repost in thread</a>
+                    <button class="sheet-link" type="button" data-more-save>Save</button>
+                    <button class="sheet-link" type="button" data-more-copy>Copy link</button>
+                    <a class="sheet-link" href="mailto:support@mv-pulse.local?subject=Report%20video" data-more-report>Report</a>
+                    <a class="sheet-link" href="/feed" data-more-download download>Download</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-backdrop" data-auth-modal>
         <div class="modal-card">
-            <h3>Sign in to keep your voice in the thread</h3>
-            <p class="assist-text">Follow creators, like videos, save clips, and record voice replies after signing in.</p>
-            <div class="modal-actions">
-                <a class="action primary" href="/">Sign in or create account</a>
-                <button class="ghost" type="button" data-close-modal>Close</button>
+            <h3>Sign in to interact</h3>
+            <p class="meta-copy">Likes, saves, follows, and voice replies are tied to your account.</p>
+            <div class="sheet-actions">
+                <a class="sheet-link primary" href="/">Sign in or create account</a>
+                <button class="sheet-link" type="button" data-close-modal>Close</button>
             </div>
         </div>
     </div>
@@ -773,9 +1123,13 @@
     <script>
         const appShell = document.querySelector('.app');
         const isAuthenticated = appShell?.dataset.authenticated === 'true';
-        const loginUrl = appShell?.dataset.loginUrl || '/';
         const authModal = document.querySelector('[data-auth-modal]');
+        const sheetBackdrop = document.querySelector('[data-sheet-backdrop]');
+        const feedVoiceSheet = document.querySelector('[data-feed-voice-sheet]');
+        const moreSheet = document.querySelector('[data-more-sheet]');
         const unreadBadges = document.querySelectorAll('[data-unread-badge]');
+        let activeSheet = null;
+        let activeMoreContext = null;
 
         const setPending = (button, pending) => {
             if (!button) {
@@ -789,42 +1143,40 @@
             return false;
         };
 
-        const preserveScroll = () => {
-            const currentTop = window.scrollY;
-            requestAnimationFrame(() => window.scrollTo({ top: currentTop }));
+        const openAuthModal = () => authModal?.classList.add('active');
+        const closeAuthModal = () => authModal?.classList.remove('active');
+
+        const openSheet = (sheet) => {
+            if (!sheet) {
+                return;
+            }
+            sheetBackdrop?.classList.add('active');
+            sheet.classList.add('active');
+            activeSheet = sheet;
         };
 
-        const openAuthModal = () => {
-            if (authModal) {
-                authModal.classList.add('active');
-            }
-        };
-
-        const closeAuthModal = () => {
-            if (authModal) {
-                authModal.classList.remove('active');
-            }
+        const closeSheets = () => {
+            activeSheet?.classList.remove('active');
+            feedVoiceSheet?.classList.remove('active');
+            moreSheet?.classList.remove('active');
+            sheetBackdrop?.classList.remove('active');
+            activeSheet = null;
         };
 
         document.querySelectorAll('[data-close-modal]').forEach((button) => {
             button.addEventListener('click', closeAuthModal);
         });
 
-        if (authModal) {
-            authModal.addEventListener('click', (event) => {
-                if (event.target === authModal) {
-                    closeAuthModal();
-                }
-            });
-        }
+        document.querySelectorAll('[data-close-sheet]').forEach((button) => {
+            button.addEventListener('click', closeSheets);
+        });
 
-        const handleAuthError = async (response) => {
-            if (response.status !== 401) {
-                return false;
+        sheetBackdrop?.addEventListener('click', closeSheets);
+        authModal?.addEventListener('click', (event) => {
+            if (event.target === authModal) {
+                closeAuthModal();
             }
-            openAuthModal();
-            return true;
-        };
+        });
 
         const requestJson = async (url, options = {}) => {
             const response = await fetch(url, {
@@ -835,67 +1187,63 @@
                     ...(options.headers || {}),
                 },
             });
-
             const payload = await response.json().catch(() => ({}));
-
-            if (await handleAuthError(response)) {
-                const authError = new Error(payload.error || 'auth');
-                authError.code = payload.code || 'auth_required';
-                authError.payload = payload;
-                throw authError;
+            if (response.status === 401) {
+                openAuthModal();
+                const error = new Error(payload.error || 'auth');
+                error.code = payload.code || 'auth_required';
+                throw error;
             }
-
             if (!response.ok) {
-                const requestError = new Error(payload.error || 'request failed');
-                requestError.code = payload.code || 'request_error';
-                requestError.payload = payload;
-                throw requestError;
+                const error = new Error(payload.error || 'request failed');
+                error.code = payload.code || 'request_error';
+                throw error;
             }
-
             return payload;
         };
 
-        const setCount = (element, value) => {
-            if (element) {
-                element.textContent = value;
+        const setCount = (node, value) => {
+            if (node) {
+                node.textContent = value;
             }
         };
 
-        const updateUnreadBadges = (value) => {
-            unreadBadges.forEach((badge) => {
-                if (value > 0) {
-                    badge.textContent = value;
-                    badge.style.display = 'inline-flex';
-                } else {
-                    badge.style.display = 'none';
-                }
-            });
-        };
-
-        const setActiveState = (button, active, activeLabel, idleLabel) => {
+        const setToggleButton = (button, active, activeLabel, idleLabel) => {
             button.classList.toggle('active', active);
-            if (typeof activeLabel === 'string' && typeof idleLabel === 'string') {
-                button.textContent = active ? activeLabel : idleLabel;
+            button.textContent = active ? activeLabel : idleLabel;
+        };
+
+        const animateLikeBurst = (button) => {
+            if (!button) {
+                return;
             }
+            button.classList.remove('like-burst');
+            void button.offsetWidth;
+            button.classList.add('like-burst');
+            window.setTimeout(() => button.classList.remove('like-burst'), 430);
         };
 
         const updateVideoAudioToggle = (button, video) => {
             if (!button || !video) {
                 return;
             }
-            button.textContent = video.muted ? 'Sound off' : 'Sound on';
+            button.textContent = video.muted ? 'Audio' : 'Muted';
+            const label = button.closest('.rail-action')?.querySelector('.rail-action-label strong');
+            if (label) {
+                label.textContent = video.muted ? 'Off' : 'On';
+            }
             button.classList.toggle('active', !video.muted);
         };
 
-        const muteOtherFeedVideos = (activeVideo) => {
+        const muteOtherVideos = (activeVideo) => {
             document.querySelectorAll('.autoplay-video').forEach((video) => {
                 if (video !== activeVideo) {
                     video.muted = true;
                 }
             });
             document.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
-                const video = document.getElementById(button.dataset.targetVideo);
-                updateVideoAudioToggle(button, video);
+                const target = document.getElementById(button.dataset.targetVideo);
+                updateVideoAudioToggle(button, target);
             });
         };
 
@@ -909,7 +1257,7 @@
                         video.pause();
                     }
                 });
-            }, { threshold: 0.55 });
+            }, { threshold: 0.7 });
             observer.observe(video);
         });
 
@@ -920,50 +1268,51 @@
                 if (!video) {
                     return;
                 }
-                const shouldUnmute = video.muted;
-                if (shouldUnmute) {
-                    muteOtherFeedVideos(video);
+                if (video.muted) {
+                    muteOtherVideos(video);
+                    video.muted = false;
+                } else {
+                    video.muted = true;
                 }
-                video.muted = !shouldUnmute ? true : false;
-                updateVideoAudioToggle(button, video);
                 if (video.paused) {
                     video.play().catch(() => {});
                 }
+                updateVideoAudioToggle(button, video);
             });
             video?.addEventListener('volumechange', () => updateVideoAudioToggle(button, video));
         });
 
         document.querySelectorAll('.speed-button').forEach((button) => {
             button.addEventListener('click', () => {
-                const audio = button.closest('.reply-card').querySelector('audio');
-                if (!audio) {
-                    return;
+                const audio = button.closest('.reply-card')?.querySelector('audio');
+                if (audio) {
+                    audio.playbackRate = Number(button.dataset.rate || 1);
                 }
-                audio.playbackRate = Number(button.dataset.rate || 1);
             });
         });
 
-        document.querySelectorAll('.like-button').forEach((button) => {
+        document.querySelectorAll('[data-video-like-button]').forEach((button) => {
             button.addEventListener('click', async () => {
                 if (setPending(button, true)) {
                     return;
                 }
-                const countNode = button.querySelector('[data-video-like-count]');
-                const previousLiked = button.dataset.liked === 'true';
+                const countNode = button.closest('.rail-action')?.querySelector('[data-video-like-count]');
+                const previous = button.dataset.liked === 'true';
                 const previousCount = Number(countNode?.textContent || '0');
-                button.dataset.liked = previousLiked ? 'false' : 'true';
-                button.classList.toggle('active', !previousLiked);
-                setCount(countNode, previousLiked ? previousCount - 1 : previousCount + 1);
-                preserveScroll();
-
+                button.dataset.liked = previous ? 'false' : 'true';
+                button.classList.toggle('active', !previous);
+                setCount(countNode, previous ? Math.max(previousCount - 1, 0) : previousCount + 1);
                 try {
-                    const data = await requestJson(`/api/videos/${button.dataset.videoId}/like`, { method: 'POST' });
-                    button.dataset.liked = data.liked ? 'true' : 'false';
-                    button.classList.toggle('active', data.liked);
-                    setCount(countNode, data.likes);
+                    const payload = await requestJson(`/api/videos/${button.dataset.videoId}/like`, { method: 'POST' });
+                    button.dataset.liked = payload.liked ? 'true' : 'false';
+                    button.classList.toggle('active', payload.liked);
+                    setCount(countNode, payload.likes);
+                    if (payload.liked) {
+                        animateLikeBurst(button);
+                    }
                 } catch (error) {
-                    button.dataset.liked = previousLiked ? 'true' : 'false';
-                    button.classList.toggle('active', previousLiked);
+                    button.dataset.liked = previous ? 'true' : 'false';
+                    button.classList.toggle('active', previous);
                     setCount(countNode, previousCount);
                     if (error.code !== 'auth_required') {
                         console.error(error);
@@ -979,22 +1328,20 @@
                 if (setPending(button, true)) {
                     return;
                 }
-                const countNode = button.querySelector('[data-video-save-count]');
-                const previousSaved = button.dataset.saved === 'true';
+                const countNode = button.closest('.rail-action')?.querySelector('[data-video-save-count]');
+                const previous = button.dataset.saved === 'true';
                 const previousCount = Number(countNode?.textContent || '0');
-                button.dataset.saved = previousSaved ? 'false' : 'true';
-                button.classList.toggle('active', !previousSaved);
-                setCount(countNode, previousSaved ? Math.max(previousCount - 1, 0) : previousCount + 1);
-                preserveScroll();
-
+                button.dataset.saved = previous ? 'false' : 'true';
+                button.classList.toggle('active', !previous);
+                setCount(countNode, previous ? Math.max(previousCount - 1, 0) : previousCount + 1);
                 try {
-                    const data = await requestJson(`/api/videos/${button.dataset.videoId}/save`, { method: 'POST' });
-                    button.dataset.saved = data.saved ? 'true' : 'false';
-                    button.classList.toggle('active', data.saved);
-                    setCount(countNode, data.saves_count);
+                    const payload = await requestJson(`/api/videos/${button.dataset.videoId}/save`, { method: 'POST' });
+                    button.dataset.saved = payload.saved ? 'true' : 'false';
+                    button.classList.toggle('active', payload.saved);
+                    setCount(countNode, payload.saves_count);
                 } catch (error) {
-                    button.dataset.saved = previousSaved ? 'true' : 'false';
-                    button.classList.toggle('active', previousSaved);
+                    button.dataset.saved = previous ? 'true' : 'false';
+                    button.classList.toggle('active', previous);
                     setCount(countNode, previousCount);
                     if (error.code !== 'auth_required') {
                         console.error(error);
@@ -1005,59 +1352,72 @@
             });
         });
 
-        document.querySelectorAll('.share-button').forEach((button) => {
+        const performShare = async (videoId, fallbackUrl, countNode = null, trigger = null) => {
+            const previousCount = Number(countNode?.textContent || '0');
+            if (countNode) {
+                countNode.textContent = previousCount + 1;
+            }
+            try {
+                if (navigator.share) {
+                    navigator.share({ url: new URL(fallbackUrl, window.location.origin).toString() }).catch(() => {});
+                } else if (navigator.clipboard) {
+                    navigator.clipboard.writeText(new URL(fallbackUrl, window.location.origin).toString()).catch(() => {});
+                }
+                const payload = await requestJson(`/api/videos/${videoId}/share`, { method: 'POST' });
+                setCount(countNode, payload.shares_count);
+                return payload;
+            } catch (error) {
+                setCount(countNode, previousCount);
+                if (error.code !== 'auth_required') {
+                    console.error(error);
+                }
+                throw error;
+            } finally {
+                if (trigger) {
+                    setPending(trigger, false);
+                }
+            }
+        };
+
+        document.querySelectorAll('[data-video-share-button]').forEach((button) => {
             button.addEventListener('click', async () => {
                 if (setPending(button, true)) {
                     return;
                 }
-                const countNode = button.querySelector('[data-video-share-count]');
-                const previousCount = Number(countNode?.textContent || '0');
-                setCount(countNode, previousCount + 1);
-                preserveScroll();
-
-                try {
-                    const shareUrl = `${window.location.origin}/video/${button.dataset.videoId}`;
-                    if (navigator.share) {
-                        navigator.share({ url: shareUrl }).catch(() => {});
-                    } else if (navigator.clipboard) {
-                        navigator.clipboard.writeText(shareUrl).catch(() => {});
-                    }
-                    const data = await requestJson(`/api/videos/${button.dataset.videoId}/share`, { method: 'POST' });
-                    setCount(countNode, data.shares_count);
-                } catch (error) {
-                    setCount(countNode, previousCount);
-                    console.error(error);
-                } finally {
-                    setPending(button, false);
-                }
+                const countNode = button.closest('.rail-action')?.querySelector('[data-video-share-count]');
+                await performShare(button.dataset.videoId, `/video/${button.dataset.videoId}`, countNode, button).catch(() => {});
             });
         });
+
+        const updateFollowerLabels = (userId, following, followersCount = null) => {
+            document.querySelectorAll(`[data-follow-button][data-target-user-id="${userId}"]`).forEach((button) => {
+                button.dataset.following = following ? 'true' : 'false';
+                setToggleButton(button, following, 'Following', button.closest('.sheet-actions') ? 'Follow creator' : 'Follow creator');
+            });
+            if (followersCount !== null) {
+                document.querySelectorAll(`[data-followers-for="${userId}"]`).forEach((node) => {
+                    node.textContent = `${followersCount} followers`;
+                });
+            }
+        };
 
         document.querySelectorAll('[data-follow-button]').forEach((button) => {
             button.addEventListener('click', async () => {
                 if (setPending(button, true)) {
                     return;
                 }
-                const targetUserId = button.dataset.targetUserId;
-                const currentlyFollowing = button.dataset.following === 'true';
-                button.dataset.following = currentlyFollowing ? 'false' : 'true';
-                setActiveState(button, !currentlyFollowing, 'Following', 'Follow');
-                preserveScroll();
-
-                const updateFollowers = (payload) => {
-                    document.querySelectorAll(`[data-followers-for="${targetUserId}"]`).forEach((node) => {
-                        node.textContent = `${payload.followers} followers`;
-                    });
-                };
-
+                const userId = button.dataset.targetUserId;
+                const previous = button.dataset.following === 'true';
+                button.dataset.following = previous ? 'false' : 'true';
+                setToggleButton(button, !previous, 'Following', 'Follow creator');
                 try {
-                    const data = await requestJson(`/api/follow/${targetUserId}`, { method: currentlyFollowing ? 'DELETE' : 'POST' });
-                    button.dataset.following = data.following ? 'true' : 'false';
-                    setActiveState(button, data.following, 'Following', 'Follow');
-                    updateFollowers(data);
+                    const payload = await requestJson(`/api/follow/${userId}`, {
+                        method: previous ? 'DELETE' : 'POST',
+                    });
+                    updateFollowerLabels(userId, payload.following, payload.followers);
                 } catch (error) {
-                    button.dataset.following = currentlyFollowing ? 'true' : 'false';
-                    setActiveState(button, currentlyFollowing, 'Following', 'Follow');
+                    button.dataset.following = previous ? 'true' : 'false';
+                    setToggleButton(button, previous, 'Following', 'Follow creator');
                     if (error.code !== 'auth_required') {
                         console.error(error);
                     }
@@ -1067,24 +1427,173 @@
             });
         });
 
-        if (window.location.hash === '#replies') {
-            document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
-            const repliesScreen = document.querySelector('[data-screen="replies"]');
-            if (repliesScreen) {
-                repliesScreen.classList.add('active');
-            }
-        }
+        const voiceSheetTitle = document.querySelector('[data-sheet-title]');
+        const voiceSheetSummary = document.querySelector('[data-sheet-summary]');
+        const voiceSheetReplies = document.querySelector('[data-sheet-replies]');
+        const voiceSheetComments = document.querySelector('[data-sheet-comments]');
+        const voiceSheetOpenThread = document.querySelector('[data-sheet-open-thread]');
+        const voiceSheetRecord = document.querySelector('[data-sheet-record]');
+        const voiceSheetDownload = document.querySelector('[data-sheet-download]');
+        const voiceSheetProfile = document.querySelector('[data-sheet-profile]');
+        const voiceSheetFollow = document.querySelector('[data-sheet-follow]');
 
-        const activeNotificationsScreen = document.querySelector('[data-screen="notifications"].active');
-        if (activeNotificationsScreen) {
-            requestJson('/api/notifications/read', { method: 'POST' })
-                .then((payload) => updateUnreadBadges(payload.unread_count))
-                .catch((error) => {
-                    if (error.message !== 'auth') {
-                        console.error(error);
-                    }
+        document.querySelectorAll('[data-open-feed-voice-sheet]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const title = button.dataset.videoTitle || 'Voice thread';
+                const creator = button.dataset.videoCreator || 'creator';
+                const summary = button.dataset.summary || 'Open the full thread to record, reply, and continue the conversation.';
+                voiceSheetTitle.textContent = `${title} by @${creator}`;
+                voiceSheetSummary.textContent = summary;
+                voiceSheetReplies.textContent = `${button.dataset.replies || 0} voice replies`;
+                voiceSheetComments.textContent = `${button.dataset.comments || 0} comments`;
+                voiceSheetOpenThread.href = button.hasAttribute('data-open-feed-comments') ? `${button.dataset.videoUrl || '/feed'}#comments` : (button.dataset.videoUrl || '/feed');
+                voiceSheetRecord.href = button.hasAttribute('data-open-feed-comments') ? `${button.dataset.videoUrl || '/feed'}#comments` : `${button.dataset.videoUrl || '/feed'}#record`;
+                voiceSheetRecord.textContent = button.hasAttribute('data-open-feed-comments') ? 'Open comments' : 'Speak now';
+                voiceSheetDownload.href = button.dataset.videoDownloadUrl || button.dataset.videoUrl || '/feed';
+                if (button.dataset.videoProfileUrl) {
+                    voiceSheetProfile.hidden = false;
+                    voiceSheetProfile.href = button.dataset.videoProfileUrl;
+                } else {
+                    voiceSheetProfile.hidden = true;
+                }
+                if (button.dataset.followAllowed === 'true') {
+                    voiceSheetFollow.hidden = false;
+                    voiceSheetFollow.dataset.targetUserId = button.dataset.followUserId || '';
+                    voiceSheetFollow.dataset.following = button.dataset.following || 'false';
+                    setToggleButton(voiceSheetFollow, button.dataset.following === 'true', 'Following', 'Follow creator');
+                } else {
+                    voiceSheetFollow.hidden = true;
+                }
+                if (button.hasAttribute('data-open-feed-comments')) {
+                    voiceSheetComments.textContent = `${button.dataset.comments || 0} comments · text-first view`;
+                }
+                openSheet(feedVoiceSheet);
+            });
+        });
+
+        voiceSheetFollow?.addEventListener('click', async () => {
+            if (!voiceSheetFollow.dataset.targetUserId) {
+                return;
+            }
+            if (setPending(voiceSheetFollow, true)) {
+                return;
+            }
+            const userId = voiceSheetFollow.dataset.targetUserId;
+            const previous = voiceSheetFollow.dataset.following === 'true';
+            voiceSheetFollow.dataset.following = previous ? 'false' : 'true';
+            setToggleButton(voiceSheetFollow, !previous, 'Following', 'Follow creator');
+            try {
+                const payload = await requestJson(`/api/follow/${userId}`, {
+                    method: previous ? 'DELETE' : 'POST',
                 });
-        }
+                voiceSheetFollow.dataset.following = payload.following ? 'true' : 'false';
+                updateFollowerLabels(userId, payload.following, payload.followers);
+            } catch (error) {
+                voiceSheetFollow.dataset.following = previous ? 'true' : 'false';
+                setToggleButton(voiceSheetFollow, previous, 'Following', 'Follow creator');
+                if (error.code !== 'auth_required') {
+                    console.error(error);
+                }
+            } finally {
+                setPending(voiceSheetFollow, false);
+            }
+        });
+
+        const moreShare = document.querySelector('[data-more-share]');
+        const moreRepost = document.querySelector('[data-more-repost]');
+        const moreSave = document.querySelector('[data-more-save]');
+        const moreCopy = document.querySelector('[data-more-copy]');
+        const moreDownload = document.querySelector('[data-more-download]');
+        const moreReport = document.querySelector('[data-more-report]');
+
+        document.querySelectorAll('[data-open-more-menu]').forEach((button) => {
+            button.addEventListener('click', () => {
+                activeMoreContext = {
+                    videoId: button.dataset.videoId,
+                    videoUrl: button.dataset.videoUrl || `/video/${button.dataset.videoId}`,
+                    downloadUrl: button.dataset.downloadUrl || button.dataset.videoUrl || `/video/${button.dataset.videoId}`,
+                };
+                moreRepost.href = activeMoreContext.videoUrl;
+                moreDownload.href = activeMoreContext.downloadUrl;
+                moreReport.href = `mailto:support@mv-pulse.local?subject=Report%20video%20${activeMoreContext.videoId}`;
+                openSheet(moreSheet);
+            });
+        });
+
+        moreShare?.addEventListener('click', async () => {
+            if (!activeMoreContext || setPending(moreShare, true)) {
+                return;
+            }
+            await performShare(activeMoreContext.videoId, activeMoreContext.videoUrl, null, moreShare).catch(() => {});
+        });
+
+        moreSave?.addEventListener('click', async () => {
+            if (!activeMoreContext || setPending(moreSave, true)) {
+                return;
+            }
+            try {
+                const payload = await requestJson(`/api/videos/${activeMoreContext.videoId}/save`, { method: 'POST' });
+                document.querySelectorAll(`[data-video-save-button][data-video-id="${activeMoreContext.videoId}"]`).forEach((button) => {
+                    button.dataset.saved = payload.saved ? 'true' : 'false';
+                    button.classList.toggle('active', payload.saved);
+                    setCount(button.closest('.rail-action')?.querySelector('[data-video-save-count]'), payload.saves_count);
+                });
+                moreSave.textContent = payload.saved ? 'Saved' : 'Save';
+            } catch (error) {
+                if (error.code !== 'auth_required') {
+                    console.error(error);
+                }
+            } finally {
+                setPending(moreSave, false);
+            }
+        });
+
+        moreCopy?.addEventListener('click', async () => {
+            if (!activeMoreContext || !navigator.clipboard) {
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(new URL(activeMoreContext.videoUrl, window.location.origin).toString());
+                moreCopy.textContent = 'Copied';
+                window.setTimeout(() => {
+                    moreCopy.textContent = 'Copy link';
+                }, 1600);
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        const bindFeedHoldMenus = () => {
+            const holdButtons = document.querySelectorAll('[data-video-share-button], [data-open-more-menu], [data-video-save-button], [data-video-like-button]');
+            holdButtons.forEach((button) => {
+                let holdTimer = null;
+                button.addEventListener('pointerdown', () => {
+                    holdTimer = window.setTimeout(() => {
+                        if (button.hasAttribute('data-video-share-button') || button.hasAttribute('data-open-more-menu')) {
+                            button.closest('.reel-slide')?.querySelector('[data-open-more-menu]')?.click();
+                        } else if (button.hasAttribute('data-video-like-button')) {
+                            animateLikeBurst(button);
+                        }
+                    }, 520);
+                });
+                ['pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => {
+                    button.addEventListener(eventName, () => {
+                        if (holdTimer) {
+                            window.clearTimeout(holdTimer);
+                            holdTimer = null;
+                        }
+                    });
+                });
+            });
+        };
+
+        bindFeedHoldMenus();
+
+        unreadBadges.forEach((badge) => {
+            if (!badge.textContent.trim()) {
+                badge.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
