@@ -6,6 +6,7 @@ from http import HTTPStatus
 
 from werkzeug.exceptions import RequestEntityTooLarge
 import stripe
+from flask_cors import CORS
 
 from flask import Flask, abort, g, render_template, request, send_from_directory, session
 from database import db
@@ -71,6 +72,7 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=int(os.getenv("SESSION
 app.config["SESSION_REFRESH_EACH_REQUEST"] = True
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+CORS(app, resources={r"/api/*": {"origins": [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()] or ["*"]}})
 
 db.init_app(app)
 

@@ -11,6 +11,10 @@
             --accent: #0f9d7a;
             --warm: #f17c45;
             --panel: rgba(255, 251, 246, 0.86);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
         }
 
         * { box-sizing: border-box; }
@@ -28,9 +32,10 @@
                 radial-gradient(circle at top left, rgba(15, 157, 122, 0.22), transparent 24%),
                 radial-gradient(circle at bottom right, rgba(241, 124, 69, 0.22), transparent 24%),
                 linear-gradient(180deg, #f4efe6 0%, #efe5d5 100%);
-            padding: 24px;
+            padding: calc(24px + var(--safe-top)) calc(24px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(24px + var(--safe-left));
             overflow-x: hidden;
             overflow-y: auto;
+            -webkit-text-size-adjust: 100%;
         }
 
         .shell {
@@ -189,6 +194,8 @@
             padding: 12px 16px;
             border: 0;
             font: inherit;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .chip {
