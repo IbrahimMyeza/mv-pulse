@@ -19,6 +19,7 @@ from models.premium_voice_room import PremiumVoiceRoom
 from models.subscriber_access import SubscriberAccess
 from models.tip_transaction import TipTransaction
 from models.thread_summary import ThreadSummary
+from models.text_comment import TextComment
 from models.video import Video
 from models.save import Save
 from models.user_social_profile import UserSocialProfile

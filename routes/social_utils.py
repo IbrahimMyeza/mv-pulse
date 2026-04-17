@@ -19,6 +19,7 @@ from models.premium_voice_room import PremiumVoiceRoom
 from models.reel import Reel
 from models.save import Save
 from models.thread_summary import ThreadSummary
+from models.text_comment import TextComment
 from models.user import User
 from models.user_social_profile import UserSocialProfile
 from models.video import Video
@@ -171,6 +172,7 @@ def serialize_video(video):
         "likes": video.likes,
         "views": video.views,
         "voice_replies": video.voice_replies,
+        "text_comments_count": getattr(video, "text_comments_count", 0),
         "saves_count": getattr(video, "saves_count", 0),
         "shares_count": video.shares_count,
         "debate_score": round(video.debate_score, 2),
@@ -215,6 +217,17 @@ def serialize_notification(item):
     return serialize_notification_timeline_item(item)
 
 
+def serialize_text_comment(comment):
+    return {
+        "id": comment.id,
+        "video_id": comment.video_id,
+        "user_id": comment.user_id,
+        "username": comment.user.username if comment.user else "user",
+        "content": comment.content,
+        "created_at": comment.created_at.isoformat() if comment.created_at else None,
+    }
+
+
 def serialize_voice_reply(reply):
     return {
         "id": reply.id,
@@ -250,6 +263,14 @@ def _save_counts_for_videos(video_ids):
         return {}
 
     rows = db.session.query(Save.video_id, func.count(Save.id)).filter(Save.video_id.in_(video_ids)).group_by(Save.video_id).all()
+    return {video_id: count for video_id, count in rows}
+
+
+def _text_comment_counts_for_videos(video_ids):
+    if not video_ids:
+        return {}
+
+    rows = db.session.query(TextComment.video_id, func.count(TextComment.id)).filter(TextComment.video_id.in_(video_ids)).group_by(TextComment.video_id).all()
     return {video_id: count for video_id, count in rows}
 
 
@@ -307,6 +328,7 @@ def hydrate_videos(videos, viewer=None):
     video_ids = [video.id for video in videos]
     creator_ids = [video.creator_id for video in videos if video.creator_id]
     saved_counts = _save_counts_for_videos(video_ids)
+    text_comment_counts = _text_comment_counts_for_videos(video_ids)
     liked_ids = _liked_video_ids(viewer, video_ids)
     saved_ids = _saved_video_ids(viewer, video_ids)
     followed_ids = _followed_user_ids(viewer, creator_ids)
@@ -314,12 +336,18 @@ def hydrate_videos(videos, viewer=None):
 
     for video in videos:
         video.saves_count = saved_counts.get(video.id, 0)
+        video.text_comments_count = text_comment_counts.get(video.id, 0)
         video.is_liked = video.id in liked_ids
         video.is_saved = video.id in saved_ids
         video.creator_is_followed = bool(viewer and video.creator_id and video.creator_id in followed_ids and viewer.id != video.creator_id)
         video.can_follow_creator = bool(video.creator_id and (not viewer or viewer.id != video.creator_id))
         video.creator_followers_count = follower_counts.get(video.creator_id, 0)
     return videos
+
+
+def load_text_comments(video_id, limit=60):
+    comments = TextComment.query.filter_by(video_id=video_id).order_by(TextComment.created_at.asc()).limit(limit).all()
+    return [serialize_text_comment(comment) for comment in comments]
 
 
 def _hydrate_replies(replies, viewer=None):

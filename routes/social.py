@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, redirect, render_template, request, sessio
 
 from database import db
 from models.follow import Follow
+from models.text_comment import TextComment
 from models.user import User
 from models.video import Video
 from models.voice_insight import VoiceInsight
@@ -40,7 +41,9 @@ from services.social_retention import (
 from routes.social_utils import (
     current_user,
     ensure_social_seed,
+    load_text_comments,
     serialize_video,
+    serialize_text_comment,
     social_context,
     build_reply_tree,
     hydrate_videos,
@@ -257,6 +260,7 @@ def video_detail(id):
         premium_room=serialize_room(premium_room, viewer) if premium_room else None,
         premium_preview_only=bool(premium_room and premium_access and not premium_access["can_access"]),
         creator_tiers=video_creator_tiers,
+        text_comments=load_text_comments(video.id),
         thread_summary=get_thread_summary(video.id),
         clip_suggestions=clip_suggestions,
     )
@@ -266,6 +270,50 @@ def video_detail(id):
 def api_video_replies(id):
     Video.query.get_or_404(id)
     return jsonify({"replies": build_reply_tree(id, viewer=current_user())})
+
+
+@social_bp.route("/api/videos/<int:id>/comments")
+def api_video_comments(id):
+    Video.query.get_or_404(id)
+    return jsonify({"items": load_text_comments(id)})
+
+
+@social_bp.route("/api/videos/<int:id>/comments", methods=["POST"])
+def api_video_comments_create(id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to comment.")
+
+    video = Video.query.get_or_404(id)
+    payload = request.get_json(silent=True) or request.form
+    content = (payload.get("content") or "").strip()
+    if not content:
+        return json_error("comment content is required", status=400)
+    if len(content) > 280:
+        return json_error("comment must be 280 characters or fewer", status=400)
+
+    comment = TextComment(user_id=viewer.id, video_id=video.id, content=content)
+    db.session.add(comment)
+    video.comments = (video.comments or 0) + 1
+    db.session.commit()
+
+    if video.creator_id and video.creator_id != viewer.id:
+        from routes.social_utils import create_notification
+
+        create_notification(
+            recipient_id=video.creator_id,
+            actor_id=viewer.id,
+            video_id=video.id,
+            kind="text_comment",
+            message=f"{viewer.username} commented on your video",
+        )
+
+    return jsonify({
+        "ok": True,
+        "comment": serialize_text_comment(comment),
+        "comments_count": TextComment.query.filter_by(video_id=video.id).count(),
+        "discussion_count": video.comments,
+    })
 
 
 @social_bp.route("/api/videos/<int:id>/like", methods=["POST"])

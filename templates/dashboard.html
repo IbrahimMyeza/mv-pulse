@@ -66,7 +66,7 @@
         .hero h1 { margin: 8px 0; font-size: clamp(2rem, 7vw, 3.2rem); }
         .hero p { margin: 0; color: var(--muted); line-height: 1.5; }
 
-        .hero-actions, .chip-row, .stats-row, .inline-actions, .tabbar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .hero-actions, .chip-row, .stats-row, .inline-actions, .tabbar, .video-action-row { display: flex; gap: 10px; flex-wrap: wrap; }
         .chip, .action, .pill {
             display: inline-flex;
             align-items: center;
@@ -145,6 +145,15 @@
             cursor: pointer;
         }
 
+        .sound-button {
+            width: auto;
+            min-width: 74px;
+            height: auto;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            line-height: 1.1;
+        }
+
         .icon-button.active,
         .ghost.active,
         .submit.alt {
@@ -158,6 +167,28 @@
             padding: 16px 18px 18px;
             display: grid;
             gap: 12px;
+        }
+
+        .video-action-row {
+            align-items: center;
+        }
+
+        .video-action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 10px 14px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .video-action-button strong,
+        .video-action-button small {
+            color: inherit;
+            font: inherit;
         }
 
         .card, .reply-card, .profile-card { padding: 18px; }
@@ -492,21 +523,11 @@
                     {% set video = item %}
                     <article class="feed-card" id="video-{{ video.id }}">
                         <div class="video-shell">
-                            <video class="autoplay-video" src="{{ video.video_url }}" muted loop playsinline controls preload="metadata"></video>
+                            <video class="autoplay-video" id="feed-video-{{ video.id }}" src="{{ video.video_url }}" muted loop playsinline controls preload="metadata"></video>
                             <div class="video-overlay">
                                 <div class="video-meta">
                                     <div class="creator-row">
                                         <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
-                                        {% if video.can_follow_creator %}
-                                        <button
-                                            class="ghost follow-button {% if video.creator_is_followed %}active{% endif %}"
-                                            type="button"
-                                            data-follow-button
-                                            data-target-user-id="{{ video.creator_id }}"
-                                            data-target-username="{{ video.creator_username }}"
-                                            data-following="{{ 'true' if video.creator_is_followed else 'false' }}"
-                                        >{% if video.creator_is_followed %}Following{% else %}Follow{% endif %}</button>
-                                        {% endif %}
                                     </div>
                                     <p>{{ video.caption }}</p>
                                     <div class="video-stats">
@@ -527,9 +548,7 @@
                                     </div>
                                 </div>
                                 <div class="side-actions">
-                                    <button class="icon-button like-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">❤️<br><small data-video-like-count>{{ video.likes }}</small></button>
-                                    <button class="icon-button save-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">🔖<br><small data-video-save-count>{{ video.saves_count }}</small></button>
-                                    <button class="icon-button share-button" type="button" data-video-share-button data-video-id="{{ video.id }}">↗️<br><small data-video-share-count>{{ video.shares_count }}</small></button>
+                                    <button class="icon-button sound-button" type="button" data-video-audio-toggle data-target-video="feed-video-{{ video.id }}">Sound off</button>
                                 </div>
                             </div>
                         </div>
@@ -546,6 +565,26 @@
                             {% if video.thread_summary %}
                             <p class="assist-text">{{ video.thread_summary.summary_text }}</p>
                             {% endif %}
+                            <div class="video-action-row">
+                                <button class="video-action-button like-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">Like <strong data-video-like-count>{{ video.likes }}</strong></button>
+                                <button class="video-action-button save-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">Save <strong data-video-save-count>{{ video.saves_count }}</strong></button>
+                                <button class="video-action-button share-button" type="button" data-video-share-button data-video-id="{{ video.id }}">Share <strong data-video-share-count>{{ video.shares_count }}</strong></button>
+                                <a class="video-action-button" href="/video/{{ video.id }}#comments">Comment <strong>{{ video.text_comments_count }}</strong></a>
+                                <a class="video-action-button" href="{{ video.video_url }}" download>Download</a>
+                                {% if video.can_follow_creator %}
+                                <button
+                                    class="video-action-button follow-button {% if video.creator_is_followed %}active{% endif %}"
+                                    type="button"
+                                    data-follow-button
+                                    data-target-user-id="{{ video.creator_id }}"
+                                    data-target-username="{{ video.creator_username }}"
+                                    data-following="{{ 'true' if video.creator_is_followed else 'false' }}"
+                                >{% if video.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
+                                {% endif %}
+                                {% if video.creator_username %}
+                                <a class="video-action-button" href="/profile/{{ video.creator_username }}">Creator page</a>
+                                {% endif %}
+                            </div>
                             <div class="inline-actions">
                                 <a class="action" href="/video/{{ video.id }}">Open threaded voice discussion</a>
                                 {% if video.premium_room %}
@@ -840,6 +879,26 @@
             }
         };
 
+        const updateVideoAudioToggle = (button, video) => {
+            if (!button || !video) {
+                return;
+            }
+            button.textContent = video.muted ? 'Sound off' : 'Sound on';
+            button.classList.toggle('active', !video.muted);
+        };
+
+        const muteOtherFeedVideos = (activeVideo) => {
+            document.querySelectorAll('.autoplay-video').forEach((video) => {
+                if (video !== activeVideo) {
+                    video.muted = true;
+                }
+            });
+            document.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
+                const video = document.getElementById(button.dataset.targetVideo);
+                updateVideoAudioToggle(button, video);
+            });
+        };
+
         document.querySelectorAll('.autoplay-video').forEach((video) => {
             video.muted = true;
             const observer = new IntersectionObserver((entries) => {
@@ -852,6 +911,26 @@
                 });
             }, { threshold: 0.55 });
             observer.observe(video);
+        });
+
+        document.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
+            const video = document.getElementById(button.dataset.targetVideo);
+            updateVideoAudioToggle(button, video);
+            button.addEventListener('click', () => {
+                if (!video) {
+                    return;
+                }
+                const shouldUnmute = video.muted;
+                if (shouldUnmute) {
+                    muteOtherFeedVideos(video);
+                }
+                video.muted = !shouldUnmute ? true : false;
+                updateVideoAudioToggle(button, video);
+                if (video.paused) {
+                    video.play().catch(() => {});
+                }
+            });
+            video?.addEventListener('volumechange', () => updateVideoAudioToggle(button, video));
         });
 
         document.querySelectorAll('.speed-button').forEach((button) => {

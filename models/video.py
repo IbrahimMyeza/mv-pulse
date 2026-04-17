@@ -38,6 +38,12 @@ class Video(db.Model):
         cascade="all, delete-orphan",
         lazy="dynamic",
     )
+    text_comments = db.relationship(
+        "TextComment",
+        back_populates="video",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
     like_records = db.relationship(
         "Like",
         back_populates="video",

@@ -40,6 +40,7 @@ from app import app
 from database import db
 from models.user import User
 from models.video import Video
+from models.text_comment import TextComment
 from models.voice_reply import VoiceReply
 
 
@@ -83,6 +84,16 @@ def run_check():
         assert unauth_payload["login_url"] == "/"
 
         login_as(client, listener.id)
+
+        comment_response = client.post(
+            f"/api/videos/{video.id}/comments",
+            json={"content": "This text comment should persist."},
+            headers={"Accept": "application/json", "X-Requested-With": "fetch"},
+        )
+        comment_payload = comment_response.get_json()
+        assert comment_response.status_code == 200
+        assert comment_payload["comment"]["content"] == "This text comment should persist."
+        assert TextComment.query.filter_by(video_id=video.id, user_id=listener.id).count() == 1
 
         token = "voice-reply-token-1"
         response_one = client.post(
@@ -164,6 +175,7 @@ def run_check():
         assert room_reply_payload_two["deduplicated"] is True
 
         print("auth_error_contract", "ok")
+        print("text_comment_posting", "ok")
         print("voice_reply_idempotency", "ok")
         print("premium_room_reply_idempotency", "ok")
         print("m7_5_stability_status", "ok")

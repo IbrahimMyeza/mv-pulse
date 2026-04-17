@@ -24,6 +24,14 @@
         .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .ghost { border-radius: 999px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #f5f7fa; cursor: pointer; }
         .ghost.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
+        .player-toolbar { display: flex; justify-content: flex-end; margin-top: 12px; }
+        .video-action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+        .video-action-button { border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #f5f7fa; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; }
+        .video-action-button.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
+        .comment-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+        .comment-list { display: grid; gap: 10px; margin-top: 12px; }
+        .comment-card { padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); }
+        .comment-card strong { display: block; margin-bottom: 6px; }
         .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
         .stack { display: grid; gap: 12px; }
         .helper { font-size: 0.94rem; color: #9aa6b5; }
@@ -73,19 +81,27 @@
     <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}" data-video-id="{{ video.id }}" data-focus-reply-id="{{ focused_reply_id or '' }}">
         <a class="btn" href="/feed">Back to feed</a>
         <section class="card">
-            <video src="{{ video_payload.video_url }}" controls autoplay muted playsinline></video>
+            <video src="{{ video_payload.video_url }}" controls playsinline preload="metadata" data-detail-video></video>
+            <div class="player-toolbar">
+                <button class="ghost" type="button" data-video-audio-toggle data-target-video="detail">Mute video</button>
+            </div>
             <h1>{{ video.title }}</h1>
             <p>{{ video.caption }}</p>
             <p class="meta">@{{ video_payload.creator }} · {{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</p>
             <p class="meta">{{ video.views }} views · <span data-video-replies-total>{{ video.voice_replies }}</span> voice replies · creator score {{ '%.2f'|format(video.creator_score) }}</p>
-            <div class="actions">
-                <button class="ghost {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">❤️ <span data-video-like-count>{{ video_payload.likes }}</span></button>
-                <button class="ghost {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">🔖 <span data-video-save-count>{{ video_payload.saves_count }}</span></button>
-                <button class="ghost" type="button" data-video-share-button>↗️ <span data-video-share-count>{{ video_payload.shares_count }}</span></button>
+            <div class="video-action-row">
+                <button class="video-action-button {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">Like <span data-video-like-count>{{ video_payload.likes }}</span></button>
+                <button class="video-action-button {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">Save <span data-video-save-count>{{ video_payload.saves_count }}</span></button>
+                <button class="video-action-button" type="button" data-video-share-button>Share <span data-video-share-count>{{ video_payload.shares_count }}</span></button>
+                <a class="video-action-button" href="#comments">Comment <span data-text-comment-count>{{ text_comments|length }}</span></a>
+                <a class="video-action-button" href="{{ video_payload.video_url }}" download>Download</a>
                 {% if video_payload.can_follow_creator %}
-                <button class="ghost {% if video_payload.creator_is_followed %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ video_payload.creator_id }}" data-following="{{ 'true' if video_payload.creator_is_followed else 'false' }}">{% if video_payload.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
+                <button class="video-action-button {% if video_payload.creator_is_followed %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ video_payload.creator_id }}" data-following="{{ 'true' if video_payload.creator_is_followed else 'false' }}">{% if video_payload.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
                 {% endif %}
-                <button class="ghost" type="button" data-tip-button data-target-type="video" data-video-id="{{ video.id }}">Tip creator</button>
+                {% if creator_tiers %}
+                <button class="video-action-button" type="button" data-subscribe-button data-tier-id="{{ creator_tiers[0].id if creator_tiers else '' }}">Subscribe</button>
+                {% endif %}
+                <button class="video-action-button" type="button" data-tip-button data-target-type="video" data-video-id="{{ video.id }}">Tip creator</button>
             </div>
             {% if creator_tiers %}
             <div class="banner">
@@ -163,6 +179,25 @@
                         <button class="ghost" type="button" data-retry-upload disabled>Retry last upload</button>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="card" id="comments">
+            <h2>Quick comments</h2>
+            <p class="helper">Type a short comment in one line, or use a voice reply below for a richer response.</p>
+            <form class="comment-form" data-comment-form>
+                <input type="text" name="content" maxlength="280" placeholder="Write a comment..." {% if not current_user %}disabled{% endif %}>
+                <button type="submit" {% if not current_user %}disabled{% endif %}>{% if current_user %}Post comment{% else %}Sign in to comment{% endif %}</button>
+            </form>
+            <div class="comment-list" data-comment-list>
+                {% for comment in text_comments %}
+                <div class="comment-card" id="comment-{{ comment.id }}">
+                    <strong>@{{ comment.username }}</strong>
+                    <p>{{ comment.content }}</p>
+                </div>
+                {% else %}
+                <p data-comment-empty>No text comments yet.</p>
+                {% endfor %}
             </div>
         </section>
 
@@ -249,6 +284,10 @@
         const uploadProgress = document.querySelector('[data-upload-progress]');
         const retryUploadButton = document.querySelector('[data-retry-upload]');
         const threadList = document.querySelector('[data-thread-list]');
+        const commentForm = document.querySelector('[data-comment-form]');
+        const commentInput = commentForm?.querySelector('input[name="content"]');
+        const commentList = document.querySelector('[data-comment-list]');
+        const detailVideo = document.querySelector('[data-detail-video]');
         const creatorId = {{ video_payload.creator_id }};
         const premiumRoomAccessible = {{ 'true' if premium_room and premium_room.can_access else 'false' }};
         let recorder = null;
@@ -376,6 +415,12 @@
             });
         };
 
+        const updateTextCommentTotals = (count) => {
+            document.querySelectorAll('[data-text-comment-count]').forEach((node) => {
+                node.textContent = count;
+            });
+        };
+
         const playbackQueueFrom = (replyCard) => {
             const audios = Array.from(replyCard.querySelectorAll('[data-reply-audio]'));
             if (!audios.length) {
@@ -418,6 +463,34 @@
             button.textContent = active ? activeLabel : idleLabel;
         };
 
+        const updateVideoAudioToggle = (button, video) => {
+            if (!button || !video) {
+                return;
+            }
+            button.textContent = video.muted ? 'Unmute video' : 'Mute video';
+            button.classList.toggle('active', !video.muted);
+        };
+
+        const bindVideoAudioToggles = (root = document) => root.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
+            const video = button.dataset.targetVideo === 'detail' ? detailVideo : document.getElementById(button.dataset.targetVideo);
+            updateVideoAudioToggle(button, video);
+            button.addEventListener('click', async () => {
+                if (!video) {
+                    return;
+                }
+                video.muted = !video.muted;
+                updateVideoAudioToggle(button, video);
+                if (video.paused) {
+                    video.play().catch(() => {});
+                }
+            });
+            video?.addEventListener('volumechange', () => updateVideoAudioToggle(button, video));
+        });
+
         const renderReplyCard = (reply) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'reply-card';
@@ -456,6 +529,27 @@
                 wrapper.appendChild(thread);
             }
             return wrapper;
+        };
+
+        const renderTextCommentCard = (comment) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'comment-card';
+            wrapper.id = `comment-${comment.id}`;
+            wrapper.innerHTML = `
+                <strong>@${escapeHtml(comment.username)}</strong>
+                <p>${escapeHtml(comment.content)}</p>
+            `;
+            return wrapper;
+        };
+
+        const attachTextComment = (comment) => {
+            if (!commentList || !comment) {
+                return;
+            }
+            commentList.querySelector('[data-comment-empty]')?.remove();
+            const commentNode = renderTextCommentCard(comment);
+            commentList.appendChild(commentNode);
+            commentNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         };
 
         const attachReplyToThread = (reply) => {
@@ -914,6 +1008,7 @@
             bindVideoLikeButtons(root);
             bindVideoSaveButtons(root);
             bindVideoShareButtons(root);
+            bindVideoAudioToggles(root);
             bindFollowButtons(root);
             bindSubscribeButtons(root);
             bindRoomJoinButtons(root);
@@ -983,6 +1078,39 @@
                 sourceButton: submitButton,
                 resetInput: () => fallbackForm.reset(),
             });
+        });
+
+        commentForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!isAuthenticated) {
+                authModal?.classList.add('active');
+                return;
+            }
+            const submitButton = commentForm.querySelector('button[type="submit"]');
+            const content = (commentInput?.value || '').trim();
+            if (!content) {
+                commentInput?.focus();
+                return;
+            }
+            if (setPending(submitButton, true)) {
+                return;
+            }
+            try {
+                const payload = await requestJson(`/api/videos/${videoId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content }),
+                });
+                attachTextComment(payload.comment);
+                updateTextCommentTotals(payload.comments_count || 0);
+                commentForm.reset();
+            } catch (error) {
+                if (error.code !== 'auth_required') {
+                    console.error(error);
+                }
+            } finally {
+                setPending(submitButton, false);
+            }
         });
 
         retryUploadButton?.addEventListener('click', () => {

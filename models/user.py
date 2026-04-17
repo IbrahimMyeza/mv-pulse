@@ -15,6 +15,12 @@ class User(db.Model):
     )
     videos = db.relationship("Video", back_populates="creator", lazy="dynamic")
     voice_replies = db.relationship("VoiceReply", back_populates="creator", lazy="dynamic")
+    text_comments = db.relationship(
+        "TextComment",
+        back_populates="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
     likes = db.relationship(
         "Like",
         back_populates="user",
