@@ -32,6 +32,7 @@ from services.payments import (
     grant_paid_thread_unlock,
     record_tip_transaction,
 )
+from services.storage import resolve_local_media_path
 
 monetization_bp = Blueprint("monetization", __name__)
 ROOM_AUDIO_FOLDER = "static/voices/rooms"
@@ -69,7 +70,7 @@ def _analyze_room_audio(audio_url):
         from ml.transcriber import transcribe_audio
         from ml.voice_sentiment import analyze_voice_sentiment
 
-        transcript = transcribe_audio(audio_url.lstrip("/"))
+        transcript = transcribe_audio(resolve_local_media_path(audio_url) or "")
         sentiment = analyze_voice_sentiment(transcript)
         debate = controversy_score(sentiment, transcript)
         return transcript, sentiment, debate

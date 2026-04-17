@@ -3,6 +3,10 @@ services:
     name: mv-pulse
     runtime: python
     plan: free
+    disk:
+      name: mv-pulse-media
+      mountPath: /var/data
+      sizeGB: 1
     autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
     preDeployCommand: python seed_data.py
@@ -13,6 +17,12 @@ services:
         value: 3.11.11
       - key: SECRET_KEY
         generateValue: true
+      - key: MEDIA_STORAGE_ROOT
+        value: /var/data
+      - key: SESSION_DAYS
+        value: 30
+      - key: SESSION_COOKIE_SECURE
+        value: true
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: DATABASE_URL

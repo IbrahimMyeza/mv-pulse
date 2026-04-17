@@ -1,12 +1,13 @@
 import os
 import time
 import uuid
+from datetime import timedelta
 from http import HTTPStatus
 
 from werkzeug.exceptions import RequestEntityTooLarge
 import stripe
 
-from flask import Flask, g, render_template, request, session
+from flask import Flask, abort, g, render_template, request, send_from_directory, session
 from database import db
 from models.user import User
 from models.reel import Reel
@@ -41,6 +42,7 @@ from routes.dashboard import dashboard_bp
 from routes.simulate import simulate_bp
 from routes.api_responses import json_error, wants_json_response
 from routes.social_utils import ensure_social_seed, hydrate_videos, serialize_video
+from services.storage import configured_media_root
 
 
 def _env_flag(name, default=False):
@@ -65,6 +67,8 @@ app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", 32 * 1024
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
 app.config["SESSION_COOKIE_SECURE"] = _env_flag("SESSION_COOKIE_SECURE", default=False)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=int(os.getenv("SESSION_DAYS", "30")))
+app.config["SESSION_REFRESH_EACH_REQUEST"] = True
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 
@@ -87,6 +91,8 @@ app.register_blueprint(simulate_bp)
 def track_request_start():
     g.request_started_at = time.perf_counter()
     g.request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+    if session.get("user_id"):
+        session.permanent = True
 
 
 @app.after_request
@@ -141,6 +147,14 @@ def home():
         featured_public_video=public_video_payloads[0] if public_video_payloads else None,
         public_videos=public_video_payloads[1:6] if len(public_video_payloads) > 1 else [],
     )
+
+
+@app.route("/media/<path:asset_path>")
+def media_asset(asset_path):
+    media_root = configured_media_root()
+    if not media_root:
+        abort(404)
+    return send_from_directory(media_root, asset_path, conditional=True)
 
 with app.app_context():
     db.create_all()

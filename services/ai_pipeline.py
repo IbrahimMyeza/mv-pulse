@@ -4,6 +4,7 @@ import math
 import os
 import threading
 from collections import Counter
+from services.storage import resolve_local_media_path
 
 from flask import current_app
 
@@ -127,7 +128,7 @@ def process_voice_reply(reply_id):
         if not transcript and reply.audio_url:
             from ml.transcriber import transcribe_audio
 
-            transcript = transcribe_audio(reply.audio_url.lstrip("/")) or ""
+            transcript = transcribe_audio(resolve_local_media_path(reply.audio_url) or "") or ""
             reply.transcript = transcript
 
         if transcript:

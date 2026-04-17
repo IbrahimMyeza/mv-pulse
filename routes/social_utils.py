@@ -1,10 +1,7 @@
-import os
-from uuid import uuid4
 from collections import Counter
 
 from flask import session
 from sqlalchemy import func
-from werkzeug.utils import secure_filename
 
 from database import db
 from ml.debate_detector import controversy_score
@@ -39,6 +36,7 @@ from services.thread_intelligence import get_thread_summary, search_discovery
 from services.voice_identity import voice_identity_payload
 from services.social_retention import group_notifications, retention_rank_videos, unread_notification_count
 from services.thread_heat import compute_hot_threads, inject_hot_thread_cards, notify_hot_thread_participants
+from services.storage import save_uploaded_file
 
 SUPPORTED_LANGUAGES = {
     "en": "English",
@@ -91,16 +89,7 @@ def ensure_social_seed():
 
 
 def save_video_file(file_storage, target_folder):
-    os.makedirs(target_folder, exist_ok=True)
-    original_name = secure_filename(file_storage.filename or "upload.bin")
-    if not original_name:
-        original_name = "upload.bin"
-    name, extension = os.path.splitext(original_name)
-    unique_prefix = uuid4().hex
-    filename = f"{name[:80] or 'upload'}-{unique_prefix}{extension[:12]}"
-    file_path = os.path.join(target_folder, filename)
-    file_storage.save(file_path)
-    return "/" + file_path.replace("\\", "/")
+    return save_uploaded_file(file_storage, target_folder).public_url
 
 
 def ensure_social_profile(user):

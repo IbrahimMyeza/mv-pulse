@@ -12,6 +12,7 @@ def _wants_json_response():
 
 
 def _login_user(user):
+    session.permanent = True
     session["user_id"] = user.id
     session["username"] = user.username
     session["email"] = user.email
@@ -58,7 +59,7 @@ def signup():
         return _auth_error_response("passwords do not match", 400)
 
     if User.query.filter((User.username == username) | (User.email == email)).first():
-        return _auth_error_response("account already exists", 409)
+        return _auth_error_response("account already exists, sign in instead", 409)
 
     hashed_password = generate_password_hash(password)
 
