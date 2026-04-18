@@ -9,19 +9,26 @@ services:
       sizeGB: 1
     autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
+    preDeployCommand: flask --app app db upgrade
     startCommand: gunicorn app:app
     healthCheckPath: /
     envVars:
+      - key: APP_ENV
+        value: production
       - key: PYTHON_VERSION
         value: 3.11.11
       - key: AUTO_SEED_DEMO_DATA
         value: "true"
       - key: SECRET_KEY
         generateValue: true
+      - key: CLOUDINARY_URL
+        sync: false
       - key: MEDIA_STORAGE_ROOT
         value: /var/data
       - key: SESSION_DAYS
         value: 30
+      - key: SESSION_COOKIE_SAMESITE
+        value: Lax
       - key: SESSION_COOKIE_SECURE
         value: "true"
       - key: STRIPE_SECRET_KEY

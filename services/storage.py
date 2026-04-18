@@ -1,10 +1,21 @@
 import os
+import os
+import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 from uuid import uuid4
 
+import requests
 from flask import current_app
 from werkzeug.utils import secure_filename
+
+try:
+    import cloudinary
+    import cloudinary.uploader
+except Exception:  # pragma: no cover - dependency is optional in local fallback mode
+    cloudinary = None
 
 
 @dataclass(frozen=True)
@@ -12,6 +23,10 @@ class StoredMedia:
     public_url: str
     local_path: str
     storage_kind: str
+
+
+def cloud_storage_configured() -> bool:
+    return bool((os.getenv("CLOUDINARY_URL") or "").strip())
 
 
 def _app_root() -> Path:
@@ -22,6 +37,8 @@ def _app_root() -> Path:
 
 
 def configured_media_root() -> Path | None:
+    if cloud_storage_configured():
+        return None
     configured = os.getenv("MEDIA_STORAGE_ROOT") or os.getenv("RENDER_DISK_MOUNT_PATH")
     if not configured:
         return None
@@ -48,10 +65,44 @@ def _build_filename(file_storage) -> str:
     return f"{name[:80] or 'upload'}-{unique_prefix}{extension[:12]}"
 
 
+def _configure_cloudinary() -> bool:
+    if not cloud_storage_configured():
+        return False
+    if cloudinary is None:
+        raise RuntimeError("cloudinary package is required when CLOUDINARY_URL is set")
+    cloudinary.config(secure=True)
+    return True
+
+
+def _upload_to_cloudinary(file_storage, target_folder: str, filename: str) -> StoredMedia:
+    _configure_cloudinary()
+    folder = _relative_target_folder(target_folder) or "mv-pulse/uploads"
+    stream = getattr(file_storage, "stream", file_storage)
+    if hasattr(stream, "seek"):
+        stream.seek(0)
+    upload_result = cloudinary.uploader.upload(
+        stream,
+        resource_type="auto",
+        folder=folder,
+        public_id=Path(filename).stem,
+        use_filename=False,
+        unique_filename=True,
+        overwrite=False,
+    )
+    return StoredMedia(
+        public_url=upload_result["secure_url"],
+        local_path="",
+        storage_kind="cloudinary",
+    )
+
+
 def save_uploaded_file(file_storage, target_folder: str) -> StoredMedia:
     filename = _build_filename(file_storage)
     relative_folder = _relative_target_folder(target_folder)
     relative_path = Path(relative_folder) / filename if relative_folder else Path(filename)
+
+    if cloud_storage_configured():
+        return _upload_to_cloudinary(file_storage, target_folder, filename)
 
     media_root = configured_media_root()
     if media_root:
@@ -88,3 +139,36 @@ def resolve_local_media_path(public_url: str | None) -> str | None:
         return str(_app_root() / public_url.lstrip("/"))
 
     return None
+
+
+@contextmanager
+def local_media_path(public_url: str | None):
+    local_path = resolve_local_media_path(public_url)
+    if local_path:
+        yield local_path
+        return
+
+    if not public_url or not public_url.startswith(("http://", "https://")):
+        yield None
+        return
+
+    parsed = urlparse(public_url)
+    suffix = Path(parsed.path).suffix or ".bin"
+    temporary_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        with requests.get(public_url, stream=True, timeout=(10, 60)) as response:
+            response.raise_for_status()
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    temporary_file.write(chunk)
+        temporary_file.close()
+        yield temporary_file.name
+    finally:
+        try:
+            temporary_file.close()
+        except Exception:
+            pass
+        try:
+            os.unlink(temporary_file.name)
+        except OSError:
+            pass

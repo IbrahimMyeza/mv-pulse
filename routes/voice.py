@@ -7,24 +7,27 @@ from models.voice_reply import VoiceReply
 from routes.api_responses import auth_required_response, json_error, json_success, wants_json_response
 from routes.social_utils import create_notification, current_user, save_video_file, serialize_voice_reply, touch_video_reputation
 from services.ai_pipeline import schedule_voice_reply_processing
-from services.storage import resolve_local_media_path
+from services.storage import local_media_path
 
 voice_bp = Blueprint("voice", __name__)
 VOICE_FOLDER = "static/voices/replies"
 
 
-def _analyze_audio(audio_path):
-    if not audio_path:
+def _analyze_audio(audio_url):
+    if not audio_url:
         return "", 0.0
     try:
         from ml.transcriber import transcribe_audio
         from ml.voice_sentiment import analyze_voice_sentiment
 
-        transcript = transcribe_audio(audio_path)
-        sentiment = analyze_voice_sentiment(transcript)
-        return transcript, sentiment
+        with local_media_path(audio_url) as audio_path:
+            if not audio_path:
+                return "", 0.0
+            transcript = transcribe_audio(audio_path)
+            sentiment = analyze_voice_sentiment(transcript)
+            return transcript, sentiment
     except Exception:
-        current_app.logger.exception("voice.analysis_failed path=%s", audio_path)
+        current_app.logger.exception("voice.analysis_failed url=%s", audio_url)
         return "", 0.0
 
 
@@ -66,8 +69,7 @@ def api_voice_transcribe():
         return json_error("voice file required", status=400)
 
     audio_url = save_video_file(audio, VOICE_FOLDER)
-    audio_path = resolve_local_media_path(audio_url)
-    transcript, sentiment = _analyze_audio(audio_path)
+    transcript, sentiment = _analyze_audio(audio_url)
     debate = controversy_score(sentiment, transcript)
 
     return json_success(
@@ -109,8 +111,7 @@ def voice_reply():
             return _reply_response(existing_reply, video, deduplicated=True)
 
     audio_url = save_video_file(audio, VOICE_FOLDER)
-    audio_path = resolve_local_media_path(audio_url)
-    transcript, sentiment = _analyze_audio(audio_path)
+    transcript, sentiment = _analyze_audio(audio_url)
     debate = controversy_score(sentiment, transcript)
 
     reply = VoiceReply(

@@ -5,11 +5,12 @@ from datetime import timedelta
 from http import HTTPStatus
 
 from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.middleware.proxy_fix import ProxyFix
 import stripe
 from flask_cors import CORS
 
 from flask import Flask, abort, g, render_template, request, send_from_directory, session
-from database import db
+from database import db, migrate
 from models.user import User
 from models.reel import Reel
 from models.export_project import ExportProject
@@ -44,7 +45,7 @@ from routes.simulate import simulate_bp
 from routes.api_responses import json_error, wants_json_response
 from routes.social_utils import ensure_social_seed, hydrate_videos, serialize_video
 from services.demo_seed import seed_demo_content
-from services.storage import configured_media_root
+from services.storage import cloud_storage_configured, configured_media_root
 
 
 def _env_flag(name, default=False):
@@ -52,6 +53,17 @@ def _env_flag(name, default=False):
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_production_environment():
+    return any(
+        [
+            os.getenv("APP_ENV", "").strip().lower() == "production",
+            os.getenv("FLASK_ENV", "").strip().lower() == "production",
+            _env_flag("RENDER", default=False),
+            bool(os.getenv("RENDER_SERVICE_ID")),
+        ]
+    )
 
 
 def _maybe_seed_demo_content():
@@ -67,27 +79,51 @@ def _maybe_seed_demo_content():
 
 
 def _database_uri():
-    database_url = os.getenv("DATABASE_URL")
+    database_url = (os.getenv("DATABASE_URL") or "").strip()
     if database_url and database_url.startswith("postgres://"):
-        return database_url.replace("postgres://", "postgresql://", 1)
-    return database_url or "sqlite:///mv_pulse.db"
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    if database_url:
+        return database_url
+
+    if _is_production_environment():
+        raise RuntimeError("DATABASE_URL is required in production")
+
+    return (os.getenv("LOCAL_DATABASE_URL") or "sqlite:///mv_pulse.db").strip()
+
+
+def _validate_production_services():
+    if not _is_production_environment():
+        return
+    if not app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("postgresql"):
+        raise RuntimeError("Production requires a PostgreSQL DATABASE_URL")
+    if not cloud_storage_configured() and not configured_media_root():
+        raise RuntimeError("Production requires CLOUDINARY_URL or MEDIA_STORAGE_ROOT")
 
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mv-pulse-dev-secret")
 app.config["SQLALCHEMY_DATABASE_URI"] = _database_uri()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "300")),
+}
 app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", 32 * 1024 * 1024))
+app.config["SESSION_COOKIE_NAME"] = os.getenv("SESSION_COOKIE_NAME", "mv_pulse_session")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
-app.config["SESSION_COOKIE_SECURE"] = _env_flag("SESSION_COOKIE_SECURE", default=False)
+app.config["SESSION_COOKIE_SECURE"] = _env_flag("SESSION_COOKIE_SECURE", default=_is_production_environment())
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=int(os.getenv("SESSION_DAYS", "30")))
 app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+app.config["PREFERRED_URL_SCHEME"] = os.getenv("PREFERRED_URL_SCHEME", "https")
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 CORS(app, resources={r"/api/*": {"origins": [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()] or ["*"]}})
 
 db.init_app(app)
+migrate.init_app(app, db)
+_validate_production_services()
 
 app.register_blueprint(voice_bp)
 app.register_blueprint(auth_bp)
@@ -107,7 +143,7 @@ def track_request_start():
     g.request_started_at = time.perf_counter()
     g.request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
     if session.get("user_id"):
-        session.permanent = True
+        session.permanent = bool(session.get("remember_login", True))
 
 
 @app.after_request
@@ -187,7 +223,6 @@ def offline_page():
     return send_from_directory(app.static_folder, "offline.html")
 
 with app.app_context():
-    db.create_all()
     _maybe_seed_demo_content()
 
 if __name__ == "__main__":

@@ -11,11 +11,21 @@ def _wants_json_response():
     return wants_json_response()
 
 
-def _login_user(user):
-    session.permanent = True
+def _remember_login(payload):
+    raw_value = payload.get("remember_me")
+    if raw_value is None:
+        return True
+    if isinstance(raw_value, bool):
+        return raw_value
+    return str(raw_value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _login_user(user, remember_login=True):
+    session.permanent = remember_login
     session["user_id"] = user.id
     session["username"] = user.username
     session["email"] = user.email
+    session["remember_login"] = remember_login
 
 
 def _auth_success_response(message, user):
@@ -62,11 +72,12 @@ def signup():
         return _auth_error_response("account already exists, sign in instead", 409)
 
     hashed_password = generate_password_hash(password)
+    remember_login = _remember_login(payload)
 
     user = User(username=username, email=email, password=hashed_password)
     db.session.add(user)
     db.session.commit()
-    _login_user(user)
+    _login_user(user, remember_login=remember_login)
 
     return _auth_success_response("secure user created", user)
 
@@ -75,11 +86,12 @@ def login():
     payload = request.get_json(silent=True) or request.form
     email = (payload.get("email") or "").strip().lower()
     password = payload.get("password") or ""
+    remember_login = _remember_login(payload)
 
     user = User.query.filter_by(email=email).first()
 
     if user and check_password_hash(user.password, password):
-        _login_user(user)
+        _login_user(user, remember_login=remember_login)
         return _auth_success_response("login success", user)
 
     return _auth_error_response("invalid credentials", 401)
