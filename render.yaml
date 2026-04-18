@@ -9,12 +9,13 @@ services:
       sizeGB: 1
     autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: python seed_data.py
     startCommand: gunicorn app:app
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
+      - key: AUTO_SEED_DEMO_DATA
+        value: "true"
       - key: SECRET_KEY
         generateValue: true
       - key: MEDIA_STORAGE_ROOT
@@ -22,7 +23,7 @@ services:
       - key: SESSION_DAYS
         value: 30
       - key: SESSION_COOKIE_SECURE
-        value: true
+        value: "true"
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: DATABASE_URL

@@ -43,6 +43,7 @@ from routes.dashboard import dashboard_bp
 from routes.simulate import simulate_bp
 from routes.api_responses import json_error, wants_json_response
 from routes.social_utils import ensure_social_seed, hydrate_videos, serialize_video
+from services.demo_seed import seed_demo_content
 from services.storage import configured_media_root
 
 
@@ -51,6 +52,18 @@ def _env_flag(name, default=False):
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _maybe_seed_demo_content():
+    if not _env_flag("AUTO_SEED_DEMO_DATA", default=False):
+        return
+
+    try:
+        result = seed_demo_content()
+        if result["reels"] or result["videos"]:
+            app.logger.info("demo.seed.complete %s", result)
+    except Exception:
+        app.logger.exception("demo.seed.failed")
 
 
 def _database_uri():
@@ -175,6 +188,7 @@ def offline_page():
 
 with app.app_context():
     db.create_all()
+    _maybe_seed_demo_content()
 
 if __name__ == "__main__":
     app.run(debug=True)
