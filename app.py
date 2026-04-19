@@ -103,13 +103,51 @@ def _normalize_database_url(raw_value):
     return database_url
 
 
+def _first_configured_env(*names):
+    for name in names:
+        value = os.getenv(name)
+        if value and value.strip():
+            return value
+    return ""
+
+
+def _database_url_from_parts():
+    host = _first_configured_env("PGHOST", "POSTGRES_HOST", "DB_HOST", "RENDER_PGHOST")
+    database_name = _first_configured_env("PGDATABASE", "POSTGRES_DB", "DB_NAME", "RENDER_PGDATABASE")
+    username = _first_configured_env("PGUSER", "POSTGRES_USER", "DB_USER", "RENDER_PGUSER")
+    password = _first_configured_env("PGPASSWORD", "POSTGRES_PASSWORD", "DB_PASSWORD", "RENDER_PGPASSWORD")
+    port = _first_configured_env("PGPORT", "POSTGRES_PORT", "DB_PORT", "RENDER_PGPORT") or "5432"
+
+    if not all([host, database_name, username, password]):
+        return ""
+
+    return f"postgresql+psycopg://{username}:{password}@{host}:{port}/{database_name}"
+
+
 def _database_uri():
-    database_url = _normalize_database_url(os.getenv("DATABASE_URL"))
+    database_url = _normalize_database_url(
+        _first_configured_env(
+            "SQLALCHEMY_DATABASE_URI",
+            "DATABASE_URL",
+            "RENDER_DATABASE_URL",
+            "RENDER_EXTERNAL_DATABASE_URL",
+            "RENDER_INTERNAL_DATABASE_URL",
+            "POSTGRES_URL",
+            "POSTGRESQL_URL",
+            "INTERNAL_DATABASE_URL",
+        )
+    )
+    if database_url:
+        return database_url
+
+    database_url = _normalize_database_url(_database_url_from_parts())
     if database_url:
         return database_url
 
     if _is_production_environment():
-        raise RuntimeError("DATABASE_URL is required in production")
+        raise RuntimeError(
+            "Production database configuration is missing. Set DATABASE_URL or equivalent Render Postgres env vars."
+        )
 
     local_database_url = (os.getenv("LOCAL_DATABASE_URL") or "sqlite:///mv_pulse.db").strip()
     return _normalize_database_url(local_database_url) if "://" in local_database_url else local_database_url
