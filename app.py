@@ -82,6 +82,8 @@ def _database_uri():
     database_url = (os.getenv("DATABASE_URL") or "").strip()
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
+    if database_url.startswith("postgresql://") and not database_url.startswith("postgresql+psycopg://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     if database_url:
         return database_url
 
