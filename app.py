@@ -1,9 +1,11 @@
 import os
+import re
 import time
 import uuid
 from datetime import timedelta
 from http import HTTPStatus
 
+import sqlalchemy as sa
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 import stripe
@@ -80,19 +82,37 @@ def _maybe_seed_demo_content():
         app.logger.exception("demo.seed.failed")
 
 
-def _database_uri():
-    database_url = (os.getenv("DATABASE_URL") or "").strip()
-    if database_url and database_url.startswith("postgres://"):
+def _normalize_database_url(raw_value):
+    database_url = (raw_value or "").strip()
+    if not database_url:
+        return ""
+
+    database_url = database_url.strip("'\"")
+    database_url = database_url.replace("\r", "").replace("\n", "")
+
+    matched_url = re.search(r"(postgres(?:ql)?://\S+)", database_url, flags=re.IGNORECASE)
+    if matched_url:
+        database_url = matched_url.group(1)
+
+    if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     if database_url.startswith("postgresql://") and not database_url.startswith("postgresql+psycopg://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    sa.engine.make_url(database_url)
+    return database_url
+
+
+def _database_uri():
+    database_url = _normalize_database_url(os.getenv("DATABASE_URL"))
     if database_url:
         return database_url
 
     if _is_production_environment():
         raise RuntimeError("DATABASE_URL is required in production")
 
-    return (os.getenv("LOCAL_DATABASE_URL") or "sqlite:///mv_pulse.db").strip()
+    local_database_url = (os.getenv("LOCAL_DATABASE_URL") or "sqlite:///mv_pulse.db").strip()
+    return _normalize_database_url(local_database_url) if "://" in local_database_url else local_database_url
 
 
 def _validate_production_services():
