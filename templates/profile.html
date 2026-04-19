@@ -2,194 +2,707 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#081117">
     <title>{% if profile_user %}@{{ profile_user.username }}{% else %}Profile{% endif %}</title>
     <style>
-        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #0d1117; color: #f5f7fa; padding: 18px; }
-        .shell { max-width: 980px; margin: 0 auto; display: grid; gap: 16px; }
-        .card { background: rgba(17,24,32,0.94); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 18px; }
-        .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-        .stat { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); }
-        p { color: #9aa6b5; line-height: 1.5; }
-        a, button { color: inherit; text-decoration: none; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 16px; background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; font-weight: 700; border: 0; cursor: pointer; }
-        .btn.ghost { background: rgba(255,255,255,0.05); color: #f5f7fa; border: 1px solid rgba(255,255,255,0.08); }
-        .btn.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; }
-        .video-item, .retention-item { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); margin-top: 12px; display: grid; gap: 6px; }
-        .topbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .modal-backdrop { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.72); }
-        .modal-backdrop.active { display: flex; }
-        .modal-card { width: min(420px, 100%); background: #101720; border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); padding: 20px; display: grid; gap: 12px; }
-        .tabbar { display: flex; gap: 10px; flex-wrap: wrap; }
-        .tab-button { border-radius: 999px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); color: #f5f7fa; cursor: pointer; }
-        .tab-button.active { background: linear-gradient(135deg, #1bd1a5 0%, #ff8f5a 100%); color: #071118; border-color: transparent; }
-        .helper { color: #9aa6b5; font-size: 0.94rem; }
-        .tier-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-        .tier-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
-        .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
-        .insight-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-        .insight-card { padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.05); display: grid; gap: 8px; }
+        :root {
+            --bg: #071017;
+            --bg-soft: #0d1821;
+            --panel: rgba(8, 14, 20, 0.92);
+            --panel-soft: rgba(255, 255, 255, 0.05);
+            --line: rgba(255, 255, 255, 0.08);
+            --line-strong: rgba(255, 255, 255, 0.16);
+            --text: #f4f8fb;
+            --muted: #9eb0bc;
+            --accent: #18d4ab;
+            --accent-warm: #ff8756;
+            --shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+        }
+
+        * { box-sizing: border-box; }
+
+        html {
+            background: #050b10;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 24%),
+                radial-gradient(circle at top right, rgba(255, 135, 86, 0.16), transparent 26%),
+                linear-gradient(180deg, #04090e 0%, #0a141c 55%, #071017 100%);
+            padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(32px + var(--safe-bottom)) calc(16px + var(--safe-left));
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        a,
+        button {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button,
+        input,
+        textarea,
+        select {
+            font: inherit;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .shell {
+            width: min(1180px, 100%);
+            margin: 0 auto;
+            display: grid;
+            gap: 18px;
+        }
+
+        .topbar,
+        .hero-actions,
+        .profile-chips,
+        .stat-row,
+        .section-actions,
+        .tabbar,
+        .tier-meta,
+        .room-meta,
+        .video-meta,
+        .modal-actions,
+        .retention-meta,
+        .insight-meta,
+        .room-form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .topbar {
+            justify-content: space-between;
+        }
+
+        .panel,
+        .hero,
+        .spotlight-card,
+        .retention-shell,
+        .modal-card {
+            border-radius: 28px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .hero,
+        .panel,
+        .retention-shell {
+            padding: 20px;
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.22), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(255, 135, 86, 0.2), transparent 30%),
+                linear-gradient(160deg, rgba(8, 14, 20, 0.96), rgba(13, 24, 33, 0.98));
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: auto -10% -30% auto;
+            width: 220px;
+            height: 220px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(24, 212, 171, 0.16) 0%, transparent 72%);
+            pointer-events: none;
+        }
+
+        .hero-grid,
+        .section-grid,
+        .video-grid,
+        .insight-grid,
+        .tier-grid,
+        .room-grid,
+        .stats-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .hero-grid {
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-head {
+            display: grid;
+            gap: 16px;
+        }
+
+        .avatar-ring {
+            width: 88px;
+            height: 88px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, rgba(24, 212, 171, 0.88), rgba(255, 135, 86, 0.88));
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+        }
+
+        .avatar-core {
+            width: 78px;
+            height: 78px;
+            border-radius: 999px;
+            background: rgba(7, 16, 23, 0.96);
+            display: grid;
+            place-items: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .eyebrow {
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            line-height: 1.02;
+        }
+
+        h2 {
+            font-size: clamp(1.15rem, 3vw, 1.5rem);
+        }
+
+        .lead,
+        .helper,
+        .section-copy,
+        .muted,
+        .video-card p,
+        .tier-card p,
+        .room-card p,
+        .insight-card p,
+        .retention-card p {
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .button,
+        .tab-button,
+        .tier-button,
+        .modal-button,
+        .room-submit {
+            min-height: 46px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            padding: 0 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .button.primary,
+        .tab-button.active,
+        .tier-button.active,
+        .room-submit,
+        .modal-button.primary {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            color: #061018;
+            font-weight: 800;
+        }
+
+        .button.ghost,
+        .modal-button.ghost {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .profile-chips {
+            margin-top: 2px;
+        }
+
+        .chip,
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .stat-card,
+        .insight-card,
+        .tier-card,
+        .room-card,
+        .video-card,
+        .retention-card,
+        .spotlight-card,
+        .earnings-card,
+        .room-form-shell {
+            padding: 16px;
+            border-radius: 22px;
+            background: var(--panel-soft);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: grid;
+            gap: 10px;
+        }
+
+        .stat-card strong,
+        .stat-card span,
+        .spotlight-card strong,
+        .tier-card strong,
+        .room-card strong,
+        .video-card strong,
+        .retention-card strong,
+        .insight-card strong {
+            font-size: 1rem;
+        }
+
+        .stat-value {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .insight-grid,
+        .tier-grid,
+        .room-grid,
+        .video-grid {
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .retention-shell {
+            gap: 14px;
+            display: grid;
+        }
+
+        .retention-board {
+            display: grid;
+            gap: 12px;
+            min-height: 120px;
+        }
+
+        .retention-card {
+            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+        }
+
+        .retention-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--line-strong);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .retention-meta,
+        .video-meta,
+        .room-meta,
+        .insight-meta {
+            font-size: 0.86rem;
+            color: var(--muted);
+        }
+
+        .room-form-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 14px;
+            border-radius: 18px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(158, 176, 188, 0.75);
+        }
+
+        .video-card a,
+        .room-card a,
+        .spotlight-card a,
+        .retention-card a {
+            color: inherit;
+        }
+
+        .section-head {
+            display: grid;
+            gap: 8px;
+        }
+
+        .empty-state {
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(3, 7, 10, 0.72);
+            backdrop-filter: blur(10px);
+            z-index: 40;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(440px, 100%);
+            padding: 22px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .modal-actions {
+            justify-content: flex-end;
+        }
+
+        @media (min-width: 760px) {
+            .hero-grid {
+                grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+                align-items: end;
+            }
+
+            .profile-head {
+                grid-template-columns: auto minmax(0, 1fr);
+                align-items: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 759px) {
+            .topbar {
+                align-items: stretch;
+            }
+
+            .topbar .button {
+                flex: 1 1 auto;
+            }
+
+            .hero,
+            .panel,
+            .retention-shell {
+                padding: 18px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
     </style>
 </head>
 <body>
     <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}" data-profile-owner="{{ 'true' if profile_is_owner else 'false' }}">
         <div class="topbar">
-            <a class="btn" href="/feed">Back to feed</a>
+            <a class="button primary" href="/feed">Back to feed</a>
             {% if current_user and profile_user and current_user.username != profile_user.username %}
             <button
-                class="btn ghost {% if is_following_profile %}active{% endif %}"
+                class="button ghost {% if is_following_profile %}active{% endif %}"
                 type="button"
                 data-follow-button
                 data-target-user-id="{{ profile_user.id }}"
                 data-following="{{ 'true' if is_following_profile else 'false' }}"
-            >{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
+            >{% if is_following_profile %}Following{% else %}Follow creator{% endif %}</button>
             {% endif %}
         </div>
 
-        <section class="card">
+        <section class="hero">
             {% if profile_user %}
-            <h1>@{{ profile_user.username }}</h1>
-            <p><span data-followers-for="{{ profile_user.id }}">{{ profile_stats.followers }} followers</span> · {{ profile_stats.following }} following · {{ profile_stats.replies }} voice replies</p>
-            <div class="stats">
-                <div class="stat"><strong>{{ profile_stats.videos }}</strong><p>videos</p></div>
-                <div class="stat"><strong>{{ profile_stats.creator_score }}</strong><p>creator score</p></div>
+            <div class="hero-grid">
+                <div class="section-head">
+                    <div class="eyebrow">Umbono Wami profile</div>
+                    <div class="profile-head">
+                        <div class="avatar-ring">
+                            <div class="avatar-core">{{ (profile_user.username or 'U')[:1]|upper }}</div>
+                        </div>
+                        <div class="section-head">
+                            <h1>@{{ profile_user.username }}</h1>
+                            <p class="lead">{{ profile_user.social_profile.headline if profile_user.social_profile and profile_user.social_profile.headline else 'Voice-first creator building public threads, premium rooms, and recurring community rituals.' }}</p>
+                            <div class="profile-chips">
+                                <span class="chip">{{ profile_user.social_profile.region if profile_user.social_profile else 'Durban' }}</span>
+                                <span class="chip">{{ profile_user.social_profile.primary_language_code if profile_user.social_profile else 'en' }}</span>
+                                <span class="chip">{{ profile_user.social_profile.voice_style if profile_user.social_profile else 'community' }}</span>
+                                {% if profile_voice_identity.dominant_tone %}
+                                <span class="chip">tone {{ profile_voice_identity.dominant_tone }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="section-copy">{{ profile_user.social_profile.bio if profile_user.social_profile and profile_user.social_profile.bio else 'This profile is where creator voice, monetization loops, retention assets, and public videos stay visible in one place.' }}</p>
+                    <div class="hero-actions">
+                        {% if profile_videos %}
+                        <a class="button ghost" href="/video/{{ profile_videos[0].id }}">Watch latest video</a>
+                        {% endif %}
+                        {% if profile_premium_rooms %}
+                        <a class="button ghost" href="{{ profile_premium_rooms[0].target_url }}">Open premium room</a>
+                        {% endif %}
+                        {% if profile_is_owner %}
+                        <a class="button ghost" href="/feed#upload">Post new video</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="eyebrow">Followers</span>
+                        <div class="stat-value" data-followers-for="{{ profile_user.id }}">{{ profile_stats.followers }}</div>
+                        <p>People coming back for the next thread.</p>
+                    </div>
+                    <div class="stat-card">
+                        <span class="eyebrow">Following</span>
+                        <div class="stat-value">{{ profile_stats.following }}</div>
+                        <p>Creators and communities tracked here.</p>
+                    </div>
+                    <div class="stat-card">
+                        <span class="eyebrow">Videos</span>
+                        <div class="stat-value">{{ profile_stats.videos }}</div>
+                        <p>Published clips and voice-first posts.</p>
+                    </div>
+                    <div class="stat-card">
+                        <span class="eyebrow">Creator score</span>
+                        <div class="stat-value">{{ profile_stats.creator_score }}</div>
+                        <p>{{ profile_stats.replies }} public voice replies processed.</p>
+                    </div>
+                </div>
             </div>
             {% else %}
-            <p>Profile not found.</p>
+            <div class="empty-state">Profile not found.</div>
             {% endif %}
         </section>
 
-        <section class="card">
-            <h2>Conversation Intelligence Core</h2>
+        <section class="panel">
+            <div class="section-head">
+                <div class="eyebrow">Conversation intelligence</div>
+                <h2>How this creator sounds in public</h2>
+                <p class="section-copy">Profile intelligence turns reply history into reusable positioning, premium room ideas, and a faster sense of what the audience responds to.</p>
+            </div>
             <div class="insight-grid">
-                <div class="insight-card">
+                <article class="insight-card">
                     <strong>Brand voice</strong>
                     <p>{{ profile_voice_identity.creator_brand_voice_hint }}</p>
-                    <span class="pill">tone {{ profile_voice_identity.dominant_tone }}</span>
-                </div>
-                <div class="insight-card">
-                    <strong>What topics am I known for?</strong>
+                    <div class="insight-meta">
+                        <span class="pill">dominant tone {{ profile_voice_identity.dominant_tone }}</span>
+                    </div>
+                </article>
+                <article class="insight-card">
+                    <strong>Known topics</strong>
                     <p>{% for topic in profile_voice_identity.dominant_topics %}{{ topic.label }}{% if not loop.last %}, {% endif %}{% else %}No processed topics yet.{% endfor %}</p>
-                    <p>processed replies {{ profile_voice_identity.total_processed_replies }}</p>
-                </div>
-                <div class="insight-card">
-                    <strong>Audience sentiment analysis</strong>
+                    <div class="insight-meta">
+                        <span class="pill">processed replies {{ profile_voice_identity.total_processed_replies }}</span>
+                    </div>
+                </article>
+                <article class="insight-card">
+                    <strong>Audience sentiment</strong>
                     <p>{{ profile_voice_identity.audience_sentiment_analysis }}</p>
-                    <p>avg sentiment {{ profile_voice_identity.average_sentiment }} · avg toxicity {{ profile_voice_identity.average_toxicity }}</p>
-                </div>
-                <div class="insight-card">
-                    <strong>Suggested premium room topics</strong>
+                    <div class="insight-meta">
+                        <span class="pill">avg sentiment {{ profile_voice_identity.average_sentiment }}</span>
+                        <span class="pill">avg toxicity {{ profile_voice_identity.average_toxicity }}</span>
+                    </div>
+                </article>
+                <article class="insight-card">
+                    <strong>Premium room prompts</strong>
                     <p>{{ profile_voice_identity.suggested_premium_room_topics|join(', ') if profile_voice_identity.suggested_premium_room_topics else 'Wait for more processed conversations.' }}</p>
-                </div>
+                    <div class="insight-meta">
+                        <span class="pill">voice style {{ (profile_voice_identity.speaking_style or ['balanced'])|join(', ') }}</span>
+                    </div>
+                </article>
             </div>
             {% if profile_voice_identity.best_performing_replies %}
-            <div class="video-item">
+            <div class="spotlight-card">
                 <strong>Best performing voice replies</strong>
                 {% for item in profile_voice_identity.best_performing_replies %}
-                <p><a href="{{ item.target_url }}">{{ item.topic_label }} · {{ item.tone_label }} · intelligence {{ item.intelligence_score }}</a></p>
+                <a href="{{ item.target_url }}">{{ item.topic_label }} · {{ item.tone_label }} · intelligence {{ item.intelligence_score }}</a>
                 {% endfor %}
             </div>
             {% endif %}
         </section>
 
-        <section class="card">
-            <h2>{% if profile_is_owner %}Creator Monetization{% else %}Subscribe to {{ profile_user.username }}{% endif %}</h2>
+        <section class="panel">
+            <div class="section-head">
+                <div class="eyebrow">Monetization</div>
+                <h2>{% if profile_is_owner %}Subscription tiers and support paths{% else %}Support {{ profile_user.username }}{% endif %}</h2>
+                <p class="section-copy">Creator tiers and premium rooms now live in the same page as public identity, which makes the profile feel like a real creator storefront instead of a static account card.</p>
+            </div>
             <div class="tier-grid">
                 {% for tier in creator_tiers %}
-                <div class="tier-card">
+                <article class="tier-card">
                     <strong>{{ tier.tier_name }}</strong>
                     <p>{{ tier.description }}</p>
-                    <span class="pill">{{ tier.currency }} {{ '%.2f'|format(tier.monthly_price_cents / 100) }} / month</span>
+                    <div class="tier-meta">
+                        <span class="pill">{{ tier.currency }} {{ '%.2f'|format(tier.monthly_price_cents / 100) }} / month</span>
+                        <span class="pill">{% if tier.founder_badges_enabled %}Founder badge enabled{% else %}Standard tier{% endif %}</span>
+                    </div>
                     {% if profile_is_owner %}
-                    <span class="pill">{% if tier.founder_badges_enabled %}Founder badge enabled{% else %}Standard tier{% endif %}</span>
+                    <span class="muted">Visible to supporters as a standing offer.</span>
                     {% else %}
-                    <button class="btn {% if tier.active_access %}active{% endif %}" type="button" data-subscribe-button data-tier-id="{{ tier.id }}">{% if tier.active_access %}Subscribed{% else %}Subscribe{% endif %}</button>
+                    <button class="tier-button {% if tier.active_access %}active{% endif %}" type="button" data-subscribe-button data-tier-id="{{ tier.id }}">{% if tier.active_access %}Subscribed{% else %}Subscribe{% endif %}</button>
                     {% endif %}
-                </div>
+                </article>
                 {% else %}
-                <p>No creator tiers yet.</p>
+                <div class="empty-state">No creator tiers yet.</div>
                 {% endfor %}
             </div>
         </section>
 
-        <section class="card">
-            <h2>Premium Voice Rooms</h2>
+        <section class="panel">
+            <div class="section-head">
+                <div class="eyebrow">Premium rooms</div>
+                <h2>Voice rooms, AMAs, and debate spaces</h2>
+                <p class="section-copy">This section keeps room creation and room discovery above the fold on mobile so the premium conversation loop is easier to understand and actually use.</p>
+            </div>
             {% if profile_is_owner %}
-            <form id="room-form" class="video-item" style="margin-top: 0;">
-                <input type="text" name="title" placeholder="Room title" required>
-                <input type="text" name="description" placeholder="What is this debate or AMA about?">
-                <input type="number" name="video_id" placeholder="Linked reel ID">
-                <input type="number" name="highlighted_reply_id" placeholder="Highlighted reply ID">
-                <select name="room_type">
-                    <option value="public">public</option>
-                    <option value="subscriber_only">subscriber_only</option>
-                    <option value="paid_entry">paid_entry</option>
-                    <option value="invite_only">invite_only</option>
-                </select>
-                <select name="session_kind">
-                    <option value="debate">debate</option>
-                    <option value="ama">ama</option>
-                </select>
-                <input type="number" name="entry_price_cents" placeholder="Entry price cents">
-                <input type="number" name="participant_cap" placeholder="Participant cap" value="100">
-                <button class="btn" type="submit">Create Premium Room</button>
-            </form>
-            <div class="video-item" id="creator-earnings-panel">
-                <strong>Creator earnings</strong>
-                <p class="helper">Loading earnings, room conversion, and supporter leaderboard...</p>
+            <div class="section-grid">
+                <div class="room-form-shell">
+                    <strong>Create a premium room</strong>
+                    <form id="room-form">
+                        <div class="room-form-grid">
+                            <input type="text" name="title" placeholder="Room title" required>
+                            <input type="text" name="description" placeholder="What is this debate or AMA about?">
+                            <input type="number" name="video_id" placeholder="Linked reel ID">
+                            <input type="number" name="highlighted_reply_id" placeholder="Highlighted reply ID">
+                            <select name="room_type">
+                                <option value="public">public</option>
+                                <option value="subscriber_only">subscriber_only</option>
+                                <option value="paid_entry">paid_entry</option>
+                                <option value="invite_only">invite_only</option>
+                            </select>
+                            <select name="session_kind">
+                                <option value="debate">debate</option>
+                                <option value="ama">ama</option>
+                            </select>
+                            <input type="number" name="entry_price_cents" placeholder="Entry price cents">
+                            <input type="number" name="participant_cap" placeholder="Participant cap" value="100">
+                        </div>
+                        <button class="room-submit" type="submit">Create premium room</button>
+                    </form>
+                </div>
+                <div class="earnings-card" id="creator-earnings-panel">
+                    <strong>Creator earnings</strong>
+                    <p class="helper">Loading earnings, conversion, and supporter highlights...</p>
+                </div>
             </div>
             {% endif %}
-            <div id="room-list">
+            <div class="room-grid" id="room-list">
                 {% for room in profile_premium_rooms %}
-                <div class="video-item">
+                <article class="room-card">
                     <strong><a href="{{ room.target_url }}">{{ room.title }}</a></strong>
-                    <p>{{ room.label }} · {{ room.room_type }} · {{ room.participant_count }}/{{ room.participant_cap }} joined</p>
+                    <p>{{ room.description or room.label }}</p>
+                    <div class="room-meta">
+                        <span class="pill">{{ room.label }}</span>
+                        <span class="pill">{{ room.room_type }}</span>
+                        <span class="pill">{{ room.participant_count }}/{{ room.participant_cap }} joined</span>
+                    </div>
                     <p>{% if room.scheduled_for %}Starts {{ room.scheduled_for }}{% else %}Open now{% endif %}</p>
-                </div>
+                </article>
                 {% else %}
-                <p class="helper">No premium rooms yet.</p>
+                <div class="empty-state">No premium rooms yet.</div>
                 {% endfor %}
             </div>
         </section>
 
         {% if profile_is_owner %}
-        <section class="card">
-            <h2>Retention Library</h2>
-            <p class="helper">Saved voice reactions, revisit loops, and creator history stay here for fast return sessions.</p>
+        <section class="retention-shell">
+            <div class="section-head">
+                <div class="eyebrow">Retention library</div>
+                <h2>Saved assets, repeat listens, and creator history</h2>
+                <p class="section-copy">These tabs now render different item types cleanly instead of forcing every API response into one generic card shape.</p>
+            </div>
             <div class="tabbar">
-                <button class="tab-button active" type="button" data-tab="saved-replies">Saved Replies</button>
-                <button class="tab-button" type="button" data-tab="saved-videos">Saved Reels</button>
-                <button class="tab-button" type="button" data-tab="my-replies">My Voice Replies</button>
-                <button class="tab-button" type="button" data-tab="likes">Liked Videos</button>
+                <button class="tab-button active" type="button" data-tab="saved-replies">Saved replies</button>
+                <button class="tab-button" type="button" data-tab="saved-videos">Saved reels</button>
+                <button class="tab-button" type="button" data-tab="my-replies">My voice replies</button>
+                <button class="tab-button" type="button" data-tab="likes">Liked videos</button>
                 <button class="tab-button" type="button" data-tab="activity">Activity</button>
             </div>
-            <div class="card" data-tab-content>
+            <div class="retention-board" data-tab-content>
                 <p class="helper">Loading your saved voice library...</p>
             </div>
         </section>
         {% endif %}
 
-        <section class="card">
-            <h2>Posted videos</h2>
-            {% for video in profile_videos %}
-            <div class="video-item">
-                <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
-                <p>{{ video.caption }}</p>
-                <p>{{ video.voice_replies }} voice replies · {{ video.likes }} likes · {{ video.region }}</p>
+        <section class="panel">
+            <div class="section-head">
+                <div class="eyebrow">Published videos</div>
+                <h2>What this creator has already posted</h2>
+                <p class="section-copy">Video cards now present the content as real feed entries, with stronger hierarchy and cleaner metadata on small screens.</p>
             </div>
-            {% else %}
-            <p>No videos yet.</p>
-            {% endfor %}
+            <div class="video-grid">
+                {% for video in profile_videos %}
+                <article class="video-card">
+                    <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
+                    <p>{{ video.caption or video.description or 'Open the thread to see the full conversation.' }}</p>
+                    <div class="video-meta">
+                        <span class="pill">{{ video.voice_replies }} voice replies</span>
+                        <span class="pill">{{ video.likes }} likes</span>
+                        <span class="pill">{{ video.region }}</span>
+                    </div>
+                    <a class="button ghost" href="/video/{{ video.id }}">Open video</a>
+                </article>
+                {% else %}
+                <div class="empty-state">No videos yet.</div>
+                {% endfor %}
+            </div>
         </section>
     </div>
 
     <div class="modal-backdrop" data-auth-modal>
         <div class="modal-card">
             <h3>Sign in to follow creators</h3>
-            <p>Umbono Wami keeps follow state persistent once you are signed in.</p>
-            <div class="topbar">
-                <a class="btn" href="/">Sign in</a>
-                <button class="btn ghost" type="button" data-close-modal>Close</button>
+            <p class="helper">Umbono Wami keeps follow state, subscriptions, and saved creator actions persistent once you are signed in.</p>
+            <div class="modal-actions">
+                <a class="modal-button primary" href="/">Sign in</a>
+                <button class="modal-button ghost" type="button" data-close-modal>Close</button>
             </div>
         </div>
     </div>
@@ -202,6 +715,7 @@
         const tabContent = document.querySelector('[data-tab-content]');
         const tabCache = new Map();
         const creatorId = {{ profile_user.id if profile_user else 'null' }};
+
         const setPending = (button, pending) => {
             if (!button) {
                 return false;
@@ -213,12 +727,36 @@
             button.disabled = pending;
             return false;
         };
+
         const tabEndpoints = {
             'saved-videos': '/api/me/saved/videos',
             'saved-replies': '/api/me/saved/replies',
             'my-replies': '/api/me/voice-replies',
             'likes': '/api/me/likes',
             'activity': '/api/me/activity',
+        };
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const formatDate = (value) => {
+            if (!value) {
+                return 'Recent';
+            }
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return value;
+            }
+            return new Intl.DateTimeFormat(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+            }).format(date);
         };
 
         const requestJson = async (url, options = {}) => {
@@ -246,7 +784,7 @@
         const setFollowButtonState = (button, following) => {
             button.dataset.following = following ? 'true' : 'false';
             button.classList.toggle('active', following);
-            button.textContent = following ? 'Following' : 'Follow';
+            button.textContent = following ? 'Following' : 'Follow creator';
         };
 
         const openAuthModal = () => {
@@ -256,18 +794,38 @@
         };
 
         const renderItems = (items, emptyText) => {
+            if (!tabContent) {
+                return;
+            }
             if (!items.length) {
-                tabContent.innerHTML = `<p class="helper">${emptyText}</p>`;
+                tabContent.innerHTML = `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
                 return;
             }
 
-            tabContent.innerHTML = items.map((item) => `
-                <a class="retention-item" href="${item.target_url}">
-                    <strong>${item.title || item.video_title || 'Open item'}</strong>
-                    <p>${item.caption || item.transcript || item.kind || ''}</p>
-                    <p>${item.created_at || item.saved_at || ''}</p>
-                </a>
-            `).join('');
+            tabContent.innerHTML = items.map((item) => {
+                const title = item.title || item.video_title || 'Open item';
+                const summary = item.caption || item.transcript || item.message || item.kind || '';
+                const timeLabel = formatDate(item.created_at || item.saved_at);
+                const targetUrl = item.target_url || '#';
+                const creator = item.creator || item.username || item.actor || '';
+                const badges = [
+                    creator ? `<span class="pill">${escapeHtml(creator)}</span>` : '',
+                    item.region ? `<span class="pill">${escapeHtml(item.region)}</span>` : '',
+                    item.topic ? `<span class="pill">${escapeHtml(item.topic)}</span>` : '',
+                    item.kind ? `<span class="pill">${escapeHtml(String(item.kind).replaceAll('_', ' '))}</span>` : '',
+                ].filter(Boolean).join('');
+
+                return `
+                    <a class="retention-card" href="${escapeHtml(targetUrl)}">
+                        <strong>${escapeHtml(title)}</strong>
+                        <p>${escapeHtml(summary || 'Open this item to view the full context.')}</p>
+                        <div class="retention-meta">
+                            ${badges}
+                            <span class="pill">${escapeHtml(timeLabel)}</span>
+                        </div>
+                    </a>
+                `;
+            }).join('');
         };
 
         const loadTab = async (tabName) => {
@@ -292,7 +850,7 @@
                 renderItems(items, 'Nothing here yet.');
             } catch (error) {
                 if (error.code !== 'auth_required') {
-                    tabContent.innerHTML = '<p class="helper">Could not load this tab right now.</p>';
+                    tabContent.innerHTML = '<div class="empty-state">Could not load this tab right now.</div>';
                     console.error(error);
                 }
             }
@@ -322,7 +880,7 @@
                     });
                     setFollowButtonState(button, payload.following);
                     document.querySelectorAll(`[data-followers-for="${targetUserId}"]`).forEach((node) => {
-                        node.textContent = `${payload.followers} followers`;
+                        node.textContent = payload.followers;
                     });
                 } catch (error) {
                     setFollowButtonState(button, previouslyFollowing);
@@ -369,15 +927,17 @@
                     earningsPanel.innerHTML = `
                         <strong>Total earnings</strong>
                         <p>ZAR ${(payload.total_earnings_cents / 100).toFixed(2)}</p>
-                        <p>Room conversion ${payload.room_conversion_rate}</p>
-                        <p>Subscriber retention ${payload.subscriber_retention}%</p>
-                        <p>Average tip ZAR ${(payload.avg_tip_per_creator_cents / 100).toFixed(2)}</p>
-                        <p>Top supporters: ${(payload.top_supporters || []).map((item) => item.username).join(', ') || 'No supporters yet'}</p>
+                        <div class="retention-meta">
+                            <span class="pill">room conversion ${escapeHtml(payload.room_conversion_rate)}</span>
+                            <span class="pill">retention ${escapeHtml(payload.subscriber_retention)}%</span>
+                            <span class="pill">avg tip ZAR ${(payload.avg_tip_per_creator_cents / 100).toFixed(2)}</span>
+                        </div>
+                        <p>Top supporters: ${escapeHtml((payload.top_supporters || []).map((item) => item.username).join(', ') || 'No supporters yet')}</p>
                     `;
                 })
                 .catch((error) => {
                     console.error(error);
-                    earningsPanel.innerHTML = '<p class="helper">Could not load creator earnings right now.</p>';
+                    earningsPanel.innerHTML = '<div class="empty-state">Could not load creator earnings right now.</div>';
                 });
         }
 
