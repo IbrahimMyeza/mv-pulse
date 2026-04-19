@@ -45,6 +45,10 @@
             -webkit-text-size-adjust: 100%;
         }
 
+        body.overlay-open {
+            overflow: hidden;
+        }
+
         a { color: inherit; text-decoration: none; }
         p { color: var(--muted); line-height: 1.5; }
 
@@ -269,6 +273,10 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        .modal-card.dragging {
+            transition: none;
+        }
+
         .modal-handle {
             width: 68px;
             height: 6px;
@@ -461,6 +469,7 @@
         const authModalCard = document.querySelector('[data-auth-modal-card]');
         const authStatus = document.querySelector('[data-auth-status]');
         let authGesture = null;
+        let overlayHistoryDepth = 0;
 
         const setAuthStatus = (message = '', tone = 'error') => {
             if (!authStatus) {
@@ -487,16 +496,26 @@
                 return;
             }
             authModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            document.body.classList.add('overlay-open');
             showAuthPanel(target);
+            window.history.pushState({ overlay: true }, '');
+            overlayHistoryDepth += 1;
         };
 
-        const closeAuthModal = () => {
+        const hardCloseAuthModal = () => {
             if (!authModal) {
                 return;
             }
             authModal.classList.remove('active');
-            document.body.style.overflow = '';
+            document.body.classList.remove('overlay-open');
+        };
+
+        const closeAuthModal = () => {
+            if (overlayHistoryDepth > 0) {
+                window.history.back();
+                return;
+            }
+            hardCloseAuthModal();
         };
 
         const bindPasswordToggles = (root = document) => {
@@ -581,6 +600,9 @@
         });
 
         authModalCard?.addEventListener('pointerdown', (event) => {
+            if (event.target.closest('input, button, label')) {
+                return;
+            }
             authGesture = { pointerId: event.pointerId, startY: event.clientY };
         });
 
@@ -592,6 +614,17 @@
             authGesture = null;
             if (deltaY > 110) {
                 closeAuthModal();
+            }
+        });
+
+        authModalCard?.addEventListener('pointercancel', () => {
+            authGesture = null;
+        });
+
+        window.addEventListener('popstate', () => {
+            if (overlayHistoryDepth > 0 && authModal?.classList.contains('active')) {
+                overlayHistoryDepth = Math.max(overlayHistoryDepth - 1, 0);
+                hardCloseAuthModal();
             }
         });
 

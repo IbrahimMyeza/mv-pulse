@@ -51,6 +51,10 @@
             -webkit-text-size-adjust: 100%;
         }
 
+        body.overlay-open {
+            overflow: hidden;
+        }
+
         a {
             color: inherit;
             text-decoration: none;
@@ -616,6 +620,11 @@
             overflow: hidden;
             display: grid;
             max-height: min(82vh, 760px);
+        }
+
+        .sheet-card.dragging,
+        .modal-card.dragging {
+            transition: none;
         }
 
         .sheet-handle {
@@ -1214,7 +1223,7 @@
     </div>
 
     <div class="modal-backdrop" data-auth-modal>
-        <div class="modal-card">
+        <div class="modal-card" data-auth-modal-card>
             <div class="sheet-header">
                 <div>
                     <h3>Sign in to interact</h3>
@@ -1260,6 +1269,7 @@
         const appShell = document.querySelector('.app');
         const isAuthenticated = appShell?.dataset.authenticated === 'true';
         const authModal = document.querySelector('[data-auth-modal]');
+        const authModalCard = document.querySelector('[data-auth-modal-card]');
         const authStatus = document.querySelector('[data-auth-status]');
         const sheetBackdrop = document.querySelector('[data-sheet-backdrop]');
         const feedVoiceSheet = document.querySelector('[data-feed-voice-sheet]');
@@ -1267,6 +1277,9 @@
         const unreadBadges = document.querySelectorAll('[data-unread-badge]');
         let activeSheet = null;
         let activeMoreContext = null;
+        let overlayHistoryDepth = 0;
+        let authGesture = null;
+        let sheetGesture = null;
 
         const setPending = (button, pending) => {
             if (!button) {
@@ -1297,29 +1310,65 @@
             document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
                 panel.classList.toggle('active', panel.dataset.authPanel === target);
             });
+            document.querySelector(`[data-auth-panel="${target}"] input`)?.focus({ preventScroll: true });
         };
 
-        const openAuthModal = (target = 'login') => {
-            authModal?.classList.add('active');
-            showAuthPanel(target);
-        };
-        const closeAuthModal = () => authModal?.classList.remove('active');
-
-        const openSheet = (sheet) => {
-            if (!sheet) {
-                return;
-            }
-            sheetBackdrop?.classList.add('active');
-            sheet.classList.add('active');
-            activeSheet = sheet;
+        const syncOverlayState = () => {
+            document.body.classList.toggle('overlay-open', Boolean(activeSheet || authModal?.classList.contains('active')));
         };
 
-        const closeSheets = () => {
+        const pushOverlayHistory = () => {
+            window.history.pushState({ overlay: true }, '');
+            overlayHistoryDepth += 1;
+        };
+
+        const hardCloseAuthModal = () => {
+            authModal?.classList.remove('active');
+            syncOverlayState();
+        };
+
+        const hardCloseSheets = () => {
             activeSheet?.classList.remove('active');
             feedVoiceSheet?.classList.remove('active');
             moreSheet?.classList.remove('active');
             sheetBackdrop?.classList.remove('active');
             activeSheet = null;
+            syncOverlayState();
+        };
+
+        const dismissOverlay = () => {
+            if (overlayHistoryDepth > 0) {
+                window.history.back();
+                return;
+            }
+            hardCloseSheets();
+            hardCloseAuthModal();
+        };
+
+        const openAuthModal = (target = 'login') => {
+            hardCloseSheets();
+            authModal?.classList.add('active');
+            showAuthPanel(target);
+            syncOverlayState();
+            pushOverlayHistory();
+        };
+        const closeAuthModal = () => dismissOverlay();
+
+        const openSheet = (sheet) => {
+            if (!sheet) {
+                return;
+            }
+            hardCloseAuthModal();
+            hardCloseSheets();
+            sheetBackdrop?.classList.add('active');
+            sheet.classList.add('active');
+            activeSheet = sheet;
+            syncOverlayState();
+            pushOverlayHistory();
+        };
+
+        const closeSheets = () => {
+            dismissOverlay();
         };
 
         document.querySelectorAll('[data-close-modal]').forEach((button) => {
@@ -1343,6 +1392,60 @@
             if (event.target === authModal) {
                 closeAuthModal();
             }
+        });
+
+        const bindSwipeDismiss = (target, setState) => {
+            if (!target) {
+                return;
+            }
+            target.addEventListener('pointerdown', (event) => {
+                if (event.target.closest('input, textarea, select, button, a, audio, label')) {
+                    return;
+                }
+                setState({ pointerId: event.pointerId, startY: event.clientY, startX: event.clientX, active: true });
+                target.setPointerCapture?.(event.pointerId);
+            });
+            target.addEventListener('pointermove', (event) => {
+                const state = setState();
+                if (!state?.active || state.pointerId !== event.pointerId) {
+                    return;
+                }
+                const deltaY = Math.max(event.clientY - state.startY, 0);
+                const deltaX = Math.abs(event.clientX - state.startX);
+                if (deltaY > 0 && deltaX < 90) {
+                    target.style.transform = `translateY(${Math.min(deltaY, 120)}px)`;
+                }
+            });
+            const endGesture = (event) => {
+                const state = setState();
+                if (!state?.active || state.pointerId !== event.pointerId) {
+                    return;
+                }
+                const deltaY = event.clientY - state.startY;
+                target.style.transform = '';
+                setState(null);
+                if (deltaY > 90) {
+                    dismissOverlay();
+                }
+            };
+            target.addEventListener('pointerup', endGesture);
+            target.addEventListener('pointercancel', endGesture);
+        };
+
+        bindSwipeDismiss(authModalCard, (next) => {
+            if (typeof next !== 'undefined') {
+                authGesture = next;
+            }
+            return authGesture;
+        });
+
+        document.querySelectorAll('.sheet .sheet-card').forEach((card) => {
+            bindSwipeDismiss(card, (next) => {
+                if (typeof next !== 'undefined') {
+                    sheetGesture = next;
+                }
+                return sheetGesture;
+            });
         });
 
         document.querySelectorAll('[data-toggle-password]').forEach((button) => {
@@ -1805,10 +1908,17 @@
 
         bindFeedHoldMenus();
 
+        window.addEventListener('popstate', () => {
+            if (overlayHistoryDepth > 0 && (activeSheet || authModal?.classList.contains('active'))) {
+                overlayHistoryDepth = Math.max(overlayHistoryDepth - 1, 0);
+                hardCloseSheets();
+                hardCloseAuthModal();
+            }
+        });
+
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
-                closeSheets();
-                closeAuthModal();
+                dismissOverlay();
             }
         });
 
