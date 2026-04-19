@@ -4,8 +4,11 @@ import time
 import uuid
 from datetime import timedelta
 from http import HTTPStatus
+from pathlib import Path
 
 import sqlalchemy as sa
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 import stripe
@@ -164,6 +167,52 @@ def _validate_production_services():
         )
 
 
+def _current_migration_head():
+    migrations_path = Path(app.root_path) / "migrations"
+    alembic_config = Config(str(migrations_path / "alembic.ini"))
+    alembic_config.set_main_option("script_location", str(migrations_path))
+    return ScriptDirectory.from_config(alembic_config).get_current_head()
+
+
+def _stamp_database_revision(revision):
+    with db.engine.begin() as connection:
+        inspector = sa.inspect(connection)
+        if not inspector.has_table("alembic_version"):
+            connection.execute(
+                sa.text("CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL PRIMARY KEY)")
+            )
+
+        current_revision = connection.execute(sa.text("SELECT version_num FROM alembic_version")).scalar_one_or_none()
+        if current_revision == revision:
+            return
+        if current_revision is None:
+            connection.execute(
+                sa.text("INSERT INTO alembic_version (version_num) VALUES (:revision)"),
+                {"revision": revision},
+            )
+            return
+
+        connection.execute(
+            sa.text("UPDATE alembic_version SET version_num = :revision"),
+            {"revision": revision},
+        )
+
+
+def _ensure_database_schema():
+    if not app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("postgresql"):
+        return
+
+    inspector = sa.inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+    if "video" in table_names:
+        return
+
+    app.logger.warning("database.schema_bootstrap starting for empty or incomplete PostgreSQL schema")
+    db.create_all()
+    _stamp_database_revision(_current_migration_head())
+    app.logger.warning("database.schema_bootstrap completed")
+
+
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mv-pulse-dev-secret")
@@ -188,6 +237,8 @@ CORS(app, resources={r"/api/*": {"origins": [origin.strip() for origin in os.get
 db.init_app(app)
 migrate.init_app(app, db)
 _validate_production_services()
+with app.app_context():
+    _ensure_database_schema()
 
 app.register_blueprint(voice_bp)
 app.register_blueprint(auth_bp)
