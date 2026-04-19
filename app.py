@@ -159,7 +159,9 @@ def _validate_production_services():
     if not app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("postgresql"):
         raise RuntimeError("Production requires a PostgreSQL DATABASE_URL")
     if not cloud_storage_configured() and not configured_media_root():
-        raise RuntimeError("Production requires CLOUDINARY_URL or MEDIA_STORAGE_ROOT")
+        app.logger.warning(
+            "production.media_storage_fallback enabled because CLOUDINARY_URL and MEDIA_STORAGE_ROOT are not configured"
+        )
 
 
 app = Flask(__name__)
