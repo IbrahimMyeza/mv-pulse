@@ -204,6 +204,11 @@ def home():
     )
 
 
+@app.route("/healthz")
+def healthz():
+    return {"status": "ok"}, 200
+
+
 @app.route("/media/<path:asset_path>")
 def media_asset(asset_path):
     media_root = configured_media_root()

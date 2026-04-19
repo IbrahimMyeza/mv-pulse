@@ -11,7 +11,7 @@ services:
     buildCommand: pip install -r requirements.txt
     preDeployCommand: flask --app app db upgrade
     startCommand: gunicorn app:app
-    healthCheckPath: /
+    healthCheckPath: /healthz
     envVars:
       - key: APP_ENV
         value: production
