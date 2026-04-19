@@ -28,6 +28,7 @@
             --safe-right: env(safe-area-inset-right, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
+            --keyboard-offset: 0px;
         }
 
         * { box-sizing: border-box; }
@@ -43,9 +44,9 @@
             color: var(--text);
             font-family: "Segoe UI", sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 26%),
-                radial-gradient(circle at top right, rgba(255, 135, 86, 0.16), transparent 30%),
-                linear-gradient(180deg, #030507 0%, #09111a 50%, #030507 100%);
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.08), transparent 20%),
+                radial-gradient(circle at top right, rgba(255, 135, 86, 0.08), transparent 20%),
+                linear-gradient(180deg, #010203 0%, #05080d 50%, #010203 100%);
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-text-size-adjust: 100%;
@@ -78,47 +79,74 @@
             position: fixed;
             inset: 0 0 auto 0;
             z-index: 25;
-            padding: calc(14px + var(--safe-top)) calc(14px + var(--safe-right)) 0 calc(14px + var(--safe-left));
+            padding: calc(8px + var(--safe-top)) calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
             pointer-events: none;
         }
 
         .topbar-inner {
-            width: min(1180px, 100%);
+            width: min(920px, 100%);
             margin: 0 auto;
-            border-radius: 24px;
+            border-radius: 18px;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            background: linear-gradient(180deg, rgba(8, 11, 16, 0.92), rgba(8, 11, 16, 0.72));
+            background: rgba(5, 8, 12, 0.44);
             backdrop-filter: blur(18px);
             box-shadow: var(--shadow);
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 14px 16px;
+            padding: 10px 12px;
             pointer-events: auto;
         }
 
         .brand-block {
-            display: grid;
-            gap: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .eyebrow {
-            color: var(--accent);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            font-size: 0.74rem;
-            font-weight: 700;
+            display: none;
         }
 
         .brand-title {
-            font-size: 1rem;
-            font-weight: 700;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .brand-subtitle {
-            color: var(--muted);
-            font-size: 0.86rem;
+            display: none;
+        }
+
+        .top-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            min-height: 36px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
         .topbar-actions,
@@ -190,8 +218,14 @@
             display: none;
             width: min(1180px, 100%);
             margin: 0 auto;
-            padding: calc(92px + var(--safe-top)) calc(14px + var(--safe-right)) calc(120px + var(--safe-bottom)) calc(14px + var(--safe-left));
+            padding: calc(70px + var(--safe-top)) calc(10px + var(--safe-right)) calc(92px + var(--safe-bottom)) calc(10px + var(--safe-left));
             scroll-margin-top: 92px;
+        }
+
+        .screen[data-screen="home"] {
+            width: min(520px, 100%);
+            padding-top: calc(58px + var(--safe-top));
+            padding-bottom: calc(84px + var(--safe-bottom));
         }
 
         .screen.active {
@@ -200,12 +234,12 @@
 
         .feed-shell {
             display: grid;
-            gap: 18px;
+            gap: 0;
         }
 
         .feed-stage {
             display: grid;
-            gap: 18px;
+            gap: 0;
         }
 
         .reel-slide,
@@ -224,13 +258,19 @@
         .reel-slide,
         .thread-slide {
             position: relative;
-            min-height: min(100svh, 920px);
+            min-height: 100svh;
             scroll-snap-align: start;
         }
 
         .feed-stage {
-            scroll-snap-type: y proximity;
+            scroll-snap-type: y mandatory;
             overscroll-behavior-y: contain;
+        }
+
+        .thread-slide,
+        .feed-shell > .secondary-grid,
+        .feed-shell > .reply-list {
+            display: none;
         }
 
         .reel-video,
@@ -241,6 +281,22 @@
             height: 100%;
             object-fit: cover;
             background: #05070a;
+        }
+
+        .reel-loading {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: calc(130px + var(--safe-bottom));
+            z-index: 2;
+            display: grid;
+            gap: 10px;
+            transition: opacity 180ms ease;
+        }
+
+        .reel-slide.loaded .reel-loading {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .thread-slide-backdrop {
@@ -267,11 +323,7 @@
         }
 
         .reel-top {
-            padding: 22px 18px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 14px;
+            display: none;
         }
 
         .creator-pill {
@@ -314,20 +366,21 @@
             min-height: 100%;
             display: grid;
             align-items: end;
-            padding: 0 18px 24px;
+            padding: 0 14px 18px;
         }
 
         .reel-bottom-inner {
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
-            gap: 16px;
+            gap: 12px;
             align-items: end;
         }
 
         .reel-copy {
             display: grid;
-            gap: 12px;
-            max-width: 720px;
+            gap: 10px;
+            max-width: 260px;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .reel-copy h2,
@@ -339,7 +392,8 @@
         }
 
         .reel-copy h2 {
-            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-size: 0.98rem;
+            font-weight: 700;
         }
 
         .reel-copy p,
@@ -354,18 +408,55 @@
             line-height: 1.5;
         }
 
+        .creator-handle {
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+
+        .caption-shell {
+            display: grid;
+            gap: 8px;
+        }
+
+        .caption-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .caption-shell.expanded .caption-text {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+
+        .caption-toggle {
+            width: fit-content;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: rgba(245, 247, 250, 0.78);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
         .reel-meta {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: 0.92rem;
+            display: none;
+        }
+
+        .reel-copy .chip-row,
+        .reel-copy .actions-row,
+        .reel-copy .meta-copy {
+            display: none;
         }
 
         .rail {
             display: grid;
-            gap: 12px;
+            gap: 10px;
             justify-items: center;
-            width: 82px;
+            width: 68px;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .rail-action {
@@ -375,12 +466,12 @@
         }
 
         .rail-button {
-            width: 62px;
-            height: 62px;
+            width: 56px;
+            height: 56px;
             display: grid;
             place-items: center;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.05rem;
             padding: 0;
             backdrop-filter: blur(14px);
             background: rgba(7, 10, 16, 0.72);
@@ -389,8 +480,8 @@
         }
 
         .rail-button.voice-primary {
-            width: 70px;
-            height: 70px;
+            width: 62px;
+            height: 62px;
             border-color: transparent;
             background: linear-gradient(135deg, rgba(24, 212, 171, 0.96) 0%, rgba(255, 135, 86, 0.96) 100%);
             color: #061018;
@@ -412,8 +503,36 @@
             flex-direction: column;
             gap: 2px;
             text-align: center;
-            font-size: 0.78rem;
+            font-size: 0.74rem;
             color: rgba(245, 247, 250, 0.82);
+        }
+
+        .rail-action-label span {
+            display: none;
+        }
+
+        .rail-action-label strong {
+            font-size: 0.82rem;
+            color: rgba(245, 247, 250, 0.92);
+        }
+
+        .voice-cta {
+            position: absolute;
+            left: 50%;
+            bottom: calc(78px + var(--safe-bottom));
+            transform: translateX(-50%);
+            min-height: 56px;
+            padding: 0 22px;
+            border-radius: 999px;
+            border: 0;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            color: #061018;
+            font-weight: 900;
+            font-size: 0.98rem;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
+            z-index: 3;
+            cursor: pointer;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .rail-action-label strong {
@@ -536,28 +655,37 @@
         .bottom-nav {
             position: fixed;
             left: 50%;
-            bottom: calc(14px + var(--safe-bottom));
+            bottom: calc(8px + var(--safe-bottom));
             transform: translateX(-50%);
             z-index: 24;
-            width: min(900px, calc(100% - 24px));
-            border-radius: 24px;
+            width: min(520px, calc(100% - 16px));
+            border-radius: 18px;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(7, 10, 16, 0.92);
+            background: rgba(7, 10, 16, 0.78);
             backdrop-filter: blur(18px);
             box-shadow: var(--shadow);
             display: flex;
             justify-content: space-between;
             gap: 8px;
-            padding: 10px;
+            padding: 6px;
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        body.overlay-open .bottom-nav,
+        body.overlay-open .voice-cta,
+        body.overlay-open .rail {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .tab-link {
             flex: 1;
             text-align: center;
-            min-height: 50px;
+            min-height: 42px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.74rem;
         }
 
         .tab-link.active {
@@ -599,11 +727,11 @@
             left: 50%;
             bottom: 0;
             width: min(640px, 100%);
-            max-height: min(82vh, 760px);
+            max-height: min(calc(86svh - var(--keyboard-offset)), 760px);
             transform: translate(-50%, calc(100% + 24px));
             transition: transform 0.24s ease;
             z-index: 39;
-            padding: 0 calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+            padding: 0 calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom) + min(var(--keyboard-offset), 220px)) calc(12px + var(--safe-left));
             pointer-events: none;
         }
 
@@ -619,7 +747,7 @@
             box-shadow: var(--shadow);
             overflow: hidden;
             display: grid;
-            max-height: min(82vh, 760px);
+            max-height: min(calc(86svh - var(--keyboard-offset)), 760px);
         }
 
         .sheet-card.dragging,
@@ -636,13 +764,27 @@
         }
 
         .sheet-body {
-            padding: 16px 18px 20px;
+            padding: 16px 18px calc(24px + var(--safe-bottom));
             overflow: auto;
             display: grid;
             gap: 14px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             overscroll-behavior: contain;
+        }
+
+        .sheet-body:focus-within {
+            padding-bottom: calc(24px + var(--safe-bottom) + min(var(--keyboard-offset), 220px));
+        }
+
+        .notification-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.84rem;
         }
 
         .sheet-header {
@@ -757,15 +899,37 @@
             100% { opacity: 0; transform: scale(1.8); }
         }
 
+        .app.ui-hidden .topbar,
+        .app.ui-hidden .bottom-nav,
+        .app.ui-hidden .reel-copy,
+        .app.ui-hidden .rail,
+        .app.ui-hidden .voice-cta {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .app.ui-hidden .topbar,
+        .app.ui-hidden .bottom-nav,
+        .app.ui-hidden .voice-cta {
+            transform: translateY(10px);
+        }
+
+        .app.keyboard-open .bottom-nav,
+        .app.keyboard-open .voice-cta,
+        .app.keyboard-open .rail {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         @media (max-width: 840px) {
             .topbar-inner {
-                align-items: flex-start;
-                flex-direction: column;
+                align-items: center;
+                flex-direction: row;
             }
 
             .topbar-actions {
-                width: 100%;
-                justify-content: flex-start;
+                width: auto;
+                justify-content: flex-end;
             }
 
             .reel-bottom-inner {
@@ -773,9 +937,8 @@
             }
 
             .rail {
-                width: 100%;
-                grid-template-columns: repeat(6, minmax(0, 1fr));
-                justify-items: stretch;
+                width: 68px;
+                justify-items: center;
             }
 
             .rail-action {
@@ -789,13 +952,17 @@
             }
 
             .screen {
-                padding-top: calc(112px + var(--safe-top));
+                padding-top: calc(58px + var(--safe-top));
             }
 
             .bottom-nav {
                 width: calc(100% - 18px);
                 left: 9px;
                 transform: none;
+            }
+
+            .voice-cta {
+                bottom: calc(72px + var(--safe-bottom));
             }
         }
 
@@ -810,6 +977,36 @@
             .brand-title {
                 line-height: 1.35;
             }
+
+            .voice-cta {
+                width: calc(100% - 44px);
+            }
+        }
+
+        @media (max-height: 760px) {
+            .screen[data-screen="home"] {
+                padding-bottom: calc(96px + var(--safe-bottom));
+            }
+
+            .rail {
+                gap: 8px;
+                width: 60px;
+            }
+
+            .rail-button {
+                width: 52px;
+                height: 52px;
+            }
+
+            .rail-button.voice-primary {
+                width: 56px;
+                height: 56px;
+            }
+
+            .voice-cta {
+                min-height: 52px;
+                bottom: calc(66px + var(--safe-bottom));
+            }
         }
     </style>
 </head>
@@ -818,24 +1015,17 @@
         <header class="topbar">
             <div class="topbar-inner">
                 <div class="brand-block">
-                    <span class="eyebrow">Umbono Wami</span>
-                    <span class="brand-title">Watch. React. Speak. Continue the conversation.</span>
-                    <span class="brand-subtitle">Voice-first short video on the existing MV Pulse stack.</span>
+                    <a class="top-logo" href="/feed">MV</a>
+                    <span class="brand-title">MV Pulse</span>
                 </div>
                 <div class="topbar-actions">
-                    {% if active_thread_summary %}
-                    <span class="pill">CIC live · {{ active_thread_summary.cluster_label }}</span>
-                    {% endif %}
-                    <button class="action-link" type="button" data-install-app hidden>Install app</button>
-                    <button class="action-link" type="button" data-enable-notifications>Enable notifications</button>
+                    <a class="icon-button" href="/feed#conversation-radar" aria-label="Search">⌕</a>
+                    <a class="icon-button" href="/notifications" aria-label="Notifications">◌</a>
                     {% if current_user %}
-                    <span class="chip">@{{ current_user.username }}</span>
-                    <a class="action-link" href="/logout">Log out</a>
+                    <a class="icon-button" href="/profile/{{ current_user.username }}" aria-label="Profile">☺</a>
                     {% else %}
-                    <span class="pill">Guest watch mode</span>
-                    <a class="action-link" href="/">Sign in</a>
+                    <button class="icon-button" type="button" data-open-auth-modal data-auth-target="login" aria-label="Profile">☺</button>
                     {% endif %}
-                    <a class="action-link primary" href="/upload">Upload</a>
                 </div>
             </div>
         </header>
@@ -875,6 +1065,11 @@
                     {% set video = item %}
                     <article class="reel-slide" id="video-{{ video.id }}">
                         <video class="reel-video autoplay-video" id="feed-video-{{ video.id }}" src="{{ video.video_url }}" muted loop playsinline preload="metadata"></video>
+                        <div class="reply-card reel-loading" data-video-loading-indicator>
+                            <strong>Loading video</strong>
+                            <div class="waveform"></div>
+                            <p>MV Pulse is buffering the next voice-first reel.</p>
+                        </div>
                         <div class="reel-shade"></div>
                         <div class="reel-top">
                             <div class="creator-pill">
@@ -902,62 +1097,43 @@
                         <div class="reel-bottom">
                             <div class="reel-bottom-inner">
                                 <div class="reel-copy">
-                                    <h2><a href="/video/{{ video.id }}">{{ video.title }}</a></h2>
-                                    <p>{{ video.caption }}</p>
-                                    <div class="reel-meta">
-                                        <span>{{ video.views }} views</span>
-                                        <span>{{ video.voice_replies }} voice replies</span>
-                                        <span>{{ video.text_comments_count }} comments</span>
-                                        <span>debate {{ video.debate_score }}</span>
-                                        <span>intelligence {{ video.intelligence_score }}</span>
-                                    </div>
-                                    <div class="chip-row">
-                                        <span class="pill">#{{ video.topic|replace(' ', '') }}</span>
-                                        <span class="pill">#{{ video.region|replace(' ', '') }}</span>
-                                        <span class="pill">Original sound</span>
-                                    </div>
-                                    {% if video.thread_summary %}
-                                    <p class="meta-copy">{{ video.thread_summary.summary_text }}</p>
-                                    {% endif %}
-                                    <div class="actions-row">
-                                        <a class="action-link" href="/video/{{ video.id }}">Open thread</a>
-                                        <a class="action-link" href="{{ video.video_url }}" download>Download</a>
-                                        {% if video.creator_username %}
-                                        <a class="action-link" href="/profile/{{ video.creator_username }}">Creator page</a>
-                                        {% endif %}
-                                        {% if video.can_follow_creator %}
-                                        <button class="action-link {% if video.creator_is_followed %}primary{% endif %}" type="button" data-follow-button data-target-user-id="{{ video.creator_id }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}">{% if video.creator_is_followed %}Following{% else %}Follow creator{% endif %}</button>
-                                        {% endif %}
+                                    <div class="caption-shell" data-caption-shell>
+                                        <h2 class="creator-handle">
+                                            {% if video.creator_username %}
+                                            <a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a>
+                                            {% else %}
+                                            @{{ video.creator }}
+                                            {% endif %}
+                                        </h2>
+                                        <p class="caption-text">{{ video.caption or video.title }}</p>
+                                        <button class="caption-toggle" type="button" data-toggle-caption>More</button>
                                     </div>
                                 </div>
                                 <div class="rail">
                                     <div class="rail-action">
-                                        <button class="rail-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">Like</button>
+                                        <button class="rail-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">♥</button>
                                         <div class="rail-action-label"><strong data-video-like-count>{{ video.likes }}</strong><span>Like</span></div>
                                     </div>
                                     <div class="rail-action">
-                                        <button class="rail-button" type="button" data-open-feed-voice-sheet data-open-feed-comments data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">Reply</button>
-                                        <div class="rail-action-label"><strong>{{ video.text_comments_count }}</strong><span>Reply</span></div>
+                                        <button class="rail-button voice-primary" type="button" data-open-feed-voice-sheet data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">🎙</button>
+                                        <div class="rail-action-label"><strong>{{ video.voice_replies }}</strong><span>Voice Replies</span></div>
                                     </div>
                                     <div class="rail-action">
-                                        <button class="rail-button voice-primary" type="button" data-open-feed-voice-sheet data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">Voice</button>
-                                        <div class="rail-action-label"><strong>{{ video.voice_replies }}</strong><span>Voice</span></div>
+                                        <button class="rail-button" type="button" data-video-repost-button data-video-url="/video/{{ video.id }}#record">↻</button>
+                                        <div class="rail-action-label"><strong>{{ video.text_comments_count }}</strong><span>Repost</span></div>
                                     </div>
                                     <div class="rail-action">
-                                        <button class="rail-button {% if video.is_saved %}active{% endif %}" type="button" data-video-save-button data-video-id="{{ video.id }}" data-saved="{{ 'true' if video.is_saved else 'false' }}">Save</button>
-                                        <div class="rail-action-label"><strong data-video-save-count>{{ video.saves_count }}</strong><span>Save</span></div>
-                                    </div>
-                                    <div class="rail-action">
-                                        <button class="rail-button" type="button" data-video-share-button data-video-id="{{ video.id }}">Share</button>
+                                        <button class="rail-button" type="button" data-video-share-button data-video-id="{{ video.id }}">↗</button>
                                         <div class="rail-action-label"><strong data-video-share-count>{{ video.shares_count }}</strong><span>Share</span></div>
                                     </div>
                                     <div class="rail-action">
-                                        <button class="rail-button" type="button" data-open-more-menu data-video-id="{{ video.id }}" data-video-url="/video/{{ video.id }}" data-download-url="{{ video.video_url }}">More</button>
+                                        <button class="rail-button" type="button" data-open-more-menu data-video-id="{{ video.id }}" data-video-url="/video/{{ video.id }}" data-download-url="{{ video.video_url }}">⋯</button>
                                         <div class="rail-action-label"><strong>Menu</strong><span>More</span></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <button class="voice-cta" type="button" data-open-feed-voice-sheet data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}#record" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">🎙 Speak Your View</button>
                     </article>
                     {% endif %}
                     {% else %}
@@ -1101,6 +1277,7 @@
         <main class="screen {% if active_tab == 'notifications' %}active{% endif %}" data-screen="notifications">
             <section class="notification-list">
                 {% set group_labels = {'today': 'Today', 'this_week': 'This week', 'older': 'Older'} %}
+                {% set kind_labels = {'voice_reply': 'Voice reply', 'like': 'Like', 'follow': 'Follow', 'save': 'Save', 'comment': 'Comment', 'repost': 'Repost'} %}
                 {% for group_key, label in group_labels.items() %}
                     {% set items = notification_groups[group_key] %}
                     {% if items %}
@@ -1110,7 +1287,10 @@
                             {% for item in items %}
                             <a class="notification-item" href="{{ item.target_url }}">
                                 <strong>{{ item.message }}</strong>
-                                <p>{{ item.kind }} · {{ item.created_at }}</p>
+                                <div class="notification-meta">
+                                    <span class="pill">{{ kind_labels.get(item.kind, item.kind|replace('_', ' ')|title) }}</span>
+                                    <span>{{ item.created_at }}</span>
+                                </div>
                             </a>
                             {% endfor %}
                         </div>
@@ -1159,14 +1339,14 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Bottom navigation">
-            <a href="/feed" class="tab-link {% if active_tab == 'home' %}active{% endif %}">Home</a>
-            <a href="/upload" class="tab-link {% if active_tab == 'upload' %}active{% endif %}">Upload</a>
-            <a href="/feed#conversation-radar" class="tab-link">Search</a>
-            <a href="/notifications" class="tab-link {% if active_tab == 'notifications' %}active{% endif %}">Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</a>
+            <a href="/feed" class="tab-link {% if active_tab == 'home' %}active{% endif %}">⌂</a>
+            <a href="/feed#conversation-radar" class="tab-link">⌕</a>
+            <a href="/upload" class="tab-link {% if active_tab == 'upload' %}active{% endif %}">＋</a>
+            <a href="/notifications" class="tab-link {% if active_tab == 'notifications' %}active{% endif %}">◌{% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</a>
             {% if current_user %}
-            <a href="/profile/{{ current_user.username }}" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">Profile</a>
+            <a href="/profile/{{ current_user.username }}" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">☺</a>
             {% else %}
-            <button class="tab-link" type="button" data-open-auth-modal data-auth-target="login">Profile</button>
+            <button class="tab-link" type="button" data-open-auth-modal data-auth-target="login">☺</button>
             {% endif %}
         </nav>
     </div>
@@ -1280,6 +1460,7 @@
         let overlayHistoryDepth = 0;
         let authGesture = null;
         let sheetGesture = null;
+        let immersiveTimer = null;
 
         const setPending = (button, pending) => {
             if (!button) {
@@ -1317,6 +1498,33 @@
             document.body.classList.toggle('overlay-open', Boolean(activeSheet || authModal?.classList.contains('active')));
         };
 
+        const homeScreenIsActive = () => document.querySelector('.screen.active[data-screen="home"]');
+
+        const setImmersiveVisibility = (visible) => {
+            appShell?.classList.toggle('ui-hidden', !visible);
+        };
+
+        const scheduleImmersiveHide = () => {
+            if (immersiveTimer) {
+                window.clearTimeout(immersiveTimer);
+            }
+            setImmersiveVisibility(true);
+            if (!homeScreenIsActive() || activeSheet || authModal?.classList.contains('active')) {
+                return;
+            }
+            immersiveTimer = window.setTimeout(() => {
+                setImmersiveVisibility(false);
+            }, 3000);
+        };
+
+        const syncKeyboardViewport = () => {
+            const viewportHeight = window.visualViewport?.height || window.innerHeight;
+            const keyboardOffset = Math.max(0, window.innerHeight - viewportHeight);
+            document.documentElement.style.setProperty('--keyboard-offset', `${keyboardOffset}px`);
+            const focusedField = document.activeElement?.matches('input, textarea, select');
+            appShell?.classList.toggle('keyboard-open', keyboardOffset > 120 || Boolean(focusedField));
+        };
+
         const pushOverlayHistory = () => {
             window.history.pushState({ overlay: true }, '');
             overlayHistoryDepth += 1;
@@ -1325,6 +1533,7 @@
         const hardCloseAuthModal = () => {
             authModal?.classList.remove('active');
             syncOverlayState();
+            scheduleImmersiveHide();
         };
 
         const hardCloseSheets = () => {
@@ -1334,6 +1543,7 @@
             sheetBackdrop?.classList.remove('active');
             activeSheet = null;
             syncOverlayState();
+            scheduleImmersiveHide();
         };
 
         const dismissOverlay = () => {
@@ -1350,6 +1560,7 @@
             authModal?.classList.add('active');
             showAuthPanel(target);
             syncOverlayState();
+            setImmersiveVisibility(true);
             pushOverlayHistory();
         };
         const closeAuthModal = () => dismissOverlay();
@@ -1364,6 +1575,7 @@
             sheet.classList.add('active');
             activeSheet = sheet;
             syncOverlayState();
+            setImmersiveVisibility(true);
             pushOverlayHistory();
         };
 
@@ -1377,6 +1589,15 @@
 
         document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
             button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
+        });
+
+        document.querySelectorAll('[data-toggle-caption]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const shell = button.closest('[data-caption-shell]');
+                const expanded = shell?.classList.toggle('expanded');
+                button.textContent = expanded ? 'Less' : 'More';
+                scheduleImmersiveHide();
+            });
         });
 
         document.querySelectorAll('[data-auth-tab]').forEach((button) => {
@@ -1566,11 +1787,28 @@
             });
         };
 
+        const preloadAdjacentVideos = (video) => {
+            const currentSlide = video.closest('.reel-slide');
+            const candidateSlides = [currentSlide?.nextElementSibling, currentSlide?.previousElementSibling];
+            candidateSlides.forEach((slide) => {
+                const adjacentVideo = slide?.querySelector('.autoplay-video');
+                if (adjacentVideo && adjacentVideo.preload !== 'auto') {
+                    adjacentVideo.preload = 'auto';
+                    adjacentVideo.load();
+                }
+            });
+        };
+
         document.querySelectorAll('.autoplay-video').forEach((video) => {
             video.muted = true;
+            const parentSlide = video.closest('.reel-slide');
+            const markLoaded = () => parentSlide?.classList.add('loaded');
+            video.addEventListener('loadeddata', markLoaded, { once: true });
+            video.addEventListener('canplay', markLoaded, { once: true });
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
+                        preloadAdjacentVideos(video);
                         video.play().catch(() => {});
                     } else {
                         video.pause();
@@ -1705,6 +1943,13 @@
                 }
                 const countNode = button.closest('.rail-action')?.querySelector('[data-video-share-count]');
                 await performShare(button.dataset.videoId, `/video/${button.dataset.videoId}`, countNode, button).catch(() => {});
+            });
+        });
+
+        document.querySelectorAll('[data-video-repost-button]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const targetUrl = button.dataset.videoUrl || '/feed';
+                window.location.href = targetUrl;
             });
         });
 
@@ -1907,6 +2152,38 @@
         };
 
         bindFeedHoldMenus();
+
+        document.querySelectorAll('.reel-slide').forEach((slide) => {
+            slide.addEventListener('pointerdown', (event) => {
+                if (event.target.closest('button, a, input, textarea, select, audio')) {
+                    return;
+                }
+                if (appShell?.classList.contains('ui-hidden')) {
+                    setImmersiveVisibility(true);
+                    scheduleImmersiveHide();
+                    return;
+                }
+                scheduleImmersiveHide();
+            });
+        });
+
+        document.querySelector('.feed-stage')?.addEventListener('scroll', () => {
+            scheduleImmersiveHide();
+        }, { passive: true });
+
+        document.addEventListener('pointermove', () => {
+            if (!homeScreenIsActive()) {
+                return;
+            }
+            scheduleImmersiveHide();
+        }, { passive: true });
+
+        window.visualViewport?.addEventListener('resize', syncKeyboardViewport);
+        window.addEventListener('focusin', syncKeyboardViewport);
+        window.addEventListener('focusout', () => window.setTimeout(syncKeyboardViewport, 60));
+        syncKeyboardViewport();
+
+        scheduleImmersiveHide();
 
         window.addEventListener('popstate', () => {
             if (overlayHistoryDepth > 0 && (activeSheet || authModal?.classList.contains('active'))) {

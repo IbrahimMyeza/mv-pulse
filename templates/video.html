@@ -28,6 +28,7 @@
             --safe-right: env(safe-area-inset-right, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
+            --keyboard-offset: 0px;
         }
 
         * { box-sizing: border-box; }
@@ -75,7 +76,7 @@
             min-height: 100vh;
             display: grid;
             gap: 18px;
-            padding-bottom: calc(108px + var(--safe-bottom));
+            padding-bottom: calc(112px + var(--safe-bottom));
         }
 
         .stage {
@@ -100,7 +101,7 @@
             position: absolute;
             inset: 0;
             background:
-                linear-gradient(180deg, rgba(4, 6, 10, 0.34) 0%, rgba(4, 6, 10, 0.15) 20%, rgba(4, 6, 10, 0.5) 58%, rgba(4, 6, 10, 0.92) 100%),
+                linear-gradient(180deg, rgba(4, 6, 10, 0.38) 0%, rgba(4, 6, 10, 0.18) 18%, rgba(4, 6, 10, 0.62) 54%, rgba(4, 6, 10, 0.96) 100%),
                 radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.08), transparent 26%);
             pointer-events: none;
         }
@@ -113,16 +114,17 @@
         }
 
         .topbar {
-            padding: calc(18px + var(--safe-top)) calc(18px + var(--safe-right)) 0 calc(18px + var(--safe-left));
+            padding: calc(10px + var(--safe-top)) calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
             display: flex;
             justify-content: space-between;
             gap: 12px;
             align-items: flex-start;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .topbar-right {
             justify-content: flex-end;
-            max-width: min(52vw, 440px);
+            max-width: min(52vw, 240px);
         }
 
         .topbar-left,
@@ -202,47 +204,65 @@
         }
 
         .topbar-left {
-            display: grid;
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
 
         .brand-label {
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--accent);
-            font-size: 0.74rem;
-            font-weight: 700;
-        }
-
-        .back-link {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            min-height: 44px;
-            padding: 0 16px;
+            justify-content: center;
+            min-width: 36px;
+            min-height: 36px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(7, 10, 16, 0.56);
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.76rem;
+            font-weight: 800;
+        }
+
+        .back-link,
+        .icon-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            min-width: 40px;
+            padding: 0 12px;
             border-radius: 999px;
             background: rgba(7, 10, 16, 0.68);
             border: 1px solid var(--line);
+        }
+
+        .icon-button {
+            cursor: pointer;
+            font-size: 0.98rem;
         }
 
         .bottom-copy {
             min-height: 100%;
             display: grid;
             align-items: end;
-            padding: 0 calc(18px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(18px + var(--safe-left));
+            padding: 0 calc(14px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(14px + var(--safe-left));
         }
 
         .bottom-copy-inner {
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
-            gap: 16px;
+            gap: 12px;
             align-items: end;
         }
 
         .video-copy {
             display: grid;
-            gap: 12px;
-            max-width: 740px;
+            gap: 10px;
+            max-width: 280px;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .video-copy h1,
@@ -254,7 +274,8 @@
         }
 
         .video-copy h1 {
-            font-size: clamp(1.6rem, 4vw, 2.5rem);
+            font-size: 1rem;
+            font-weight: 800;
         }
 
         .video-copy p,
@@ -270,14 +291,7 @@
         }
 
         .creator-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            width: fit-content;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: rgba(7, 10, 16, 0.68);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: none;
         }
 
         .creator-avatar {
@@ -303,9 +317,10 @@
 
         .right-rail {
             display: grid;
-            gap: 12px;
+            gap: 10px;
             justify-items: center;
-            width: 84px;
+            width: 68px;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .rail-action {
@@ -315,14 +330,14 @@
         }
 
         .rail-button {
-            width: 62px;
-            height: 62px;
+            width: 56px;
+            height: 56px;
             padding: 0;
             display: grid;
             place-items: center;
             align-content: center;
             gap: 2px;
-            font-size: 0.84rem;
+            font-size: 0.92rem;
             position: relative;
             overflow: hidden;
         }
@@ -339,8 +354,8 @@
         }
 
         .rail-button.voice-primary {
-            width: 70px;
-            height: 70px;
+            width: 62px;
+            height: 62px;
             border-color: transparent;
             background: linear-gradient(135deg, rgba(24, 212, 171, 0.96) 0%, rgba(255, 135, 86, 0.96) 100%);
             color: #061018;
@@ -363,11 +378,75 @@
             gap: 2px;
             justify-items: center;
             text-align: center;
-            font-size: 0.78rem;
+            font-size: 0.74rem;
         }
 
         .rail-label strong {
-            font-size: 0.92rem;
+            font-size: 0.82rem;
+        }
+
+        .rail-label span {
+            display: none;
+        }
+
+        .caption-shell {
+            display: grid;
+            gap: 8px;
+        }
+
+        .creator-handle {
+            font-size: 0.96rem;
+            font-weight: 800;
+        }
+
+        .caption-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .caption-shell.expanded .caption-text {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+
+        .caption-toggle {
+            width: fit-content;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: rgba(245, 247, 250, 0.78);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .video-copy .meta-row,
+        .video-copy .chip-row,
+        .video-copy .actions,
+        .video-copy .sheet-copy,
+        .insights-overlay {
+            display: none;
+        }
+
+        .primary-voice-cta {
+            position: absolute;
+            left: 50%;
+            bottom: calc(82px + var(--safe-bottom));
+            transform: translateX(-50%);
+            min-height: 56px;
+            padding: 0 22px;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+            color: #061018;
+            font-weight: 900;
+            font-size: 0.98rem;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
+            cursor: pointer;
+            z-index: 27;
+            transition: opacity 180ms ease, transform 180ms ease;
         }
 
         .sheet-backdrop {
@@ -390,11 +469,11 @@
             left: 50%;
             bottom: 0;
             width: min(760px, 100%);
-            max-height: min(84vh, 860px);
+            max-height: min(calc(88svh - var(--keyboard-offset)), 860px);
             transform: translate(-50%, calc(100% + 24px));
             transition: transform 0.24s ease;
             z-index: 30;
-            padding: 0 calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+            padding: 0 calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom) + min(var(--keyboard-offset), 220px)) calc(12px + var(--safe-left));
             pointer-events: none;
         }
 
@@ -410,7 +489,7 @@
             box-shadow: var(--shadow);
             overflow: hidden;
             display: grid;
-            max-height: min(84vh, 860px);
+            max-height: min(calc(88svh - var(--keyboard-offset)), 860px);
         }
 
         .sheet-card.dragging,
@@ -428,12 +507,16 @@
 
         .sheet-scroll {
             overflow: auto;
-            padding: 16px 18px 22px;
+            padding: 16px 18px calc(28px + var(--safe-bottom));
             display: grid;
             gap: 16px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             overscroll-behavior: contain;
+        }
+
+        .sheet-scroll:focus-within {
+            padding-bottom: calc(28px + var(--safe-bottom) + min(var(--keyboard-offset), 220px));
         }
 
         .sheet-header {
@@ -469,6 +552,27 @@
         .stats-row {
             color: var(--muted);
             font-size: 0.92rem;
+        }
+
+        .recording-status-row {
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .recording-phase {
+            font-weight: 700;
+            color: rgba(245, 247, 250, 0.88);
+        }
+
+        .recording-timer {
+            min-width: 72px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent);
+            font-weight: 800;
+            letter-spacing: 0.06em;
         }
 
         .waveform {
@@ -553,10 +657,34 @@
         .recording-preview {
             display: grid;
             gap: 12px;
+            padding-top: 6px;
         }
 
         .recording-preview[hidden] {
             display: none;
+        }
+
+        .preview-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            color: rgba(245, 247, 250, 0.92);
+        }
+
+        .preview-title strong {
+            font-size: 0.95rem;
+        }
+
+        .preview-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .preview-actions .control-button {
+            flex: 1;
+            min-width: 150px;
         }
 
         input,
@@ -628,6 +756,11 @@
         .upload-status {
             display: none;
             gap: 10px;
+        }
+
+        .upload-status-meta {
+            color: var(--muted);
+            font-size: 0.86rem;
         }
 
         .upload-status.visible {
@@ -768,33 +901,41 @@
         .bottom-nav {
             position: fixed;
             left: 50%;
-            bottom: calc(10px + var(--safe-bottom));
+            bottom: calc(8px + var(--safe-bottom));
             transform: translateX(-50%);
-            width: min(720px, calc(100% - 18px));
+            width: min(520px, calc(100% - 16px));
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 8px;
-            padding: 10px;
-            border-radius: 24px;
+            padding: 6px;
+            border-radius: 18px;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(7, 10, 16, 0.88);
+            background: rgba(7, 10, 16, 0.78);
             backdrop-filter: blur(18px);
             box-shadow: var(--shadow);
             z-index: 26;
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        body.overlay-open .bottom-nav,
+        body.overlay-open .primary-voice-cta,
+        body.overlay-open .right-rail {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .nav-item {
-            min-height: 54px;
-            border-radius: 18px;
+            min-height: 42px;
+            border-radius: 14px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(255, 255, 255, 0.04);
             color: var(--text);
             display: grid;
             place-items: center;
-            gap: 4px;
-            padding: 8px;
+            gap: 2px;
+            padding: 6px;
             text-align: center;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
         }
 
         .nav-item.primary {
@@ -805,8 +946,34 @@
         }
 
         .nav-icon {
-            font-size: 1rem;
+            font-size: 0.96rem;
             line-height: 1;
+        }
+
+        .viewer.ui-hidden .topbar,
+        .viewer.ui-hidden .video-copy,
+        .viewer.ui-hidden .right-rail,
+        .viewer.ui-hidden .primary-voice-cta,
+        .viewer.ui-hidden .bottom-nav {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .viewer.ui-hidden .topbar,
+        .viewer.ui-hidden .primary-voice-cta,
+        .viewer.ui-hidden .bottom-nav {
+            transform: translateY(10px);
+        }
+
+        .viewer.keyboard-open .bottom-nav,
+        .viewer.keyboard-open .primary-voice-cta,
+        .viewer.keyboard-open .right-rail {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .viewer.keyboard-open .bottom-copy {
+            padding-bottom: calc(12px + var(--safe-bottom));
         }
 
         .insights-grid-compact {
@@ -857,12 +1024,12 @@
         @media (max-width: 860px) {
             .topbar {
                 gap: 10px;
-                padding-top: calc(14px + var(--safe-top));
+                padding-top: calc(10px + var(--safe-top));
             }
 
             .topbar-right {
-                max-width: 100%;
-                justify-content: flex-start;
+                max-width: none;
+                justify-content: flex-end;
             }
 
             .bottom-copy-inner {
@@ -874,9 +1041,9 @@
             }
 
             .right-rail {
-                width: 100%;
-                grid-template-columns: repeat(6, minmax(0, 1fr));
-                justify-items: stretch;
+                width: 68px;
+                grid-template-columns: none;
+                justify-items: center;
             }
 
             .rail-action {
@@ -884,8 +1051,8 @@
             }
 
             .rail-button {
-                width: 100%;
-                max-width: 72px;
+                width: 56px;
+                max-width: none;
             }
 
             .sheet-card {
@@ -902,6 +1069,40 @@
 
             .comment-submit {
                 width: 100%;
+            }
+
+            .primary-voice-cta {
+                bottom: calc(72px + var(--safe-bottom));
+            }
+        }
+
+        @media (max-height: 760px) {
+            .bottom-copy {
+                padding-bottom: calc(104px + var(--safe-bottom));
+            }
+
+            .video-copy {
+                max-width: 240px;
+            }
+
+            .right-rail {
+                gap: 8px;
+                width: 60px;
+            }
+
+            .rail-button {
+                width: 52px;
+                height: 52px;
+            }
+
+            .rail-button.voice-primary {
+                width: 56px;
+                height: 56px;
+            }
+
+            .primary-voice-cta {
+                min-height: 52px;
+                bottom: calc(66px + var(--safe-bottom));
             }
         }
 
@@ -934,6 +1135,10 @@
                 left: 6px;
                 transform: none;
             }
+
+            .primary-voice-cta {
+                width: calc(100% - 44px);
+            }
         }
     </style>
 </head>
@@ -943,42 +1148,33 @@
             <video src="{{ video_payload.video_url }}" autoplay muted playsinline preload="metadata" data-detail-video></video>
             <div class="topbar">
                 <div class="topbar-left">
-                    <span class="brand-label">Umbono Wami</span>
-                    <a class="back-link" href="/feed">Back to feed</a>
+                    <a class="brand-label" href="/feed">MV</a>
+                    <a class="back-link" href="/feed" aria-label="Back to feed">‹</a>
                 </div>
                 <div class="topbar-right chip-row">
-                    {% if not current_user %}
-                    <span class="top-pill">Guest watch mode</span>
-                    {% endif %}
-                    <button class="top-pill" type="button" data-install-app hidden>Install app</button>
-                    <button class="top-pill" type="button" data-enable-notifications>Enable notifications</button>
-                    <button class="top-pill" type="button" data-video-audio-toggle data-target-video="detail">Audio off</button>
-                    {% if thread_summary %}
-                    <span class="top-pill">{{ thread_summary.cluster_label }}</span>
-                    {% endif %}
-                    {% if premium_room %}
-                    <span class="top-pill">{{ premium_room.label }}</span>
+                    <a class="icon-button" href="/feed#conversation-radar" aria-label="Search">⌕</a>
+                    <a class="icon-button" href="/notifications" aria-label="Notifications">◌</a>
+                    {% if current_user %}
+                    <a class="icon-button" href="/profile/{{ current_user.username }}" aria-label="Profile">☺</a>
+                    {% else %}
+                    <button class="icon-button" type="button" data-open-auth-modal data-auth-target="login" aria-label="Profile">☺</button>
                     {% endif %}
                 </div>
             </div>
             <div class="bottom-copy">
                 <div class="bottom-copy-inner">
                     <div class="video-copy">
-                        <div class="creator-pill">
-                            <span class="creator-avatar">{{ (video_payload.creator or 'U')[:1]|upper }}</span>
-                            <div class="creator-meta">
-                                <strong>
-                                    {% if video_payload.creator_username %}
-                                    <a href="/profile/{{ video_payload.creator_username }}">@{{ video_payload.creator }}</a>
-                                    {% else %}
-                                    @{{ video_payload.creator }}
-                                    {% endif %}
-                                </strong>
-                                <span>{{ video.region }} · {{ video.topic }} · {{ video.language_code|upper }}</span>
-                            </div>
+                        <div class="caption-shell" data-caption-shell>
+                            <h1 class="creator-handle">
+                                {% if video_payload.creator_username %}
+                                <a href="/profile/{{ video_payload.creator_username }}">@{{ video_payload.creator }}</a>
+                                {% else %}
+                                @{{ video_payload.creator }}
+                                {% endif %}
+                            </h1>
+                            <p class="caption-text">{{ video.caption or video.title }}</p>
+                            <button class="caption-toggle" type="button" data-toggle-caption>More</button>
                         </div>
-                        <h1>{{ video.title }}</h1>
-                        <p>{{ video.caption }}</p>
                         <div class="meta-row">
                             <span>{{ video.views }} views</span>
                             <span><span data-video-replies-total>{{ video.voice_replies }}</span> voice replies</span>
@@ -1043,16 +1239,16 @@
                             <div class="rail-label"><strong data-video-like-count>{{ video_payload.likes }}</strong><span>Like</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button" type="button" data-open-reply-sheet data-target-tab="comments"><span class="rail-glyph">💬</span><span class="rail-copy">Comment</span></button>
+                            <button class="rail-button voice-primary" type="button" data-open-reply-sheet data-target-tab="replies"><span class="rail-glyph">🎙</span><span class="rail-copy">Voice</span></button>
+                            <div class="rail-label"><strong data-video-replies-total>{{ video.voice_replies }}</strong><span>Voice Replies</span></div>
+                        </div>
+                        <div class="rail-action">
+                            <button class="rail-button" type="button" data-open-reply-sheet data-target-tab="comments"><span class="rail-glyph">💬</span><span class="rail-copy">Reply</span></button>
                             <div class="rail-label"><strong data-text-comment-count>{{ text_comments|length }}</strong><span>Reply</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button voice-primary" type="button" data-open-reply-sheet data-target-tab="replies"><span class="rail-glyph">🎙</span><span class="rail-copy">Voice</span></button>
-                            <div class="rail-label"><strong data-video-replies-total>{{ video.voice_replies }}</strong><span>Voice</span></div>
-                        </div>
-                        <div class="rail-action">
-                            <button class="rail-button {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}"><span class="rail-glyph">🔖</span><span class="rail-copy">Save</span></button>
-                            <div class="rail-label"><strong data-video-save-count>{{ video_payload.saves_count }}</strong><span>Save</span></div>
+                            <button class="rail-button" type="button" data-more-repost-inline><span class="rail-glyph">↻</span><span class="rail-copy">Repost</span></button>
+                            <div class="rail-label"><strong>{{ text_comments|length }}</strong><span>Repost</span></div>
                         </div>
                         <div class="rail-action">
                             <button class="rail-button" type="button" data-video-share-button><span class="rail-glyph">↗</span><span class="rail-copy">Share</span></button>
@@ -1064,6 +1260,7 @@
                         </div>
                     </div>
                 </div>
+                <button class="primary-voice-cta" type="button" data-primary-voice-cta id="record">🎙 Speak Your View</button>
             </div>
         </section>
     </div>
@@ -1091,9 +1288,13 @@
                         <div class="sheet-header">
                             <div>
                                 <h2>Reply with your voice</h2>
-                                <p class="helper" data-recorder-status>Tap to record, hold to speak, slide up to lock, or slide left to cancel. When you stop, the voice reply sends immediately.</p>
+                                <p class="helper" data-recorder-status>Tap to record, hold to speak, slide up to lock, or slide left to cancel. Hold-release sends instantly. Tap-stop gives you a preview first.</p>
                             </div>
                             <button class="control-button" type="button" data-open-comment-tab>Type instead</button>
+                        </div>
+                        <div class="stats-row recording-status-row">
+                            <span class="recording-phase" data-recording-phase>Ready to speak</span>
+                            <strong class="recording-timer" data-recording-timer>00:00</strong>
                         </div>
                         <select data-recorder-language>
                             {% for code, label in locale_options.items() %}
@@ -1111,10 +1312,22 @@
                         </div>
                         <div class="recording-tools">
                             <button class="control-button primary" type="button" data-toggle-recording>Start recording</button>
-                            <button class="control-button" type="button" data-stop-recording>Stop and send</button>
+                            <button class="control-button" type="button" data-stop-recording>Stop recording</button>
+                        </div>
+                        <div class="recording-preview" data-recording-preview hidden>
+                            <div class="preview-title">
+                                <strong>Preview your voice reply</strong>
+                                <span class="ghost" data-preview-duration>00:00</span>
+                            </div>
+                            <audio controls preload="metadata" data-recording-preview-audio></audio>
+                            <div class="preview-actions">
+                                <button class="control-button primary" type="button" data-send-recording>Send voice reply</button>
+                                <button class="control-button" type="button" data-discard-recording>Discard</button>
+                            </div>
                         </div>
                         <div class="upload-status" data-upload-status>
                             <strong data-upload-status-text>Ready to post.</strong>
+                            <span class="upload-status-meta" data-upload-status-meta>Stable connection. Replies send instantly when your upload completes.</span>
                             <div class="progress-track"><div class="progress-bar" data-upload-progress></div></div>
                             <div class="sheet-actions">
                                 <button class="control-button" type="button" data-retry-upload disabled>Retry last upload</button>
@@ -1246,7 +1459,7 @@
                 <div class="sheet-header">
                     <div>
                         <h2>More actions</h2>
-                        <p>Share, repost, save, report, jump to the creator, or check this video's current metrics.</p>
+                        <p>Share, repost, save, report, or jump to the creator without breaking the watch flow.</p>
                     </div>
                     <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
@@ -1262,19 +1475,6 @@
                     <button class="sheet-link" type="button" data-more-hide>Not interested</button>
                     <a class="sheet-link" href="mailto:support@mv-pulse.local?subject=Report%20video%20{{ video.id }}" data-more-report>Report</a>
                     <a class="sheet-link" href="{{ video_payload.video_url }}" download data-more-download>Download</a>
-                    {% if current_user and video.creator_id == current_user.id %}
-                    <button class="sheet-link" type="button" data-more-insights>View insights</button>
-                    {% endif %}
-                </div>
-                <div class="panel">
-                    <h3>Video analytics</h3>
-                    <div class="insights-grid-compact">
-                        <div class="insight-tile"><span>Views</span><strong>{{ video.views }}</strong></div>
-                        <div class="insight-tile"><span>Replies</span><strong>{{ video.voice_replies }}</strong></div>
-                        <div class="insight-tile"><span>Comments</span><strong>{{ text_comments|length }}</strong></div>
-                        <div class="insight-tile"><span>Shares</span><strong>{{ video_payload.shares_count }}</strong></div>
-                    </div>
-                    <p class="helper">{{ video.topic }} · {{ video.region }} · creator score {{ '%.2f'|format(video.creator_score) }}</p>
                 </div>
             </div>
         </div>
@@ -1347,18 +1547,30 @@
         const authModal = document.querySelector('[data-auth-modal]');
         const authModalCard = document.querySelector('[data-auth-modal-card]');
         const authStatus = document.querySelector('[data-auth-status]');
+        const primaryVoiceCta = document.querySelector('[data-primary-voice-cta]');
         let activeSheet = null;
         let overlayHistoryDepth = 0;
+        let immersiveTimer = null;
 
         const recorderStatus = document.querySelector('[data-recorder-status]');
+        const recordingPhase = document.querySelector('[data-recording-phase]');
+        const recordingTimer = document.querySelector('[data-recording-timer]');
         const modalWave = document.querySelector('[data-modal-wave]');
         const recordPad = document.querySelector('[data-record-pad]');
         const recordPadLabel = document.querySelector('[data-record-pad-label]');
+        const recordingPreview = document.querySelector('[data-recording-preview]');
+        const recordingPreviewAudio = document.querySelector('[data-recording-preview-audio]');
+        const previewDuration = document.querySelector('[data-preview-duration]');
+        const sendRecordingButton = document.querySelector('[data-send-recording]');
+        const discardRecordingButton = document.querySelector('[data-discard-recording]');
         const languageInput = document.querySelector('[data-recorder-language]');
         const uploadStatus = document.querySelector('[data-upload-status]');
         const uploadStatusText = document.querySelector('[data-upload-status-text]');
+        const uploadStatusMeta = document.querySelector('[data-upload-status-meta]');
         const uploadProgress = document.querySelector('[data-upload-progress]');
         const retryUploadButton = document.querySelector('[data-retry-upload]');
+        const toggleRecordingButton = document.querySelector('[data-toggle-recording]');
+        const stopRecordingButton = document.querySelector('[data-stop-recording]');
         const threadList = document.querySelector('[data-thread-list]');
         const commentForm = document.querySelector('[data-comment-form]');
         const commentInput = commentForm?.querySelector('input[name="content"]');
@@ -1376,6 +1588,8 @@
         let currentParentReplyId = '';
         let retryUploadAction = null;
         let recorderStartedAt = 0;
+        let recorderTimerInterval = null;
+        let previewObjectUrl = null;
         let gestureState = {
             pointerId: null,
             startX: 0,
@@ -1412,9 +1626,27 @@
             document.body.classList.toggle('overlay-open', hasOverlay);
         };
 
+        const setImmersiveVisibility = (visible) => {
+            shell?.classList.toggle('ui-hidden', !visible);
+        };
+
+        const scheduleImmersiveHide = () => {
+            if (immersiveTimer) {
+                window.clearTimeout(immersiveTimer);
+            }
+            setImmersiveVisibility(true);
+            if (activeSheet || authModal?.classList.contains('active')) {
+                return;
+            }
+            immersiveTimer = window.setTimeout(() => {
+                setImmersiveVisibility(false);
+            }, 3000);
+        };
+
         const hardCloseAuthModal = () => {
             authModal?.classList.remove('active');
             syncOverlayBodyState();
+            scheduleImmersiveHide();
         };
 
         const hardCloseSheets = () => {
@@ -1422,6 +1654,7 @@
             sheetBackdrop?.classList.remove('active');
             activeSheet = null;
             syncOverlayBodyState();
+            scheduleImmersiveHide();
         };
 
         const pushOverlayHistory = () => {
@@ -1468,6 +1701,7 @@
             sheet.classList.add('active');
             activeSheet = sheet;
             syncOverlayBodyState();
+            setImmersiveVisibility(true);
             pushOverlayHistory();
         };
 
@@ -1480,6 +1714,7 @@
             authModal?.classList.add('active');
             showAuthPanel(target);
             syncOverlayBodyState();
+            setImmersiveVisibility(true);
             pushOverlayHistory();
         };
 
@@ -1494,6 +1729,15 @@
 
         document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
             button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
+        });
+
+        document.querySelectorAll('[data-toggle-caption]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const captionShell = button.closest('[data-caption-shell]');
+                const expanded = captionShell?.classList.toggle('expanded');
+                button.textContent = expanded ? 'Less' : 'More';
+                scheduleImmersiveHide();
+            });
         });
 
         document.querySelectorAll('[data-auth-tab]').forEach((button) => {
@@ -1575,7 +1819,7 @@
             xhr.send(formData);
         });
 
-        const showUploadStatus = (message, tone = 'info', progress = null) => {
+        const showUploadStatus = (message, tone = 'info', progress = null, meta = 'Stable connection. Replies send instantly when your upload completes.') => {
             uploadStatus?.classList.add('visible');
             uploadStatus?.classList.remove('error', 'success');
             if (tone === 'error' || tone === 'success') {
@@ -1584,9 +1828,74 @@
             if (uploadStatusText) {
                 uploadStatusText.textContent = message;
             }
+            if (uploadStatusMeta) {
+                uploadStatusMeta.textContent = meta;
+            }
             if (uploadProgress) {
                 uploadProgress.style.width = progress === null ? '0%' : `${Math.max(0, Math.min(progress, 100))}%`;
             }
+        };
+
+        const formatDuration = (seconds) => {
+            const totalSeconds = Math.max(0, Math.floor(Number(seconds || 0)));
+            const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const remainingSeconds = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${minutes}:${remainingSeconds}`;
+        };
+
+        const setRecordingClock = (seconds = 0) => {
+            if (recordingTimer) {
+                recordingTimer.textContent = formatDuration(seconds);
+            }
+        };
+
+        const startRecordingClock = () => {
+            if (recorderTimerInterval) {
+                window.clearInterval(recorderTimerInterval);
+            }
+            setRecordingClock(0);
+            recorderTimerInterval = window.setInterval(() => {
+                setRecordingClock((Date.now() - recorderStartedAt) / 1000);
+            }, 250);
+        };
+
+        const stopRecordingClock = (seconds = 0) => {
+            if (recorderTimerInterval) {
+                window.clearInterval(recorderTimerInterval);
+                recorderTimerInterval = null;
+            }
+            setRecordingClock(seconds);
+        };
+
+        const clearPreview = () => {
+            if (previewObjectUrl) {
+                URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = null;
+            }
+            recordingPreviewAudio?.pause();
+            if (recordingPreviewAudio) {
+                recordingPreviewAudio.removeAttribute('src');
+                recordingPreviewAudio.load();
+            }
+            if (previewDuration) {
+                previewDuration.textContent = '00:00';
+            }
+            recordingPreview?.setAttribute('hidden', 'hidden');
+            sendRecordingButton && (sendRecordingButton.disabled = true);
+            discardRecordingButton && (discardRecordingButton.disabled = true);
+        };
+
+        const showPreview = (file, seconds) => {
+            clearPreview();
+            if (!file || !recordingPreviewAudio) {
+                return;
+            }
+            previewObjectUrl = URL.createObjectURL(file);
+            recordingPreviewAudio.src = previewObjectUrl;
+            previewDuration && (previewDuration.textContent = formatDuration(seconds));
+            recordingPreview?.removeAttribute('hidden');
+            sendRecordingButton && (sendRecordingButton.disabled = false);
+            discardRecordingButton && (discardRecordingButton.disabled = false);
         };
 
         const setRetryUpload = (handler) => {
@@ -1761,13 +2070,18 @@
             }
         };
 
-        const resetRecorderUi = ({ statusText = 'Tap to record, hold to speak, slide up to lock, or slide left to cancel. When you stop, the voice reply sends immediately.' } = {}) => {
+        const resetRecorderUi = ({ statusText = 'Tap to record, hold to speak, slide up to lock, or slide left to cancel. Hold-release sends instantly. Tap-stop gives you a preview first.' } = {}) => {
             recordedFile = null;
             recordedDurationSeconds = 0;
             recorderStatus.textContent = statusText;
+            recordingPhase && (recordingPhase.textContent = 'Ready to speak');
+            stopRecordingClock(0);
             updateRecordPadState('Hold to record. Release to send. Tap for start and stop.');
             modalWave?.classList.remove('recording');
             recordPad?.classList.remove('active', 'locked', 'cancel-ready');
+            toggleRecordingButton && (toggleRecordingButton.textContent = 'Start recording');
+            stopRecordingButton && (stopRecordingButton.textContent = 'Stop recording');
+            clearPreview();
         };
 
         const resetGestureState = () => {
@@ -1791,6 +2105,9 @@
                 return true;
             }
             try {
+                clearPreview();
+                recordedFile = null;
+                recordedDurationSeconds = 0;
                 recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 recorderChunks = [];
                 recorder = new MediaRecorder(recorderStream);
@@ -1801,13 +2118,18 @@
                 });
                 recorder.start();
                 recorderStartedAt = Date.now();
+                startRecordingClock();
                 modalWave?.classList.add('recording');
                 recordPad?.classList.add('active');
                 recorderStatus.textContent = statusText || 'Recording... speak now.';
+                recordingPhase && (recordingPhase.textContent = 'Recording live');
+                toggleRecordingButton && (toggleRecordingButton.textContent = 'Finish take');
+                stopRecordingButton && (stopRecordingButton.textContent = 'Preview reply');
                 updateRecordPadState('Recording now. Release to send, slide up to lock, slide left to cancel.');
                 return true;
             } catch (error) {
                 recorderStatus.textContent = 'Microphone access failed. Upload a file instead.';
+                recordingPhase && (recordingPhase.textContent = 'Mic unavailable');
                 return false;
             }
         };
@@ -1824,6 +2146,7 @@
             const activeRecorder = recorder;
             const mimeType = activeRecorder.mimeType || 'audio/webm';
             const elapsed = Math.max(0.1, (Date.now() - recorderStartedAt) / 1000);
+            stopRecordingClock(elapsed);
 
             if (discard) {
                 recorderChunks = [];
@@ -1858,11 +2181,16 @@
 
             if (!autoSubmit) {
                 recorderStatus.textContent = statusText || `Voice reply ready. ${elapsed.toFixed(1)}s captured.`;
-                updateRecordPadState('Tap stop to send, or record again.');
+                recordingPhase && (recordingPhase.textContent = 'Preview before sending');
+                updateRecordPadState('Preview ready. Send it or discard and record again.');
+                showPreview(file, elapsed);
+                toggleRecordingButton && (toggleRecordingButton.textContent = 'Record again');
+                stopRecordingButton && (stopRecordingButton.textContent = 'Preview ready');
                 return file;
             }
 
             recorderStatus.textContent = statusText || 'Uploading voice reply...';
+            recordingPhase && (recordingPhase.textContent = 'Sending voice reply');
             updateRecordPadState('Sending voice reply now.');
             const payload = await postVoiceReply({
                 file,
@@ -1884,7 +2212,14 @@
 
         const postVoiceReply = async ({ file, languageCode, duration, parentReplyId = '', sourceButton = null, resetInput = null }) => {
             if (!file) {
-                showUploadStatus('Choose or record an audio file before posting.', 'error', 0);
+                showUploadStatus('Choose or record an audio file before posting.', 'error', 0, 'No audio is attached to this reply yet.');
+                return;
+            }
+
+            setRetryUpload(() => postVoiceReply({ file, languageCode, duration, parentReplyId, sourceButton, resetInput }));
+
+            if (navigator.onLine === false) {
+                showUploadStatus('You are offline.', 'error', 0, 'Reconnect and tap retry to send this voice reply.');
                 return;
             }
 
@@ -1898,13 +2233,18 @@
                 }
                 formData.append('client_token', createClientToken());
                 formData.append('voice', file);
-                showUploadStatus('Uploading voice reply...', 'info', 0);
+                showUploadStatus('Uploading voice reply...', 'info', 0, 'Keep this sheet open while MV Pulse sends your take.');
                 const payload = await uploadJson('/voice/reply', formData, (progress) => {
-                    showUploadStatus(progress >= 100 ? 'Finalizing reply...' : `Uploading voice reply... ${Math.round(progress)}%`, 'info', progress);
+                    showUploadStatus(
+                        progress >= 100 ? 'Finalizing reply...' : `Uploading voice reply... ${Math.round(progress)}%`,
+                        'info',
+                        progress,
+                        progress >= 100 ? 'Final checks before your voice reply lands in the thread.' : `${Math.round(progress)}% uploaded. Stay on this screen until the send completes.`
+                    );
                 });
                 attachReplyToThread(payload.reply);
                 updateReplyTotals(payload.voice_replies);
-                showUploadStatus(payload.deduplicated ? 'Reply restored from your previous submit.' : 'Voice reply posted.', 'success', 100);
+                showUploadStatus(payload.deduplicated ? 'Reply restored from your previous submit.' : 'Voice reply posted.', 'success', 100, 'Your take is now live in the thread.');
                 setRetryUpload(null);
                 if (typeof resetInput === 'function') {
                     resetInput();
@@ -1914,14 +2254,18 @@
                 return payload;
             };
 
-            setRetryUpload(() => postVoiceReply({ file, languageCode, duration, parentReplyId, sourceButton, resetInput }));
             try {
                 if (sourceButton && setPending(sourceButton, true)) {
                     return;
                 }
                 return await runUpload();
             } catch (error) {
-                showUploadStatus(error.message === 'auth' ? 'Your session expired. Sign in again to post.' : (error.message || 'Upload failed. Retry when your connection stabilizes.'), 'error', 0);
+                showUploadStatus(
+                    error.message === 'auth' ? 'Your session expired. Sign in again to post.' : (error.message || 'Upload failed. Retry when your connection stabilizes.'),
+                    'error',
+                    0,
+                    navigator.onLine === false ? 'Still offline. Reconnect before retrying.' : 'The take is still ready. Retry without recording again.'
+                );
                 if (error.code !== 'auth_required') {
                     console.error(error);
                 }
@@ -2009,8 +2353,41 @@
             });
         });
 
+        document.querySelector('[data-more-repost-inline]')?.addEventListener('click', () => {
+            openReplyTab('replies');
+            openSheet(replySheet);
+            window.location.hash = '#record';
+        });
+
+        primaryVoiceCta?.addEventListener('click', async () => {
+            if (!isAuthenticated) {
+                authRequired();
+                return;
+            }
+            openReplyTab('replies');
+            openSheet(replySheet);
+            currentParentReplyId = '';
+            if (recorder && recorder.state !== 'inactive') {
+                await stopRecording({ statusText: 'Preview your take before sending.', autoSubmit: false, sourceButton: primaryVoiceCta });
+                return;
+            }
+            await startRecording({ statusText: 'Recording... tap the mic again to preview.' });
+        });
+
         document.querySelector('[data-open-more-sheet]')?.addEventListener('click', () => {
             openSheet(moreSheet);
+        });
+
+        document.querySelector('.stage')?.addEventListener('pointerdown', (event) => {
+            if (event.target.closest('button, a, input, textarea, select, audio')) {
+                return;
+            }
+            if (shell?.classList.contains('ui-hidden')) {
+                setImmersiveVisibility(true);
+                scheduleImmersiveHide();
+                return;
+            }
+            scheduleImmersiveHide();
         });
 
         const bindSwipeDismiss = (target, setState) => {
@@ -2455,26 +2832,67 @@
         resetRecorderUi();
 
         detailVideo?.play().catch(() => {});
+        scheduleImmersiveHide();
 
-        document.querySelector('[data-toggle-recording]')?.addEventListener('click', async () => {
+        toggleRecordingButton?.addEventListener('click', async () => {
             if (!isAuthenticated) {
                 authRequired();
                 return;
             }
             if (recorder && recorder.state !== 'inactive') {
-                await stopRecording({ statusText: 'Uploading voice reply...', autoSubmit: true, sourceButton: document.querySelector('[data-toggle-recording]') });
+                await stopRecording({ statusText: 'Preview your take before sending.', autoSubmit: false, sourceButton: toggleRecordingButton });
                 return;
             }
             currentParentReplyId = currentParentReplyId || '';
-            await startRecording({ statusText: 'Recording... tap stop when finished.' });
+            await startRecording({ statusText: 'Recording... tap stop when you want a preview.' });
         });
 
-        document.querySelector('[data-stop-recording]')?.addEventListener('click', async () => {
+        stopRecordingButton?.addEventListener('click', async () => {
             if (!isAuthenticated) {
                 authRequired();
                 return;
             }
-            await stopRecording({ statusText: 'Uploading voice reply...', autoSubmit: true, sourceButton: document.querySelector('[data-stop-recording]') });
+            if (!recordedFile && (!recorder || recorder.state === 'inactive')) {
+                return;
+            }
+            if (recorder && recorder.state !== 'inactive') {
+                await stopRecording({ statusText: 'Preview your take before sending.', autoSubmit: false, sourceButton: stopRecordingButton });
+                return;
+            }
+            await postVoiceReply({
+                file: recordedFile,
+                languageCode: languageInput?.value || 'en',
+                duration: recordedDurationSeconds.toFixed(1),
+                parentReplyId: currentParentReplyId,
+                sourceButton: stopRecordingButton,
+                resetInput: () => {
+                    currentParentReplyId = '';
+                    resetRecorderUi({ statusText: 'Voice reply posted. Record another one whenever you are ready.' });
+                },
+            });
+        });
+
+        sendRecordingButton?.addEventListener('click', async () => {
+            if (!recordedFile) {
+                return;
+            }
+            await postVoiceReply({
+                file: recordedFile,
+                languageCode: languageInput?.value || 'en',
+                duration: recordedDurationSeconds.toFixed(1),
+                parentReplyId: currentParentReplyId,
+                sourceButton: sendRecordingButton,
+                resetInput: () => {
+                    currentParentReplyId = '';
+                    resetRecorderUi({ statusText: 'Voice reply posted. Record another one whenever you are ready.' });
+                },
+            });
+        });
+
+        discardRecordingButton?.addEventListener('click', () => {
+            currentParentReplyId = '';
+            resetRecorderUi({ statusText: 'Preview discarded. Record another take when you are ready.' });
+            showUploadStatus('Take discarded.', 'success', 0, 'Nothing was posted.');
         });
 
         recordPad?.addEventListener('pointerdown', async (event) => {
@@ -2583,13 +3001,45 @@
             }
         });
 
+        const syncKeyboardViewport = () => {
+            const viewportHeight = window.visualViewport?.height || window.innerHeight;
+            const keyboardOffset = Math.max(0, window.innerHeight - viewportHeight);
+            document.documentElement.style.setProperty('--keyboard-offset', `${keyboardOffset}px`);
+            const focusedField = document.activeElement?.matches('input, textarea, select');
+            shell?.classList.toggle('keyboard-open', keyboardOffset > 120 || Boolean(focusedField));
+        };
+
+        window.visualViewport?.addEventListener('resize', syncKeyboardViewport);
+        window.addEventListener('focusin', syncKeyboardViewport);
+        window.addEventListener('focusout', () => window.setTimeout(syncKeyboardViewport, 60));
+        window.addEventListener('online', () => showUploadStatus('Back online.', 'success', 0, 'You can send saved takes again.'));
+        window.addEventListener('offline', () => showUploadStatus('You are offline.', 'error', 0, 'Recording still works, but uploads must wait for a connection.'));
+        syncKeyboardViewport();
+
         document.querySelector('[data-more-share]')?.addEventListener('click', async () => {
             await performShare(document.querySelector('[data-more-share]')).catch(() => {});
         });
 
         document.querySelector('[data-more-save]')?.addEventListener('click', async () => {
-            const button = document.querySelector('[data-video-save-button]');
-            button?.click();
+            const saveButton = document.querySelector('[data-more-save]');
+            if (setPending(saveButton, true)) {
+                return;
+            }
+            const currentlySaved = saveButton.dataset.saved === 'true';
+            try {
+                const payload = await requestJson(`/api/videos/${videoId}/save`, { method: 'POST' });
+                saveButton.dataset.saved = payload.saved ? 'true' : 'false';
+                saveButton.textContent = payload.saved ? 'Saved' : 'Save';
+                if (!currentlySaved && payload.saved) {
+                    showUploadStatus('Saved to your profile.', 'success', 100);
+                }
+            } catch (error) {
+                if (error.code !== 'auth_required') {
+                    console.error(error);
+                }
+            } finally {
+                setPending(saveButton, false);
+            }
         });
 
         document.querySelector('[data-more-copy]')?.addEventListener('click', async () => {

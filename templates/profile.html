@@ -7,7 +7,7 @@
     <title>{% if profile_user %}@{{ profile_user.username }}{% else %}Profile{% endif %}</title>
     <style>
         :root {
-            --bg: #071017;
+            --bg: #05070a;
             --bg-soft: #0d1821;
             --panel: rgba(8, 14, 20, 0.92);
             --panel-soft: rgba(255, 255, 255, 0.05);
@@ -22,6 +22,7 @@
             --safe-right: env(safe-area-inset-right, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
+            --keyboard-offset: 0px;
         }
 
         * { box-sizing: border-box; }
@@ -37,10 +38,10 @@
             font-family: "Segoe UI", sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 24%),
-                radial-gradient(circle at top right, rgba(255, 135, 86, 0.16), transparent 26%),
-                linear-gradient(180deg, #04090e 0%, #0a141c 55%, #071017 100%);
-            padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(32px + var(--safe-bottom)) calc(16px + var(--safe-left));
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.1), transparent 20%),
+                radial-gradient(circle at top right, rgba(255, 135, 86, 0.1), transparent 22%),
+                linear-gradient(180deg, #010203 0%, #071017 55%, #04090e 100%);
+            padding: 0 calc(12px + var(--safe-right)) calc(96px + var(--safe-bottom)) calc(12px + var(--safe-left));
             overflow-x: hidden;
             -webkit-text-size-adjust: 100%;
         }
@@ -65,10 +66,11 @@
         }
 
         .shell {
-            width: min(1180px, 100%);
+            width: min(920px, 100%);
             margin: 0 auto;
             display: grid;
-            gap: 18px;
+            gap: 14px;
+            padding-top: calc(66px + var(--safe-top));
         }
 
         .topbar,
@@ -91,7 +93,76 @@
         }
 
         .topbar {
+            position: fixed;
+            inset: 0 0 auto 0;
+            z-index: 24;
+            justify-content: center;
+            padding: calc(8px + var(--safe-top)) calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
+        }
+
+        .topbar-inner {
+            width: min(920px, 100%);
+            margin: 0 auto;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(5, 8, 12, 0.44);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
             justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+        }
+
+        .brand-block {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            min-height: 36px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
+        .brand-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
         .panel,
@@ -99,7 +170,7 @@
         .spotlight-card,
         .retention-shell,
         .modal-card {
-            border-radius: 28px;
+            border-radius: 24px;
             border: 1px solid var(--line);
             background: var(--panel);
             box-shadow: var(--shadow);
@@ -108,16 +179,16 @@
         .hero,
         .panel,
         .retention-shell {
-            padding: 20px;
+            padding: 18px;
         }
 
         .hero {
             position: relative;
             overflow: hidden;
             background:
-                radial-gradient(circle at top left, rgba(24, 212, 171, 0.22), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(255, 135, 86, 0.2), transparent 30%),
-                linear-gradient(160deg, rgba(8, 14, 20, 0.96), rgba(13, 24, 33, 0.98));
+                radial-gradient(circle at top left, rgba(24, 212, 171, 0.18), transparent 24%),
+                radial-gradient(circle at bottom right, rgba(255, 135, 86, 0.16), transparent 28%),
+                linear-gradient(160deg, rgba(8, 14, 20, 0.94), rgba(13, 24, 33, 0.98));
         }
 
         .hero::after {
@@ -153,8 +224,8 @@
         }
 
         .avatar-ring {
-            width: 88px;
-            height: 88px;
+            width: 78px;
+            height: 78px;
             border-radius: 999px;
             display: grid;
             place-items: center;
@@ -163,13 +234,13 @@
         }
 
         .avatar-core {
-            width: 78px;
-            height: 78px;
+            width: 68px;
+            height: 68px;
             border-radius: 999px;
             background: rgba(7, 16, 23, 0.96);
             display: grid;
             place-items: center;
-            font-size: 1.8rem;
+            font-size: 1.55rem;
             font-weight: 800;
         }
 
@@ -189,8 +260,8 @@
         }
 
         h1 {
-            font-size: clamp(1.8rem, 5vw, 3rem);
-            line-height: 1.02;
+            font-size: clamp(1.6rem, 5vw, 2.5rem);
+            line-height: 1.04;
         }
 
         h2 {
@@ -217,7 +288,7 @@
         .room-submit,
         .close-button,
         .nav-item {
-            min-height: 46px;
+            min-height: 42px;
             border-radius: 999px;
             border: 1px solid var(--line);
             padding: 0 16px;
@@ -321,8 +392,8 @@
         .spotlight-card,
         .earnings-card,
         .room-form-shell {
-            padding: 16px;
-            border-radius: 22px;
+            padding: 14px;
+            border-radius: 20px;
             background: var(--panel-soft);
             border: 1px solid rgba(255, 255, 255, 0.06);
             display: grid;
@@ -448,7 +519,7 @@
 
         .modal-card {
             width: min(440px, 100%);
-            padding: 22px;
+            padding: 20px;
             display: grid;
             gap: 14px;
         }
@@ -471,29 +542,29 @@
         .bottom-nav {
             position: fixed;
             left: 50%;
-            bottom: calc(12px + var(--safe-bottom));
+            bottom: calc(8px + var(--safe-bottom));
             transform: translateX(-50%);
-            width: min(760px, calc(100% - 16px));
-            padding: 10px;
+            width: min(520px, calc(100% - 16px));
+            padding: 6px;
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 8px;
-            border-radius: 24px;
+            border-radius: 18px;
             border: 1px solid var(--line);
-            background: rgba(7, 16, 23, 0.92);
+            background: rgba(7, 16, 23, 0.78);
             box-shadow: var(--shadow);
             backdrop-filter: blur(18px);
             z-index: 30;
         }
 
         .nav-item {
-            min-height: 54px;
-            padding: 8px;
+            min-height: 42px;
+            padding: 6px;
             display: grid;
             place-items: center;
-            gap: 4px;
+            gap: 2px;
             text-align: center;
-            font-size: 0.74rem;
+            font-size: 0.7rem;
         }
 
         .nav-item.primary {
@@ -504,8 +575,13 @@
         }
 
         .nav-icon {
-            font-size: 1rem;
+            font-size: 0.96rem;
             line-height: 1;
+        }
+
+        body.overlay-open .bottom-nav {
+            opacity: 0;
+            pointer-events: none;
         }
 
         @media (min-width: 760px) {
@@ -526,11 +602,11 @@
 
         @media (max-width: 759px) {
             .topbar {
-                align-items: stretch;
+                padding-top: calc(8px + var(--safe-top));
             }
 
-            .topbar .button {
-                flex: 1 1 auto;
+            .topbar-inner {
+                align-items: center;
             }
 
             .hero,
@@ -554,30 +630,39 @@
 <body>
     <div class="shell" data-authenticated="{{ 'true' if current_user else 'false' }}" data-profile-owner="{{ 'true' if profile_is_owner else 'false' }}">
         <div class="topbar">
-            <a class="button primary" href="/feed">Back to feed</a>
-            {% if current_user and profile_user and current_user.username != profile_user.username %}
-            <button
-                class="button ghost {% if is_following_profile %}active{% endif %}"
-                type="button"
-                data-follow-button
-                data-target-user-id="{{ profile_user.id }}"
-                data-following="{{ 'true' if is_following_profile else 'false' }}"
-            >{% if is_following_profile %}Following{% else %}Follow creator{% endif %}</button>
-            {% endif %}
+            <div class="topbar-inner">
+                <div class="brand-block">
+                    <a class="top-logo" href="/feed">MV</a>
+                    <span class="brand-title">MV Pulse</span>
+                </div>
+                <div class="topbar-actions">
+                    <a class="icon-button" href="/feed" aria-label="Back to feed">Back</a>
+                    <a class="icon-button" href="/feed#conversation-radar" aria-label="Open feed">Feed</a>
+                    {% if current_user and profile_user and current_user.username != profile_user.username %}
+                    <button
+                        class="button ghost {% if is_following_profile %}active{% endif %}"
+                        type="button"
+                        data-follow-button
+                        data-target-user-id="{{ profile_user.id }}"
+                        data-following="{{ 'true' if is_following_profile else 'false' }}"
+                    >{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <section class="hero">
             {% if profile_user %}
             <div class="hero-grid">
                 <div class="section-head">
-                    <div class="eyebrow">Umbono Wami profile</div>
+                    <div class="eyebrow">Creator profile</div>
                     <div class="profile-head">
                         <div class="avatar-ring">
                             <div class="avatar-core">{{ (profile_user.username or 'U')[:1]|upper }}</div>
                         </div>
                         <div class="section-head">
                             <h1>@{{ profile_user.username }}</h1>
-                            <p class="lead">{{ profile_user.social_profile.headline if profile_user.social_profile and profile_user.social_profile.headline else 'Voice-first creator building public threads, premium rooms, and recurring community rituals.' }}</p>
+                            <p class="lead">{{ profile_user.social_profile.headline if profile_user.social_profile and profile_user.social_profile.headline else 'Voice-first creator building public threads, premium rooms, and repeat-view habits.' }}</p>
                             <div class="profile-chips">
                                 <span class="chip">{{ profile_user.social_profile.region if profile_user.social_profile else 'Durban' }}</span>
                                 <span class="chip">{{ profile_user.social_profile.primary_language_code if profile_user.social_profile else 'en' }}</span>
@@ -588,16 +673,16 @@
                             </div>
                         </div>
                     </div>
-                    <p class="section-copy">{{ profile_user.social_profile.bio if profile_user.social_profile and profile_user.social_profile.bio else 'This profile is where creator voice, monetization loops, retention assets, and public videos stay visible in one place.' }}</p>
+                    <p class="section-copy">{{ profile_user.social_profile.bio if profile_user.social_profile and profile_user.social_profile.bio else 'Profile, voice identity, supporter offers, and published videos stay in one clean creator surface.' }}</p>
                     <div class="hero-actions">
                         {% if profile_videos %}
-                        <a class="button ghost" href="/video/{{ profile_videos[0].id }}">Watch latest video</a>
+                        <a class="button ghost" href="/video/{{ profile_videos[0].id }}">Watch latest</a>
                         {% endif %}
                         {% if profile_premium_rooms %}
-                        <a class="button ghost" href="{{ profile_premium_rooms[0].target_url }}">Open premium room</a>
+                        <a class="button ghost" href="{{ profile_premium_rooms[0].target_url }}">Open room</a>
                         {% endif %}
                         {% if profile_is_owner %}
-                        <a class="button ghost" href="/feed#upload">Post new video</a>
+                        <a class="button ghost" href="/feed#upload">Post video</a>
                         {% endif %}
                     </div>
                 </div>
@@ -632,9 +717,9 @@
 
         <section class="panel">
             <div class="section-head">
-                <div class="eyebrow">Conversation intelligence</div>
-                <h2>How this creator sounds in public</h2>
-                <p class="section-copy">Profile intelligence turns reply history into reusable positioning, premium room ideas, and a faster sense of what the audience responds to.</p>
+                <div class="eyebrow">Voice identity</div>
+                <h2>How this creator lands in public</h2>
+                <p class="section-copy">Reply history turns into reusable positioning, premium room ideas, and a faster read on what the audience responds to.</p>
             </div>
             <div class="insight-grid">
                 <article class="insight-card">
@@ -669,7 +754,7 @@
             </div>
             {% if profile_voice_identity.best_performing_replies %}
             <div class="spotlight-card">
-                <strong>Best performing voice replies</strong>
+                <strong>Breakout voice replies</strong>
                 {% for item in profile_voice_identity.best_performing_replies %}
                 <a href="{{ item.target_url }}">{{ item.topic_label }} · {{ item.tone_label }} · intelligence {{ item.intelligence_score }}</a>
                 {% endfor %}
@@ -679,9 +764,9 @@
 
         <section class="panel">
             <div class="section-head">
-                <div class="eyebrow">Monetization</div>
+                <div class="eyebrow">Support</div>
                 <h2>{% if profile_is_owner %}Subscription tiers and support paths{% else %}Support {{ profile_user.username }}{% endif %}</h2>
-                <p class="section-copy">Creator tiers and premium rooms now live in the same page as public identity, which makes the profile feel like a real creator storefront instead of a static account card.</p>
+                <p class="section-copy">Tiers stay close to public identity so the profile feels like one creator surface instead of a split storefront.</p>
             </div>
             <div class="tier-grid">
                 {% for tier in creator_tiers %}
@@ -706,9 +791,9 @@
 
         <section class="panel">
             <div class="section-head">
-                <div class="eyebrow">Premium rooms</div>
+                <div class="eyebrow">Rooms</div>
                 <h2>Voice rooms, AMAs, and debate spaces</h2>
-                <p class="section-copy">This section keeps room creation and room discovery above the fold on mobile so the premium conversation loop is easier to understand and actually use.</p>
+                <p class="section-copy">Room creation and room discovery stay compact on mobile so the paid conversation loop is easier to understand and use.</p>
             </div>
             {% if profile_is_owner %}
             <div class="section-grid">
@@ -763,9 +848,9 @@
         {% if profile_is_owner %}
         <section class="retention-shell">
             <div class="section-head">
-                <div class="eyebrow">Retention library</div>
+                <div class="eyebrow">Library</div>
                 <h2>Saved assets, repeat listens, and creator history</h2>
-                <p class="section-copy">These tabs now render different item types cleanly instead of forcing every API response into one generic card shape.</p>
+                <p class="section-copy">Saved replies, reels, and activity stay separated so each content type reads cleanly on small screens.</p>
             </div>
             <div class="tabbar">
                 <button class="tab-button active" type="button" data-tab="saved-replies">Saved replies</button>
@@ -783,8 +868,8 @@
         <section class="panel">
             <div class="section-head">
                 <div class="eyebrow">Published videos</div>
-                <h2>What this creator has already posted</h2>
-                <p class="section-copy">Video cards now present the content as real feed entries, with stronger hierarchy and cleaner metadata on small screens.</p>
+                <h2>Published videos</h2>
+                <p class="section-copy">Video cards stay concise so the posted catalog still feels close to the feed experience.</p>
             </div>
             <div class="video-grid">
                 {% for video in profile_videos %}
