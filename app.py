@@ -69,6 +69,8 @@ def _is_production_environment():
 def _maybe_seed_demo_content():
     if not _env_flag("AUTO_SEED_DEMO_DATA", default=False):
         return
+    if _is_production_environment() and not _env_flag("ALLOW_PROD_DEMO_SEED", default=False):
+        return
 
     try:
         result = seed_demo_content()
