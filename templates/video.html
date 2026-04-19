@@ -52,6 +52,10 @@
             overscroll-behavior-y: none;
         }
 
+        body.overlay-open {
+            overflow: hidden;
+        }
+
         a {
             color: inherit;
             text-decoration: none;
@@ -71,7 +75,7 @@
             min-height: 100vh;
             display: grid;
             gap: 18px;
-            padding-bottom: 24px;
+            padding-bottom: calc(108px + var(--safe-bottom));
         }
 
         .stage {
@@ -316,9 +320,22 @@
             padding: 0;
             display: grid;
             place-items: center;
-            font-size: 0.98rem;
+            align-content: center;
+            gap: 2px;
+            font-size: 0.84rem;
             position: relative;
             overflow: hidden;
+        }
+
+        .rail-glyph {
+            font-size: 1.18rem;
+            line-height: 1;
+        }
+
+        .rail-copy {
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1;
         }
 
         .rail-button.voice-primary {
@@ -394,6 +411,11 @@
             overflow: hidden;
             display: grid;
             max-height: min(84vh, 860px);
+        }
+
+        .sheet-card.dragging,
+        .auth-modal-card.dragging {
+            transition: none;
         }
 
         .sheet-handle {
@@ -553,6 +575,23 @@
             grid-template-columns: minmax(0, 1fr) auto;
         }
 
+        .comment-input-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .comment-voice-button {
+            min-width: 48px;
+            min-height: 48px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
         .comment-form input {
             min-width: 0;
         }
@@ -660,6 +699,116 @@
             backdrop-filter: blur(14px);
         }
 
+        .auth-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(4, 6, 10, 0.76);
+            backdrop-filter: blur(12px);
+            z-index: 35;
+        }
+
+        .auth-modal-backdrop.active {
+            display: flex;
+        }
+
+        .auth-modal-card {
+            width: min(520px, 100%);
+            max-height: min(88vh, 820px);
+            overflow: auto;
+            border-radius: 28px;
+            background: rgba(7, 10, 16, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow);
+            padding: 18px;
+            display: grid;
+            gap: 14px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .auth-panel {
+            display: none;
+            gap: 12px;
+        }
+
+        .auth-panel.active {
+            display: grid;
+        }
+
+        .auth-status {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 18px;
+            font-weight: 600;
+        }
+
+        .auth-status.visible {
+            display: block;
+        }
+
+        .auth-status.error {
+            background: rgba(255, 109, 109, 0.14);
+            color: #ffd1d1;
+        }
+
+        .auth-status.success {
+            background: rgba(24, 212, 171, 0.14);
+            color: #c8fff2;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            left: 50%;
+            bottom: calc(10px + var(--safe-bottom));
+            transform: translateX(-50%);
+            width: min(720px, calc(100% - 18px));
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+            padding: 10px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(7, 10, 16, 0.88);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+            z-index: 26;
+        }
+
+        .nav-item {
+            min-height: 54px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            gap: 4px;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.72rem;
+        }
+
+        .nav-item.primary {
+            border-color: transparent;
+            background: linear-gradient(135deg, rgba(24, 212, 171, 0.94), rgba(255, 135, 86, 0.94));
+            color: #061018;
+            font-weight: 800;
+        }
+
+        .nav-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
         .insights-grid-compact {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -746,6 +895,14 @@
             .comment-form {
                 grid-template-columns: 1fr;
             }
+
+            .comment-input-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .comment-submit {
+                width: 100%;
+            }
         }
 
         @media (max-width: 560px) {
@@ -770,6 +927,12 @@
             .chip-row,
             .actions {
                 gap: 8px;
+            }
+
+            .bottom-nav {
+                width: calc(100% - 12px);
+                left: 6px;
+                transform: none;
             }
         }
     </style>
@@ -876,27 +1039,27 @@
                     </div>
                     <div class="right-rail">
                         <div class="rail-action">
-                            <button class="rail-button {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}">Like</button>
+                            <button class="rail-button {% if video_payload.is_liked %}active{% endif %}" type="button" data-video-like-button data-liked="{{ 'true' if video_payload.is_liked else 'false' }}"><span class="rail-glyph">♥</span><span class="rail-copy">Like</span></button>
                             <div class="rail-label"><strong data-video-like-count>{{ video_payload.likes }}</strong><span>Like</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button" type="button" data-open-reply-sheet data-target-tab="comments">Reply</button>
+                            <button class="rail-button" type="button" data-open-reply-sheet data-target-tab="comments"><span class="rail-glyph">💬</span><span class="rail-copy">Comment</span></button>
                             <div class="rail-label"><strong data-text-comment-count>{{ text_comments|length }}</strong><span>Reply</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button voice-primary" type="button" data-open-reply-sheet data-target-tab="replies">Voice</button>
+                            <button class="rail-button voice-primary" type="button" data-open-reply-sheet data-target-tab="replies"><span class="rail-glyph">🎙</span><span class="rail-copy">Voice</span></button>
                             <div class="rail-label"><strong data-video-replies-total>{{ video.voice_replies }}</strong><span>Voice</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}">Save</button>
+                            <button class="rail-button {% if video_payload.is_saved %}active{% endif %}" type="button" data-video-save-button data-saved="{{ 'true' if video_payload.is_saved else 'false' }}"><span class="rail-glyph">🔖</span><span class="rail-copy">Save</span></button>
                             <div class="rail-label"><strong data-video-save-count>{{ video_payload.saves_count }}</strong><span>Save</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button" type="button" data-video-share-button>Share</button>
+                            <button class="rail-button" type="button" data-video-share-button><span class="rail-glyph">↗</span><span class="rail-copy">Share</span></button>
                             <div class="rail-label"><strong data-video-share-count>{{ video_payload.shares_count }}</strong><span>Share</span></div>
                         </div>
                         <div class="rail-action">
-                            <button class="rail-button" type="button" data-open-more-sheet>More</button>
+                            <button class="rail-button" type="button" data-open-more-sheet><span class="rail-glyph">⋯</span><span class="rail-copy">Menu</span></button>
                             <div class="rail-label"><strong>Menu</strong><span>More</span></div>
                         </div>
                     </div>
@@ -1051,8 +1214,11 @@
                         <h3>Quick comments</h3>
                         <p class="helper">Keep it short here, or record a voice reply from this same section when typing is not enough.</p>
                         <form class="comment-form" data-comment-form>
-                            <input type="text" name="content" maxlength="280" placeholder="Write a comment..." {% if not current_user %}disabled{% endif %}>
-                            <button class="comment-submit" type="submit" {% if not current_user %}disabled{% endif %}>{% if current_user %}Post comment{% else %}Sign in to comment{% endif %}</button>
+                            <div class="comment-input-row">
+                                <input type="text" name="content" maxlength="280" placeholder="Write a comment..." {% if not current_user %}disabled{% endif %}>
+                                <button class="control-button comment-voice-button" type="button" data-comment-voice-option {% if premium_preview_only %}disabled{% endif %}>{% if current_user %}🎙{% else %}🔒{% endif %}</button>
+                                <button class="comment-submit" type="submit" {% if not current_user %}disabled{% endif %}>{% if current_user %}Post comment{% else %}Sign in to comment{% endif %}</button>
+                            </div>
                         </form>
                         <div class="sheet-actions">
                             <button class="control-button" type="button" data-comment-voice-option {% if premium_preview_only %}disabled{% endif %}>{% if current_user %}Record voice reply instead{% else %}Sign in to voice reply{% endif %}</button>
@@ -1080,7 +1246,7 @@
                 <div class="sheet-header">
                     <div>
                         <h2>More actions</h2>
-                        <p>Share, repost, save, report, or copy a direct link.</p>
+                        <p>Share, repost, save, report, jump to the creator, or check this video's current metrics.</p>
                     </div>
                     <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
                 </div>
@@ -1090,6 +1256,9 @@
                     <button class="sheet-link" type="button" data-more-send>Send to friend</button>
                     <button class="sheet-link" type="button" data-more-save>Save</button>
                     <button class="sheet-link" type="button" data-more-copy>Copy link</button>
+                    {% if video_payload.creator_username %}
+                    <a class="sheet-link" href="/profile/{{ video_payload.creator_username }}" data-more-profile>Creator profile</a>
+                    {% endif %}
                     <button class="sheet-link" type="button" data-more-hide>Not interested</button>
                     <a class="sheet-link" href="mailto:support@mv-pulse.local?subject=Report%20video%20{{ video.id }}" data-more-report>Report</a>
                     <a class="sheet-link" href="{{ video_payload.video_url }}" download data-more-download>Download</a>
@@ -1097,28 +1266,70 @@
                     <button class="sheet-link" type="button" data-more-insights>View insights</button>
                     {% endif %}
                 </div>
+                <div class="panel">
+                    <h3>Video analytics</h3>
+                    <div class="insights-grid-compact">
+                        <div class="insight-tile"><span>Views</span><strong>{{ video.views }}</strong></div>
+                        <div class="insight-tile"><span>Replies</span><strong>{{ video.voice_replies }}</strong></div>
+                        <div class="insight-tile"><span>Comments</span><strong>{{ text_comments|length }}</strong></div>
+                        <div class="insight-tile"><span>Shares</span><strong>{{ video_payload.shares_count }}</strong></div>
+                    </div>
+                    <p class="helper">{{ video.topic }} · {{ video.region }} · creator score {{ '%.2f'|format(video.creator_score) }}</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="sheet" data-auth-sheet>
-        <div class="sheet-card">
+    <div class="auth-modal-backdrop" data-auth-modal>
+        <div class="auth-modal-card" data-auth-modal-card>
             <div class="sheet-handle"></div>
-            <div class="sheet-scroll">
-                <div class="sheet-header">
-                    <div>
-                        <h2>Sign in before reacting</h2>
-                        <p>Voice replies, likes, saves, and follows persist after you sign in.</p>
-                    </div>
-                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
+            <div class="sheet-header">
+                <div>
+                    <h2>Sign in before reacting</h2>
+                    <p>Voice replies, likes, saves, comments, and follows persist after you sign in.</p>
                 </div>
-                <div class="sheet-actions">
-                    <a class="sheet-link primary" href="/">Sign in</a>
-                    <a class="sheet-link" href="/feed">Keep browsing</a>
-                </div>
+                <button class="menu-button" type="button" data-close-auth-modal aria-label="Close overlay">&times;</button>
+            </div>
+            <div class="auth-tabs">
+                <button class="sheet-tab active" type="button" data-auth-tab="login">Sign in</button>
+                <button class="sheet-tab" type="button" data-auth-tab="signup">Create account</button>
+            </div>
+            <div class="auth-status" data-auth-status></div>
+            <form class="auth-panel active" data-auth-panel="login" data-auth-form data-auth-endpoint="/login">
+                <input type="email" name="email" placeholder="Email" required autocomplete="email">
+                <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
+                <button class="sheet-link primary" type="submit">Sign in</button>
+            </form>
+            <form class="auth-panel" data-auth-panel="signup" data-auth-form data-auth-endpoint="/signup">
+                <input type="text" name="username" placeholder="Username" required autocomplete="username">
+                <input type="email" name="email" placeholder="Email" required autocomplete="email">
+                <input type="password" name="password" placeholder="Password" required minlength="8" autocomplete="new-password">
+                <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" autocomplete="new-password">
+                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
+                <button class="sheet-link primary" type="submit">Create account</button>
+            </form>
+            <div class="sheet-actions">
+                <button class="sheet-link" type="button" data-close-auth-modal>Keep browsing</button>
             </div>
         </div>
     </div>
+
+    <nav class="bottom-nav" aria-label="Bottom navigation">
+        <a class="nav-item" href="/feed"><span class="nav-icon">⌂</span><span>Home</span></a>
+        <a class="nav-item" href="/feed#conversation-radar"><span class="nav-icon">⌕</span><span>Search</span></a>
+        {% if current_user %}
+        <a class="nav-item primary" href="/upload"><span class="nav-icon">＋</span><span>Upload</span></a>
+        {% else %}
+        <button class="nav-item primary" type="button" data-open-auth-modal data-auth-target="login"><span class="nav-icon">＋</span><span>Upload</span></button>
+        {% endif %}
+        <a class="nav-item" href="/notifications"><span class="nav-icon">◌</span><span>Notifications</span></a>
+        {% if current_user %}
+        <a class="nav-item" href="/profile/{{ current_user.username }}"><span class="nav-icon">☺</span><span>Profile</span></a>
+        {% else %}
+        <button class="nav-item" type="button" data-open-auth-modal data-auth-target="login"><span class="nav-icon">☺</span><span>Profile</span></button>
+        {% endif %}
+    </nav>
 
     <script>
         const shell = document.querySelector('.viewer');
@@ -1133,8 +1344,11 @@
         const sheetBackdrop = document.querySelector('[data-sheet-backdrop]');
         const replySheet = document.querySelector('[data-reply-sheet]');
         const moreSheet = document.querySelector('[data-more-sheet]');
-        const authSheet = document.querySelector('[data-auth-sheet]');
+        const authModal = document.querySelector('[data-auth-modal]');
+        const authModalCard = document.querySelector('[data-auth-modal-card]');
+        const authStatus = document.querySelector('[data-auth-status]');
         let activeSheet = null;
+        let overlayHistoryDepth = 0;
 
         const recorderStatus = document.querySelector('[data-recorder-status]');
         const modalWave = document.querySelector('[data-modal-wave]');
@@ -1149,8 +1363,10 @@
         const commentForm = document.querySelector('[data-comment-form]');
         const commentInput = commentForm?.querySelector('input[name="content"]');
         const commentList = document.querySelector('[data-comment-list]');
-        const commentVoiceOption = document.querySelector('[data-comment-voice-option]');
+        const commentVoiceButtons = document.querySelectorAll('[data-comment-voice-option]');
         const firstReplyAudio = () => document.querySelector('[data-thread-list] [data-reply-audio]');
+        let sheetGesture = null;
+        let authGesture = null;
 
         let recorder = null;
         let recorderStream = null;
@@ -1191,19 +1407,80 @@
             return false;
         };
 
+        const syncOverlayBodyState = () => {
+            const hasOverlay = Boolean(activeSheet || authModal?.classList.contains('active'));
+            document.body.classList.toggle('overlay-open', hasOverlay);
+        };
+
+        const hardCloseAuthModal = () => {
+            authModal?.classList.remove('active');
+            syncOverlayBodyState();
+        };
+
+        const hardCloseSheets = () => {
+            [replySheet, moreSheet].forEach((sheet) => sheet?.classList.remove('active'));
+            sheetBackdrop?.classList.remove('active');
+            activeSheet = null;
+            syncOverlayBodyState();
+        };
+
+        const pushOverlayHistory = () => {
+            window.history.pushState({ overlay: true }, '');
+            overlayHistoryDepth += 1;
+        };
+
+        const dismissOverlay = () => {
+            if (overlayHistoryDepth > 0) {
+                window.history.back();
+                return;
+            }
+            hardCloseSheets();
+            hardCloseAuthModal();
+        };
+
+        const showAuthPanel = (target) => {
+            document.querySelectorAll('[data-auth-tab]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.authTab === target);
+            });
+            document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
+                panel.classList.toggle('active', panel.dataset.authPanel === target);
+            });
+            document.querySelector(`[data-auth-panel="${target}"] input`)?.focus({ preventScroll: true });
+        };
+
+        const setAuthStatus = (message = '', tone = 'error') => {
+            if (!authStatus) {
+                return;
+            }
+            authStatus.textContent = message;
+            authStatus.classList.toggle('visible', Boolean(message));
+            authStatus.classList.toggle('error', tone === 'error');
+            authStatus.classList.toggle('success', tone === 'success');
+        };
+
         const openSheet = (sheet) => {
             if (!sheet) {
                 return;
             }
+            hardCloseAuthModal();
+            hardCloseSheets();
             sheetBackdrop?.classList.add('active');
             sheet.classList.add('active');
             activeSheet = sheet;
+            syncOverlayBodyState();
+            pushOverlayHistory();
         };
 
         const closeSheets = () => {
-            [replySheet, moreSheet, authSheet].forEach((sheet) => sheet?.classList.remove('active'));
-            sheetBackdrop?.classList.remove('active');
-            activeSheet = null;
+            dismissOverlay();
+        };
+
+        const openAuthModal = (target = 'login') => {
+            hardCloseSheets();
+            authModal?.classList.add('active');
+            showAuthPanel(target);
+            syncOverlayBodyState();
+            pushOverlayHistory();
         };
 
         document.querySelectorAll('[data-close-sheet]').forEach((button) => {
@@ -1211,7 +1488,25 @@
         });
         sheetBackdrop?.addEventListener('click', closeSheets);
 
-        const authRequired = () => openSheet(authSheet);
+        document.querySelectorAll('[data-close-auth-modal]').forEach((button) => {
+            button.addEventListener('click', dismissOverlay);
+        });
+
+        document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
+            button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
+        });
+
+        document.querySelectorAll('[data-auth-tab]').forEach((button) => {
+            button.addEventListener('click', () => showAuthPanel(button.dataset.authTab));
+        });
+
+        authModal?.addEventListener('click', (event) => {
+            if (event.target === authModal) {
+                dismissOverlay();
+            }
+        });
+
+        const authRequired = (target = 'login') => openAuthModal(target);
 
         const requestJson = async (url, options = {}) => {
             const response = await fetch(url, {
@@ -1662,20 +1957,46 @@
         document.querySelector('[data-open-comment-tab]')?.addEventListener('click', () => {
             openReplyTab('comments');
             openSheet(replySheet);
-            commentInput?.focus();
+            window.setTimeout(() => commentInput?.focus({ preventScroll: true }), 80);
         });
 
-        commentVoiceOption?.addEventListener('click', async () => {
-            if (!isAuthenticated) {
-                authRequired();
-                return;
-            }
-            openReplyTab('replies');
-            openSheet(replySheet);
-            currentParentReplyId = '';
-            if (!recorder || recorder.state === 'inactive') {
-                await startRecording({ statusText: 'Recording from comments. Speak now and stop to send.' });
-            }
+        commentVoiceButtons.forEach((button) => {
+            button.addEventListener('click', async () => {
+                if (!isAuthenticated) {
+                    authRequired();
+                    return;
+                }
+                openReplyTab('replies');
+                openSheet(replySheet);
+                currentParentReplyId = '';
+                if (!recorder || recorder.state === 'inactive') {
+                    await startRecording({ statusText: 'Recording from comments. Speak now and stop to send.' });
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-auth-form]').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (setPending(submitButton, true)) {
+                    return;
+                }
+                setAuthStatus('');
+                try {
+                    const formData = new FormData(form);
+                    const payload = await requestJson(form.dataset.authEndpoint, {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    setAuthStatus(payload.message || 'Signed in. Reloading your session...', 'success');
+                    window.setTimeout(() => window.location.reload(), 350);
+                } catch (error) {
+                    setAuthStatus(error.payload?.error || error.message || 'Authentication failed.', 'error');
+                } finally {
+                    setPending(submitButton, false);
+                }
+            });
         });
 
         document.querySelectorAll('[data-open-reply-sheet]').forEach((button) => {
@@ -1690,6 +2011,58 @@
 
         document.querySelector('[data-open-more-sheet]')?.addEventListener('click', () => {
             openSheet(moreSheet);
+        });
+
+        const bindSwipeDismiss = (target, setState) => {
+            if (!target) {
+                return;
+            }
+            target.addEventListener('pointerdown', (event) => {
+                if (event.target.closest('input, textarea, select, button, a, audio')) {
+                    return;
+                }
+                setState({ pointerId: event.pointerId, startY: event.clientY, startX: event.clientX, active: true });
+                target.setPointerCapture?.(event.pointerId);
+            });
+            target.addEventListener('pointermove', (event) => {
+                const state = setState();
+                if (!state?.active || state.pointerId !== event.pointerId) {
+                    return;
+                }
+                const deltaY = Math.max(event.clientY - state.startY, 0);
+                const deltaX = Math.abs(event.clientX - state.startX);
+                if (deltaY > 0 && deltaX < 80) {
+                    target.style.transform = `translateY(${Math.min(deltaY, 120)}px)`;
+                }
+            });
+            const endGesture = (event) => {
+                const state = setState();
+                if (!state?.active || state.pointerId !== event.pointerId) {
+                    return;
+                }
+                const deltaY = event.clientY - state.startY;
+                target.style.transform = '';
+                setState(null);
+                if (deltaY > 90) {
+                    dismissOverlay();
+                }
+            };
+            target.addEventListener('pointerup', endGesture);
+            target.addEventListener('pointercancel', endGesture);
+        };
+
+        bindSwipeDismiss(replySheet?.querySelector('.sheet-card'), (next) => {
+            if (typeof next !== 'undefined') {
+                sheetGesture = next;
+            }
+            return sheetGesture;
+        });
+
+        bindSwipeDismiss(authModalCard, (next) => {
+            if (typeof next !== 'undefined') {
+                authGesture = next;
+            }
+            return authGesture;
         });
 
         audioToggle?.addEventListener('click', async () => {
@@ -2194,6 +2567,7 @@
                 commentForm.reset();
                 openReplyTab('comments');
                 openSheet(replySheet);
+                window.setTimeout(() => commentInput?.focus({ preventScroll: true }), 80);
             } catch (error) {
                 if (error.code !== 'auth_required') {
                     console.error(error);
@@ -2280,9 +2654,17 @@
 
         bindHoldMenus();
 
+        window.addEventListener('popstate', (event) => {
+            if (overlayHistoryDepth > 0 && (activeSheet || authModal?.classList.contains('active'))) {
+                overlayHistoryDepth = Math.max(overlayHistoryDepth - 1, 0);
+                hardCloseSheets();
+                hardCloseAuthModal();
+            }
+        });
+
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
-                closeSheets();
+                dismissOverlay();
             }
         });
     </script>

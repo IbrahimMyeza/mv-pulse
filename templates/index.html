@@ -45,6 +45,9 @@
             -webkit-text-size-adjust: 100%;
         }
 
+        a { color: inherit; text-decoration: none; }
+        p { color: var(--muted); line-height: 1.5; }
+
         .shell {
             max-width: 1040px;
             margin: 0 auto;
@@ -66,8 +69,10 @@
         }
 
         .hero h1,
-        h2 {
+        h2,
+        h3 {
             margin-top: 0;
+            margin-bottom: 0;
         }
 
         .hero-copy {
@@ -76,25 +81,27 @@
             line-height: 1.55;
         }
 
-        .grid {
+        .public-video-grid,
+        .auth-cta-grid {
             display: grid;
             gap: 18px;
-        }
-
-        .grid.two-up {
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
         .public-video-grid {
-            display: grid;
-            gap: 18px;
             grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
             align-items: start;
         }
 
-        .featured-video {
+        .featured-video,
+        .video-preview-list,
+        .featured-video-copy,
+        .video-preview-copy,
+        .auth-cta-card,
+        .feature-card,
+        .modal-card,
+        .modal-panel {
             display: grid;
-            gap: 16px;
+            gap: 12px;
         }
 
         .featured-video-player,
@@ -116,90 +123,71 @@
             background: #101418;
         }
 
-        .featured-video-copy,
-        .video-preview-copy {
-            display: grid;
-            gap: 10px;
-        }
-
-        .video-preview-list {
-            display: grid;
-            gap: 14px;
-        }
-
-        .video-preview-card {
-            display: grid;
-            gap: 12px;
-            padding: 14px;
-            border-radius: 20px;
+        .video-preview-card,
+        .auth-cta-card,
+        .feature-card {
+            padding: 18px;
+            border-radius: 22px;
             background: rgba(255, 255, 255, 0.56);
             border: 1px solid rgba(23, 33, 38, 0.08);
         }
 
-        .video-meta {
+        .video-meta,
+        .video-actions,
+        .chip-row,
+        .auth-cta-actions,
+        .auth-tabs,
+        .auth-meta,
+        .modal-header,
+        .password-row {
             display: flex;
-            flex-wrap: wrap;
             gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .video-meta {
             color: var(--muted);
             font-size: 0.92rem;
         }
 
-        .video-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .viewer-note {
+        .viewer-note,
+        .inline-note,
+        .auth-message,
+        .modal-status {
             padding: 12px 14px;
             border-radius: 18px;
+            font-weight: 600;
+        }
+
+        .viewer-note,
+        .modal-status.success {
             background: rgba(15, 157, 122, 0.12);
             color: #0d6a52;
-            font-weight: 600;
         }
 
-        @media (max-width: 860px) {
-            .public-video-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .chip-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .auth-message {
-            padding: 14px 16px;
-            border-radius: 18px;
+        .auth-message,
+        .modal-status.error {
             background: rgba(241, 124, 69, 0.14);
             color: #9b4520;
-            font-weight: 600;
         }
 
-        .password-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .password-toggle {
-            padding: 12px 14px;
-            border-radius: 16px;
-            background: rgba(23, 33, 38, 0.08);
-            color: var(--ink);
-            white-space: nowrap;
+        .inline-note {
+            background: rgba(23, 33, 38, 0.05);
+            color: var(--muted);
         }
 
         .chip,
+        .ghost-action,
+        .primary-action,
+        .secondary-action,
+        .auth-tab,
+        .password-toggle,
+        .close-button,
         button {
             border-radius: 999px;
             padding: 12px 16px;
-            border: 0;
+            border: 1px solid rgba(23, 33, 38, 0.12);
             font: inherit;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
@@ -212,10 +200,31 @@
             align-items: center;
         }
 
-        form {
-            display: grid;
-            gap: 12px;
+        .ghost-action,
+        .secondary-action,
+        .auth-tab,
+        .password-toggle,
+        .close-button {
+            background: rgba(23, 33, 38, 0.06);
+            color: var(--ink);
+            white-space: nowrap;
         }
+
+        .primary-action,
+        button,
+        .auth-tab.active {
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent) 0%, #41b691 100%);
+            color: white;
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .auth-tab.active {
+            color: #fff;
+        }
+
+        .current-user strong { color: var(--ink); }
 
         input {
             width: 100%;
@@ -225,16 +234,74 @@
             background: rgba(255, 255, 255, 0.78);
         }
 
-        button {
-            cursor: pointer;
-            background: linear-gradient(135deg, var(--accent) 0%, #41b691 100%);
-            color: white;
-            font-weight: 600;
+        label {
+            color: var(--muted);
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        a { color: inherit; text-decoration: none; }
-        p { color: var(--muted); line-height: 1.5; }
-        .current-user strong { color: var(--ink); }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7, 10, 16, 0.72);
+            backdrop-filter: blur(14px);
+            padding: 20px;
+            z-index: 50;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(520px, 100%);
+            max-height: min(88vh, 820px);
+            overflow: auto;
+            padding: 22px;
+            border-radius: 28px;
+            background: rgba(255, 251, 246, 0.98);
+            box-shadow: 0 24px 60px rgba(23, 33, 38, 0.24);
+            border: 1px solid rgba(23, 33, 38, 0.08);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-handle {
+            width: 68px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(23, 33, 38, 0.14);
+            margin: 0 auto;
+        }
+
+        .modal-header {
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .modal-panel {
+            display: none;
+        }
+
+        .modal-panel.active,
+        .modal-status.visible {
+            display: grid;
+        }
+
+        @media (max-width: 860px) {
+            .public-video-grid,
+            .auth-cta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-card {
+                width: 100%;
+                border-radius: 26px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -253,7 +320,7 @@
             </div>
         </section>
 
-        {% if auth_message %}
+        {% if auth_message and current_user %}
         <section class="auth-message">{{ auth_message }}</section>
         {% endif %}
 
@@ -280,7 +347,7 @@
                             <a class="chip" href="/video/{{ featured_public_video.id }}">Watch this video</a>
                             <a class="chip" href="/feed">Open full feed</a>
                             {% if not current_user %}
-                            <a class="chip" href="/">Sign in to react</a>
+                            <button class="chip" type="button" data-open-auth-modal data-auth-target="login">Sign in to react</button>
                             {% endif %}
                         </div>
                     </div>
@@ -323,53 +390,222 @@
             </div>
         </section>
         {% else %}
-        <section class="grid two-up">
-            <div class="panel">
-                <h2>Create Account</h2>
-                <form action="/signup" method="post">
-                    <input type="text" name="username" placeholder="Username" required>
-                    <input type="email" name="email" placeholder="Email" required>
-                    <div class="password-row">
-                        <input type="password" name="password" placeholder="Password" required minlength="8" data-password-input>
-                        <button class="password-toggle" type="button" data-toggle-password>Show</button>
-                    </div>
-                    <div class="password-row">
-                        <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" data-password-input>
-                        <button class="password-toggle" type="button" data-toggle-password>Show</button>
-                    </div>
-                    <button type="submit">Create Account</button>
-                </form>
-            </div>
-
-            <div class="panel">
-                <h2>Login</h2>
-                <form action="/login" method="post">
-                    <input type="email" name="email" placeholder="Email" required>
-                    <div class="password-row">
-                        <input type="password" name="password" placeholder="Password" required data-password-input>
-                        <button class="password-toggle" type="button" data-toggle-password>Show</button>
-                    </div>
-                    <button type="submit">Login</button>
-                </form>
-            </div>
+        <section class="panel auth-cta-grid">
+            <article class="auth-cta-card">
+                <h2>Join without leaving the video flow</h2>
+                <p>Account creation and sign-in now live in a popup instead of taking over the entire screen. Open it, close it, and keep browsing instantly.</p>
+                <div class="auth-cta-actions">
+                    <button class="primary-action" type="button" data-open-auth-modal data-auth-target="signup">Create account</button>
+                    <button class="secondary-action" type="button" data-open-auth-modal data-auth-target="login">Sign in</button>
+                </div>
+                <div class="inline-note">Your likes, follows, comments, and voice replies persist once you sign in, but the public feed stays watchable either way.</div>
+            </article>
+            <article class="feature-card">
+                <h3>What unlocks after sign-in</h3>
+                <div class="auth-meta">
+                    <span class="ghost-action">Like and save videos</span>
+                    <span class="ghost-action">Reply by text or voice</span>
+                    <span class="ghost-action">Follow creators</span>
+                    <span class="ghost-action">Keep your creator profile</span>
+                </div>
+            </article>
         </section>
         {% endif %}
-
     </div>
 
+    {% if not current_user %}
+    <div class="modal-backdrop" data-auth-modal>
+        <div class="modal-card" data-auth-modal-card>
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <div>
+                    <h2>Sign in or create account</h2>
+                    <p>Open auth when you need it, then drop straight back into the feed.</p>
+                </div>
+                <button class="close-button" type="button" data-close-auth-modal aria-label="Close overlay">&times;</button>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" type="button" data-auth-tab="login">Sign in</button>
+                <button class="auth-tab" type="button" data-auth-tab="signup">Create account</button>
+            </div>
+            <div class="modal-status {% if auth_message %}visible error{% endif %}" data-auth-status>{% if auth_message %}{{ auth_message }}{% endif %}</div>
+            <form class="modal-panel active" data-auth-panel="login" data-auth-form data-auth-endpoint="/login">
+                <input type="email" name="email" placeholder="Email" required autocomplete="email">
+                <div class="password-row">
+                    <input type="password" name="password" placeholder="Password" required data-password-input autocomplete="current-password">
+                    <button class="password-toggle" type="button" data-toggle-password>Show</button>
+                </div>
+                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
+                <button type="submit">Sign in</button>
+            </form>
+            <form class="modal-panel" data-auth-panel="signup" data-auth-form data-auth-endpoint="/signup">
+                <input type="text" name="username" placeholder="Username" required autocomplete="username">
+                <input type="email" name="email" placeholder="Email" required autocomplete="email">
+                <div class="password-row">
+                    <input type="password" name="password" placeholder="Password" required minlength="8" data-password-input autocomplete="new-password">
+                    <button class="password-toggle" type="button" data-toggle-password>Show</button>
+                </div>
+                <div class="password-row">
+                    <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" data-password-input autocomplete="new-password">
+                    <button class="password-toggle" type="button" data-toggle-password>Show</button>
+                </div>
+                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
+                <button type="submit">Create account</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
     <script>
-        document.querySelectorAll('[data-toggle-password]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const input = button.parentElement.querySelector('[data-password-input]');
-                if (!input) {
+        const authModal = document.querySelector('[data-auth-modal]');
+        const authModalCard = document.querySelector('[data-auth-modal-card]');
+        const authStatus = document.querySelector('[data-auth-status]');
+        let authGesture = null;
+
+        const setAuthStatus = (message = '', tone = 'error') => {
+            if (!authStatus) {
+                return;
+            }
+            authStatus.textContent = message;
+            authStatus.classList.toggle('visible', Boolean(message));
+            authStatus.classList.toggle('error', tone === 'error');
+            authStatus.classList.toggle('success', tone === 'success');
+        };
+
+        const showAuthPanel = (target) => {
+            document.querySelectorAll('[data-auth-tab]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.authTab === target);
+            });
+            document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
+                panel.classList.toggle('active', panel.dataset.authPanel === target);
+            });
+            document.querySelector(`[data-auth-panel="${target}"] input`)?.focus({ preventScroll: true });
+        };
+
+        const openAuthModal = (target = 'login') => {
+            if (!authModal) {
+                return;
+            }
+            authModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            showAuthPanel(target);
+        };
+
+        const closeAuthModal = () => {
+            if (!authModal) {
+                return;
+            }
+            authModal.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        const bindPasswordToggles = (root = document) => {
+            root.querySelectorAll('[data-toggle-password]').forEach((button) => {
+                if (button.dataset.bound === 'true') {
                     return;
                 }
+                button.dataset.bound = 'true';
+                button.addEventListener('click', () => {
+                    const input = button.parentElement.querySelector('[data-password-input]');
+                    if (!input) {
+                        return;
+                    }
+                    const showing = input.type === 'text';
+                    input.type = showing ? 'password' : 'text';
+                    button.textContent = showing ? 'Show' : 'Hide';
+                });
+            });
+        };
 
-                const showing = input.type === 'text';
-                input.type = showing ? 'password' : 'text';
-                button.textContent = showing ? 'Show' : 'Hide';
+        const requestAuth = async (endpoint, form) => {
+            const payload = Object.fromEntries(new FormData(form).entries());
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'fetch',
+                },
+                body: JSON.stringify(payload),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result.ok === false) {
+                throw new Error(result.error || 'Authentication failed.');
+            }
+            return result;
+        };
+
+        document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
+            button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
+        });
+
+        document.querySelectorAll('[data-close-auth-modal]').forEach((button) => {
+            button.addEventListener('click', closeAuthModal);
+        });
+
+        document.querySelectorAll('[data-auth-tab]').forEach((button) => {
+            button.addEventListener('click', () => showAuthPanel(button.dataset.authTab));
+        });
+
+        document.querySelectorAll('[data-auth-form]').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton?.dataset.pending === 'true') {
+                    return;
+                }
+                if (submitButton) {
+                    submitButton.dataset.pending = 'true';
+                    submitButton.disabled = true;
+                }
+                setAuthStatus('');
+                try {
+                    await requestAuth(form.dataset.authEndpoint, form);
+                    setAuthStatus('Signed in. Reloading your session...', 'success');
+                    window.location.reload();
+                } catch (error) {
+                    setAuthStatus(error.message || 'Authentication failed.', 'error');
+                } finally {
+                    if (submitButton) {
+                        submitButton.dataset.pending = 'false';
+                        submitButton.disabled = false;
+                    }
+                }
             });
         });
+
+        authModal?.addEventListener('click', (event) => {
+            if (event.target === authModal) {
+                closeAuthModal();
+            }
+        });
+
+        authModalCard?.addEventListener('pointerdown', (event) => {
+            authGesture = { pointerId: event.pointerId, startY: event.clientY };
+        });
+
+        authModalCard?.addEventListener('pointerup', (event) => {
+            if (!authGesture || authGesture.pointerId !== event.pointerId) {
+                return;
+            }
+            const deltaY = event.clientY - authGesture.startY;
+            authGesture = null;
+            if (deltaY > 110) {
+                closeAuthModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeAuthModal();
+            }
+        });
+
+        if (authModal && authStatus?.textContent.trim()) {
+            openAuthModal('login');
+        }
+
+        bindPasswordToggles();
     </script>
     <script src="/static/pwa.js"></script>
 </body>

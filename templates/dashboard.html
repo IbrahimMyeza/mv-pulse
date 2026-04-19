@@ -680,6 +680,42 @@
             gap: 12px;
         }
 
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .auth-panel {
+            display: none;
+            gap: 12px;
+        }
+
+        .auth-panel.active {
+            display: grid;
+        }
+
+        .auth-status {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 16px;
+            font-weight: 600;
+        }
+
+        .auth-status.visible {
+            display: block;
+        }
+
+        .auth-status.error {
+            background: rgba(255, 107, 107, 0.16);
+            color: #ffc4c4;
+        }
+
+        .auth-status.success {
+            background: rgba(24, 212, 171, 0.16);
+            color: #bdf4e7;
+        }
+
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -916,7 +952,7 @@
                     </article>
                     {% endif %}
                     {% else %}
-                    <article class="panel">
+                    <article class="panel" id="conversation-radar">
                         <h3>No videos yet</h3>
                         <p>Upload the first Umbono Wami clip and seed the voice thread.</p>
                     </article>
@@ -1006,7 +1042,7 @@
                         <p>Uploads only save when you are signed in. Public visitors can browse the feed, but they cannot publish a video yet.</p>
                     </div>
                     <div class="sheet-actions">
-                        <a class="sheet-link primary" href="/">Sign in to upload</a>
+                        <button class="sheet-link primary" type="button" data-open-auth-modal data-auth-target="login">Sign in to upload</button>
                     </div>
                     {% endif %}
                 </article>
@@ -1116,12 +1152,12 @@
         <nav class="bottom-nav" aria-label="Bottom navigation">
             <a href="/feed" class="tab-link {% if active_tab == 'home' %}active{% endif %}">Home</a>
             <a href="/upload" class="tab-link {% if active_tab == 'upload' %}active{% endif %}">Upload</a>
-            <a href="/feed#replies" class="tab-link {% if active_tab == 'replies' %}active{% endif %}">Replies</a>
+            <a href="/feed#conversation-radar" class="tab-link">Search</a>
             <a href="/notifications" class="tab-link {% if active_tab == 'notifications' %}active{% endif %}">Notifications {% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</a>
             {% if current_user %}
             <a href="/profile/{{ current_user.username }}" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">Profile</a>
             {% else %}
-            <a href="/" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">Profile</a>
+            <button class="tab-link" type="button" data-open-auth-modal data-auth-target="login">Profile</button>
             {% endif %}
         </nav>
     </div>
@@ -1182,12 +1218,39 @@
             <div class="sheet-header">
                 <div>
                     <h3>Sign in to interact</h3>
-                    <p class="meta-copy">Likes, saves, follows, and voice replies are tied to your account.</p>
+                    <p class="meta-copy">Likes, saves, follows, comments, and voice replies are tied to your account.</p>
                 </div>
                 <button class="menu-button" type="button" data-close-modal aria-label="Close overlay">&times;</button>
             </div>
+            <div class="auth-tabs">
+                <button class="tab-link active" type="button" data-auth-tab="login">Sign in</button>
+                <button class="tab-link" type="button" data-auth-tab="signup">Create account</button>
+            </div>
+            <div class="auth-status" data-auth-status></div>
+            <form class="auth-panel active" data-auth-panel="login" data-auth-form data-auth-endpoint="/login">
+                <input type="email" name="email" placeholder="Email" required autocomplete="email">
+                <div class="password-row">
+                    <input type="password" name="password" placeholder="Password" required data-password-input autocomplete="current-password">
+                    <button class="ghost" type="button" data-toggle-password>Show</button>
+                </div>
+                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
+                <button class="sheet-link primary" type="submit">Sign in</button>
+            </form>
+            <form class="auth-panel" data-auth-panel="signup" data-auth-form data-auth-endpoint="/signup">
+                <input type="text" name="username" placeholder="Username" required autocomplete="username">
+                <input type="email" name="email" placeholder="Email" required autocomplete="email">
+                <div class="password-row">
+                    <input type="password" name="password" placeholder="Password" required minlength="8" data-password-input autocomplete="new-password">
+                    <button class="ghost" type="button" data-toggle-password>Show</button>
+                </div>
+                <div class="password-row">
+                    <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" data-password-input autocomplete="new-password">
+                    <button class="ghost" type="button" data-toggle-password>Show</button>
+                </div>
+                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
+                <button class="sheet-link primary" type="submit">Create account</button>
+            </form>
             <div class="sheet-actions">
-                <a class="sheet-link primary" href="/">Sign in or create account</a>
                 <button class="sheet-link" type="button" data-close-modal>Keep browsing</button>
             </div>
         </div>
@@ -1197,6 +1260,7 @@
         const appShell = document.querySelector('.app');
         const isAuthenticated = appShell?.dataset.authenticated === 'true';
         const authModal = document.querySelector('[data-auth-modal]');
+        const authStatus = document.querySelector('[data-auth-status]');
         const sheetBackdrop = document.querySelector('[data-sheet-backdrop]');
         const feedVoiceSheet = document.querySelector('[data-feed-voice-sheet]');
         const moreSheet = document.querySelector('[data-more-sheet]');
@@ -1216,7 +1280,29 @@
             return false;
         };
 
-        const openAuthModal = () => authModal?.classList.add('active');
+        const setAuthStatus = (message = '', tone = 'error') => {
+            if (!authStatus) {
+                return;
+            }
+            authStatus.textContent = message;
+            authStatus.classList.toggle('visible', Boolean(message));
+            authStatus.classList.toggle('error', tone === 'error');
+            authStatus.classList.toggle('success', tone === 'success');
+        };
+
+        const showAuthPanel = (target) => {
+            document.querySelectorAll('[data-auth-tab]').forEach((button) => {
+                button.classList.toggle('active', button.dataset.authTab === target);
+            });
+            document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
+                panel.classList.toggle('active', panel.dataset.authPanel === target);
+            });
+        };
+
+        const openAuthModal = (target = 'login') => {
+            authModal?.classList.add('active');
+            showAuthPanel(target);
+        };
         const closeAuthModal = () => authModal?.classList.remove('active');
 
         const openSheet = (sheet) => {
@@ -1240,6 +1326,14 @@
             button.addEventListener('click', closeAuthModal);
         });
 
+        document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
+            button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
+        });
+
+        document.querySelectorAll('[data-auth-tab]').forEach((button) => {
+            button.addEventListener('click', () => showAuthPanel(button.dataset.authTab));
+        });
+
         document.querySelectorAll('[data-close-sheet]').forEach((button) => {
             button.addEventListener('click', closeSheets);
         });
@@ -1249,6 +1343,55 @@
             if (event.target === authModal) {
                 closeAuthModal();
             }
+        });
+
+        document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+            button.dataset.bound = 'true';
+            button.addEventListener('click', () => {
+                const input = button.parentElement.querySelector('[data-password-input]');
+                if (!input) {
+                    return;
+                }
+                const showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                button.textContent = showing ? 'Show' : 'Hide';
+            });
+        });
+
+        document.querySelectorAll('[data-auth-form]').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (setPending(submitButton, true)) {
+                    return;
+                }
+                setAuthStatus('');
+                try {
+                    const payload = Object.fromEntries(new FormData(form).entries());
+                    const response = await fetch(form.dataset.authEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'fetch',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok || result.ok === false) {
+                        throw new Error(result.error || 'Authentication failed.');
+                    }
+                    setAuthStatus('Signed in. Reloading your session...', 'success');
+                    window.location.reload();
+                } catch (error) {
+                    setAuthStatus(error.message || 'Authentication failed.', 'error');
+                } finally {
+                    setPending(submitButton, false);
+                }
+            });
         });
 
         const requestJson = async (url, options = {}) => {
