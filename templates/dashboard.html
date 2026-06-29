@@ -1,2210 +1,1046 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#030507">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MV Pulse">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/static/icons/mv-icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/static/icons/mv-icon.svg">
-    <title>Umbono Wami</title>
-    <style>
-        :root {
-            --bg: #05070a;
-            --bg-soft: #11161e;
-            --panel: rgba(9, 13, 19, 0.88);
-            --panel-strong: rgba(7, 10, 16, 0.96);
-            --line: rgba(255, 255, 255, 0.1);
-            --text: #f5f7fa;
-            --muted: #a6b0bc;
-            --accent: #18d4ab;
-            --accent-warm: #ff8756;
-            --danger: #ff6b6b;
-            --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-right: env(safe-area-inset-right, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-left: env(safe-area-inset-left, 0px);
-            --keyboard-offset: 0px;
-        }
-
-        * { box-sizing: border-box; }
-
-        html {
-            background: var(--bg);
-            scroll-behavior: smooth;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            color: var(--text);
-            font-family: "Segoe UI", sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(24, 212, 171, 0.08), transparent 20%),
-                radial-gradient(circle at top right, rgba(255, 135, 86, 0.08), transparent 20%),
-                linear-gradient(180deg, #010203 0%, #05080d 50%, #010203 100%);
-            overflow-x: hidden;
-            overflow-y: auto;
-            -webkit-text-size-adjust: 100%;
-        }
-
-        body.overlay-open {
-            overflow: hidden;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        button,
-        input,
-        textarea,
-        select {
-            font: inherit;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
-        .app {
-            position: relative;
-            min-height: 100vh;
-        }
-
-        .topbar {
-            position: fixed;
-            inset: 0 0 auto 0;
-            z-index: 25;
-            padding: calc(8px + var(--safe-top)) calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
-            pointer-events: none;
-        }
-
-        .topbar-inner {
-            width: min(920px, 100%);
-            margin: 0 auto;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(5, 8, 12, 0.44);
-            backdrop-filter: blur(18px);
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 10px 12px;
-            pointer-events: auto;
-        }
-
-        .brand-block {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .eyebrow {
-            display: none;
-        }
-
-        .brand-title {
-            font-size: 0.9rem;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .brand-subtitle {
-            display: none;
-        }
-
-        .top-logo {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 36px;
-            min-height: 36px;
-            padding: 0 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text);
-            font-size: 0.78rem;
-            font-weight: 800;
-        }
-
-        .icon-button {
-            width: 40px;
-            height: 40px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .topbar-actions,
-        .inline-row,
-        .rail-action-label,
-        .sheet-actions,
-        .meta-row,
-        .stats-row,
-        .secondary-nav,
-        .actions-row,
-        .chip-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .pill,
-        .chip,
-        .ghost,
-        .stat-pill,
-        .tab-link,
-        .action-link,
-        .rail-button,
-        .sheet-link,
-        .menu-button,
-        .submit {
-            border-radius: 999px;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text);
-        }
-
-        .action-link,
-        .submit,
-        .sheet-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 44px;
-            padding: 0 16px;
-            cursor: pointer;
-        }
-
-        .action-link.primary,
-        .submit,
-        .sheet-link.primary,
-        .rail-button.active {
-            border-color: transparent;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
-            color: #061018;
-            font-weight: 700;
-        }
-
-        .pill,
-        .chip,
-        .stat-pill,
-        .tab-link {
-            padding: 8px 12px;
-            font-size: 0.88rem;
-        }
-
-        .chip,
-        .stat-pill {
-            color: var(--muted);
-        }
-
-        .screen {
-            display: none;
-            width: min(1180px, 100%);
-            margin: 0 auto;
-            padding: calc(70px + var(--safe-top)) calc(10px + var(--safe-right)) calc(92px + var(--safe-bottom)) calc(10px + var(--safe-left));
-            scroll-margin-top: 92px;
-        }
-
-        .screen[data-screen="home"] {
-            width: min(520px, 100%);
-            padding-top: calc(58px + var(--safe-top));
-            padding-bottom: calc(84px + var(--safe-bottom));
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        .feed-shell {
-            display: grid;
-            gap: 0;
-        }
-
-        .feed-stage {
-            display: grid;
-            gap: 0;
-        }
-
-        .reel-slide,
-        .thread-slide,
-        .panel,
-        .profile-panel,
-        .list-card,
-        .reply-card {
-            border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(10, 14, 20, 0.88);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .reel-slide,
-        .thread-slide {
-            position: relative;
-            min-height: 100svh;
-            scroll-snap-align: start;
-        }
-
-        .feed-stage {
-            scroll-snap-type: y mandatory;
-            overscroll-behavior-y: contain;
-        }
-
-        .thread-slide,
-        .feed-shell > .secondary-grid,
-        .feed-shell > .reply-list {
-            display: none;
-        }
-
-        .reel-video,
-        .thread-slide-backdrop {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            background: #05070a;
-        }
-
-        .reel-loading {
-            position: absolute;
-            left: 14px;
-            right: 14px;
-            bottom: calc(130px + var(--safe-bottom));
-            z-index: 2;
-            display: grid;
-            gap: 10px;
-            transition: opacity 180ms ease;
-        }
-
-        .reel-slide.loaded .reel-loading {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .thread-slide-backdrop {
-            background:
-                radial-gradient(circle at top left, rgba(24, 212, 171, 0.25), transparent 30%),
-                radial-gradient(circle at bottom right, rgba(255, 135, 86, 0.25), transparent 32%),
-                linear-gradient(180deg, #09111a 0%, #05070a 100%);
-        }
-
-        .reel-shade {
-            position: absolute;
-            inset: 0;
-            background:
-                linear-gradient(180deg, rgba(4, 6, 10, 0.28) 0%, rgba(4, 6, 10, 0.18) 22%, rgba(4, 6, 10, 0.5) 55%, rgba(4, 6, 10, 0.92) 100%),
-                radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.08), transparent 24%);
-            pointer-events: none;
-        }
-
-        .reel-top,
-        .reel-bottom,
-        .thread-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .reel-top {
-            display: none;
-        }
-
-        .creator-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: rgba(5, 8, 12, 0.62);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(12px);
-        }
-
-        .creator-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.08);
-            font-weight: 700;
-        }
-
-        .creator-meta {
-            display: grid;
-            gap: 2px;
-        }
-
-        .creator-meta strong {
-            font-size: 0.96rem;
-        }
-
-        .creator-meta span {
-            color: rgba(245, 247, 250, 0.78);
-            font-size: 0.84rem;
-        }
-
-        .reel-bottom {
-            min-height: 100%;
-            display: grid;
-            align-items: end;
-            padding: 0 14px 18px;
-        }
-
-        .reel-bottom-inner {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .reel-copy {
-            display: grid;
-            gap: 10px;
-            max-width: 260px;
-            transition: opacity 180ms ease, transform 180ms ease;
-        }
-
-        .reel-copy h2,
-        .thread-copy h2,
-        .panel h3,
-        .profile-panel h3,
-        .list-card h3 {
-            margin: 0;
-        }
-
-        .reel-copy h2 {
-            font-size: 0.98rem;
-            font-weight: 700;
-        }
-
-        .reel-copy p,
-        .thread-copy p,
-        .meta-copy,
-        .panel p,
-        .profile-panel p,
-        .reply-card p,
-        .list-card p {
-            margin: 0;
-            color: rgba(245, 247, 250, 0.82);
-            line-height: 1.5;
-        }
-
-        .creator-handle {
-            font-size: 0.95rem;
-            font-weight: 800;
-        }
-
-        .caption-shell {
-            display: grid;
-            gap: 8px;
-        }
-
-        .caption-text {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .caption-shell.expanded .caption-text {
-            display: block;
-            -webkit-line-clamp: unset;
-        }
-
-        .caption-toggle {
-            width: fit-content;
-            padding: 0;
-            border: 0;
-            background: transparent;
-            color: rgba(245, 247, 250, 0.78);
-            font-size: 0.82rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .reel-meta {
-            display: none;
-        }
-
-        .reel-copy .chip-row,
-        .reel-copy .actions-row,
-        .reel-copy .meta-copy {
-            display: none;
-        }
-
-        .rail {
-            display: grid;
-            gap: 10px;
-            justify-items: center;
-            width: 68px;
-            transition: opacity 180ms ease, transform 180ms ease;
-        }
-
-        .rail-action {
-            display: grid;
-            gap: 6px;
-            justify-items: center;
-        }
-
-        .rail-button {
-            width: 56px;
-            height: 56px;
-            display: grid;
-            place-items: center;
-            cursor: pointer;
-            font-size: 1.05rem;
-            padding: 0;
-            backdrop-filter: blur(14px);
-            background: rgba(7, 10, 16, 0.72);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .rail-button.voice-primary {
-            width: 62px;
-            height: 62px;
-            border-color: transparent;
-            background: linear-gradient(135deg, rgba(24, 212, 171, 0.96) 0%, rgba(255, 135, 86, 0.96) 100%);
-            color: #061018;
-            box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.42);
-            animation: rail-glow 1.8s infinite;
-            font-weight: 800;
-        }
-
-        .rail-button.like-burst::after {
-            content: "";
-            position: absolute;
-            inset: 10px;
-            border-radius: 999px;
-            border: 2px solid rgba(255, 255, 255, 0.86);
-            animation: like-burst 0.42s ease-out;
-        }
-
-        .rail-action-label {
-            flex-direction: column;
-            gap: 2px;
-            text-align: center;
-            font-size: 0.74rem;
-            color: rgba(245, 247, 250, 0.82);
-        }
-
-        .rail-action-label span {
-            display: none;
-        }
-
-        .rail-action-label strong {
-            font-size: 0.82rem;
-            color: rgba(245, 247, 250, 0.92);
-        }
-
-        .voice-cta {
-            position: absolute;
-            left: 50%;
-            bottom: calc(78px + var(--safe-bottom));
-            transform: translateX(-50%);
-            min-height: 56px;
-            padding: 0 22px;
-            border-radius: 999px;
-            border: 0;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
-            color: #061018;
-            font-weight: 900;
-            font-size: 0.98rem;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
-            z-index: 3;
-            cursor: pointer;
-            transition: opacity 180ms ease, transform 180ms ease;
-        }
-
-        .rail-action-label strong {
-            font-size: 0.92rem;
-            color: var(--text);
-        }
-
-        .thread-content {
-            min-height: 100%;
-            padding: 28px;
-            display: grid;
-            align-content: end;
-            gap: 18px;
-            background: linear-gradient(180deg, rgba(5, 7, 10, 0.12) 0%, rgba(5, 7, 10, 0.92) 100%);
-        }
-
-        .thread-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            width: fit-content;
-            padding: 10px 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(24, 212, 171, 0.32);
-            background: rgba(24, 212, 171, 0.14);
-            font-weight: 700;
-        }
-
-        .pulse-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 999px;
-            background: var(--accent);
-            box-shadow: 0 0 0 rgba(24, 212, 171, 0.45);
-            animation: pulse 1.6s infinite;
-        }
-
-        .thread-grid,
-        .secondary-grid,
-        .profile-grid,
-        .reply-list,
-        .notification-list,
-        .project-list,
-        .profile-video-list {
-            display: grid;
-            gap: 16px;
-        }
-
-        .secondary-grid,
-        .profile-grid {
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        }
-
-        .panel,
-        .profile-panel,
-        .list-card {
-            padding: 20px;
-            display: grid;
-            gap: 14px;
-        }
-
-        form {
-            display: grid;
-            gap: 12px;
-        }
-
-        input,
-        textarea,
-        select {
-            width: 100%;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            padding: 14px 16px;
-        }
-
-        textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
-
-        .reply-card,
-        .notification-item,
-        .project-item,
-        .profile-video-item,
-        .insight-card {
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 22px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .waveform {
-            height: 58px;
-            border-radius: 18px;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(90deg,
-                rgba(24, 212, 171, 0.12) 0%,
-                rgba(24, 212, 171, 0.46) 15%,
-                rgba(255, 135, 86, 0.24) 30%,
-                rgba(255, 255, 255, 0.08) 45%,
-                rgba(24, 212, 171, 0.4) 60%,
-                rgba(255, 135, 86, 0.22) 80%,
-                rgba(24, 212, 171, 0.14) 100%);
-        }
-
-        .waveform::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255, 255, 255, 0.08) 10px, rgba(255, 255, 255, 0.08) 12px);
-        }
-
-        audio {
-            width: 100%;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            left: 50%;
-            bottom: calc(8px + var(--safe-bottom));
-            transform: translateX(-50%);
-            z-index: 24;
-            width: min(520px, calc(100% - 16px));
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(7, 10, 16, 0.78);
-            backdrop-filter: blur(18px);
-            box-shadow: var(--shadow);
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 6px;
-            transition: opacity 180ms ease, transform 180ms ease;
-        }
-
-        body.overlay-open .bottom-nav,
-        body.overlay-open .voice-cta,
-        body.overlay-open .rail {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .tab-link {
-            flex: 1;
-            text-align: center;
-            min-height: 42px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.74rem;
-        }
-
-        .tab-link.active {
-            background: rgba(255, 255, 255, 0.12);
-            color: var(--text);
-        }
-
-        .badge {
-            min-width: 22px;
-            height: 22px;
-            padding: 0 7px;
-            border-radius: 999px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
-            color: #061018;
-            font-size: 0.76rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .sheet-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.66);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.22s ease;
-            z-index: 38;
-        }
-
-        .sheet-backdrop.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .sheet {
-            position: fixed;
-            left: 50%;
-            bottom: 0;
-            width: min(640px, 100%);
-            max-height: min(calc(86svh - var(--keyboard-offset)), 760px);
-            transform: translate(-50%, calc(100% + 24px));
-            transition: transform 0.24s ease;
-            z-index: 39;
-            padding: 0 calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom) + min(var(--keyboard-offset), 220px)) calc(12px + var(--safe-left));
-            pointer-events: none;
-        }
-
-        .sheet.active {
-            transform: translate(-50%, 0);
-            pointer-events: auto;
-        }
-
-        .sheet-card {
-            border-radius: 28px 28px 0 0;
-            background: rgba(7, 10, 16, 0.98);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            display: grid;
-            max-height: min(calc(86svh - var(--keyboard-offset)), 760px);
-        }
-
-        .sheet-card.dragging,
-        .modal-card.dragging {
-            transition: none;
-        }
-
-        .sheet-handle {
-            width: 64px;
-            height: 6px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.18);
-            margin: 12px auto 0;
-        }
-
-        .sheet-body {
-            padding: 16px 18px calc(24px + var(--safe-bottom));
-            overflow: auto;
-            display: grid;
-            gap: 14px;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            overscroll-behavior: contain;
-        }
-
-        .sheet-body:focus-within {
-            padding-bottom: calc(24px + var(--safe-bottom) + min(var(--keyboard-offset), 220px));
-        }
-
-        .notification-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-            color: var(--muted);
-            font-size: 0.84rem;
-        }
-
-        .sheet-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: flex-start;
-        }
-
-        .sheet-header h3,
-        .sheet-header p {
-            margin: 0;
-        }
-
-        .sheet-close,
-        .menu-button {
-            min-width: 44px;
-            min-height: 44px;
-            cursor: pointer;
-            padding: 0;
-            font-size: 1.3rem;
-            line-height: 1;
-            font-weight: 700;
-        }
-
-        .insight-grid {
-            display: grid;
-            gap: 12px;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        }
-
-        .meta-copy {
-            color: var(--muted);
-        }
-
-        .modal-card {
-            width: min(460px, 100%);
-            border-radius: 28px;
-            background: rgba(7, 10, 16, 0.98);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: var(--shadow);
-            padding: 20px;
-            display: grid;
-            gap: 12px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .auth-panel {
-            display: none;
-            gap: 12px;
-        }
-
-        .auth-panel.active {
-            display: grid;
-        }
-
-        .auth-status {
-            display: none;
-            padding: 12px 14px;
-            border-radius: 16px;
-            font-weight: 600;
-        }
-
-        .auth-status.visible {
-            display: block;
-        }
-
-        .auth-status.error {
-            background: rgba(255, 107, 107, 0.16);
-            color: #ffc4c4;
-        }
-
-        .auth-status.success {
-            background: rgba(24, 212, 171, 0.16);
-            color: #bdf4e7;
-        }
-
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.76);
-            padding: 20px;
-            z-index: 45;
-        }
-
-        .modal-backdrop.active {
-            display: flex;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.45); }
-            70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(24, 212, 171, 0); }
-            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(24, 212, 171, 0); }
-        }
-
-        @keyframes rail-glow {
-            0% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0.42); }
-            70% { box-shadow: 0 0 0 16px rgba(24, 212, 171, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(24, 212, 171, 0); }
-        }
-
-        @keyframes like-burst {
-            0% { opacity: 0.9; transform: scale(0.4); }
-            100% { opacity: 0; transform: scale(1.8); }
-        }
-
-        .app.ui-hidden .topbar,
-        .app.ui-hidden .bottom-nav,
-        .app.ui-hidden .reel-copy,
-        .app.ui-hidden .rail,
-        .app.ui-hidden .voice-cta {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .app.ui-hidden .topbar,
-        .app.ui-hidden .bottom-nav,
-        .app.ui-hidden .voice-cta {
-            transform: translateY(10px);
-        }
-
-        .app.keyboard-open .bottom-nav,
-        .app.keyboard-open .voice-cta,
-        .app.keyboard-open .rail {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        @media (max-width: 840px) {
-            .topbar-inner {
-                align-items: center;
-                flex-direction: row;
-            }
-
-            .topbar-actions {
-                width: auto;
-                justify-content: flex-end;
-            }
-
-            .reel-bottom-inner {
-                grid-template-columns: 1fr;
-            }
-
-            .rail {
-                width: 68px;
-                justify-items: center;
-            }
-
-            .rail-action {
-                justify-items: center;
-            }
-
-            .rail-button {
-                width: 100%;
-                max-width: 72px;
-                margin: 0 auto;
-            }
-
-            .screen {
-                padding-top: calc(58px + var(--safe-top));
-            }
-
-            .bottom-nav {
-                width: calc(100% - 18px);
-                left: 9px;
-                transform: none;
-            }
-
-            .voice-cta {
-                bottom: calc(72px + var(--safe-bottom));
-            }
-        }
-
-        @media (max-width: 560px) {
-            .action-link,
-            .sheet-link,
-            .submit,
-            .menu-button {
-                min-height: 46px;
-            }
-
-            .brand-title {
-                line-height: 1.35;
-            }
-
-            .voice-cta {
-                width: calc(100% - 44px);
-            }
-        }
-
-        @media (max-height: 760px) {
-            .screen[data-screen="home"] {
-                padding-bottom: calc(96px + var(--safe-bottom));
-            }
-
-            .rail {
-                gap: 8px;
-                width: 60px;
-            }
-
-            .rail-button {
-                width: 52px;
-                height: 52px;
-            }
-
-            .rail-button.voice-primary {
-                width: 56px;
-                height: 56px;
-            }
-
-            .voice-cta {
-                min-height: 52px;
-                bottom: calc(66px + var(--safe-bottom));
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000">
+<title>MV Pulse</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#fe2c55;--accent2:#25f4ee;
+  --bg:#000;--surface:#161616;--surface2:#2a2a2a;
+  --border:rgba(255,255,255,.1);
+  --text:#fff;--muted:rgba(255,255,255,.6);--subtle:rgba(255,255,255,.3);
+  --nav:56px;--top:52px
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+input,textarea,select{font:inherit;color:inherit;background:none;border:none;outline:none}
+a{color:inherit;text-decoration:none}
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--top);display:flex;align-items:center;
+  justify-content:center;z-index:200;pointer-events:none}
+.topbar>*{pointer-events:all}
+.topbar-logo{position:absolute;left:14px;font-size:18px;font-weight:900;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.feed-tabs{display:flex;gap:20px;align-items:center}
+.feed-tab{font-size:15px;font-weight:700;color:var(--muted);padding:4px 0;
+  border-bottom:2px solid transparent;transition:all .2s}
+.feed-tab.active{color:var(--text);border-bottom-color:var(--text)}
+.topbar-actions{position:absolute;right:14px;display:flex;gap:10px;align-items:center}
+.topbar-title{font-size:17px;font-weight:800}
+.icon-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center}
+.icon-btn svg{width:18px;height:18px;fill:var(--text)}
+/* SCREENS */
+.screens{position:fixed;inset:0;z-index:1}
+.screen{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .2s}
+.screen.active{opacity:1;pointer-events:all}
+/* FEED */
+#feed{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+#feed::-webkit-scrollbar{display:none}
+.vslide{position:relative;height:100dvh;scroll-snap-align:start;background:#111;overflow:hidden}
+.vslide video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.grad-top{position:absolute;top:0;left:0;right:0;height:180px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);pointer-events:none;z-index:2}
+.grad-bot{position:absolute;bottom:0;left:0;right:0;height:340px;
+  background:linear-gradient(to top,rgba(0,0,0,.85),transparent);pointer-events:none;z-index:2}
+.vplaceholder{position:absolute;inset:0;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:1}
+.vplaceholder-icon{font-size:60px;opacity:.3}
+.vplaceholder-title{font-size:20px;font-weight:800;text-align:center;padding:0 28px}
+.vplaceholder-sub{font-size:13px;color:var(--muted);text-align:center;padding:0 28px}
+.play-flash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:5;pointer-events:none;opacity:0;transition:opacity .25s}
+.play-flash.show{opacity:1}
+.play-circle{width:68px;height:68px;border-radius:50%;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center}
+.play-circle svg{width:30px;height:30px;fill:#fff}
+.heart-burst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:6;pointer-events:none;opacity:0}
+.heart-burst.fire{animation:hpop .75s ease-out forwards}
+.heart-burst span{font-size:96px;filter:drop-shadow(0 0 24px rgba(254,44,85,.9))}
+@keyframes hpop{0%{opacity:0;transform:scale(.2)}25%{opacity:1;transform:scale(1.3)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.1)}}
+.sound-btn{position:absolute;top:calc(var(--top)+10px);right:12px;z-index:10;
+  width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
+.sound-btn svg{width:16px;height:16px;fill:#fff}
+.creator-info{position:absolute;bottom:calc(var(--nav)+68px);left:12px;right:72px;z-index:10;
+  display:flex;flex-direction:column;gap:6px}
+.creator-row{display:flex;align-items:center;gap:8px}
+.cavatar{width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;
+  flex-shrink:0;overflow:hidden}
+.cavatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.cname{font-size:13px;font-weight:800}
+.follow-pill{font-size:11px;font-weight:700;border:1.5px solid #fff;border-radius:4px;
+  padding:2px 8px;flex-shrink:0;transition:all .2s}
+.follow-pill.following{background:var(--accent);border-color:var(--accent)}
+.vcaption{font-size:13px;color:rgba(255,255,255,.95);line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.vcaption.exp{-webkit-line-clamp:unset}
+.vtags{font-size:12px;color:var(--accent2)}
+.action-bar{position:absolute;bottom:calc(var(--nav)+2px);left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-around;padding:6px 12px;height:58px}
+.abtn{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px}
+.abtn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.38);
+  border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;
+  transition:transform .12s,background .15s}
+.abtn:active .abtn-icon{transform:scale(.88)}
+.abtn-icon svg{width:20px;height:20px;fill:#fff;transition:fill .15s}
+.abtn-icon.liked svg{fill:var(--accent)}
+.abtn-icon.saved svg{fill:#ffd700}
+.abtn-count{font-size:11px;font-weight:700;color:rgba(255,255,255,.85)}
+.vprogress{position:absolute;bottom:var(--nav);left:0;right:0;height:3px;
+  background:rgba(255,255,255,.18);z-index:10}
+.vprogress-fill{height:100%;background:var(--accent);width:0%;transition:width .1s linear}
+.speed-picker{position:absolute;bottom:calc(var(--nav)+72px);left:50%;transform:translateX(-50%);
+  background:rgba(20,20,20,.95);border:1px solid var(--border);border-radius:12px;
+  display:none;z-index:20;overflow:hidden}
+.speed-picker.open{display:flex}
+.spd{padding:10px 15px;font-size:13px;font-weight:700;color:var(--muted);
+  border-right:1px solid var(--border)}
+.spd:last-child{border-right:none}
+.spd.active{color:var(--accent)}
+.ht-slide{background:linear-gradient(135deg,#1a0a2e,#0d1117);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px;gap:16px;position:absolute;inset:0}
+.ht-label{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--accent);text-transform:uppercase}
+.ht-title{font-size:22px;font-weight:900;text-align:center;line-height:1.25}
+.ht-meta{font-size:13px;color:var(--muted);text-align:center}
+.ht-cta{background:var(--accent);color:#fff;font-weight:800;padding:14px 28px;
+  border-radius:28px;font-size:15px;margin-top:8px}
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);
+  background:rgba(0,0,0,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;
+  z-index:300;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;height:100%;min-width:48px;position:relative}
+.nav-btn svg{width:24px;height:24px;fill:var(--muted);transition:fill .15s}
+.nav-btn.active svg{fill:var(--text)}
+.nav-label{font-size:9px;color:var(--muted);transition:color .15s}
+.nav-btn.active .nav-label{color:var(--text)}
+.create-pill{background:#fff;border-radius:8px;width:44px;height:28px;
+  display:flex;align-items:center;justify-content:center;position:relative}
+.create-pill::before,.create-pill::after{content:'';position:absolute;top:0;bottom:0;width:3px;border-radius:2px}
+.create-pill::before{left:-4px;background:var(--accent2)}
+.create-pill::after{right:-4px;background:var(--accent)}
+.create-pill svg{width:18px;height:18px;fill:#000}
+.nbadge{position:absolute;top:4px;right:4px;background:var(--accent);color:#fff;
+  font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px}
+/* SHEETS */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:350;
+  opacity:0;pointer-events:none;transition:opacity .3s}
+.backdrop.vis{opacity:1;pointer-events:all}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+  border-radius:20px 20px 0 0;z-index:400;transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.32,.72,0,1);
+  max-height:92dvh;display:flex;flex-direction:column}
+.sheet.open{transform:translateY(0)}
+.shandle{width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:10px auto;flex-shrink:0}
+.sheader{display:flex;align-items:center;padding:4px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.stitle{font-size:16px;font-weight:800;flex:1}
+.sclose{width:30px;height:30px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted)}
+.stabs{display:flex;flex:1}
+.stab{flex:1;text-align:center;padding:6px 0;font-size:14px;font-weight:700;
+  color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
+.stab.active{color:var(--text);border-bottom-color:var(--text)}
+.sbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sbody::-webkit-scrollbar{display:none}
+.cmt-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.cmt-av{width:32px;height:32px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.cmt-body{flex:1}
+.cmt-user{font-size:13px;font-weight:700}
+.cmt-text{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.4}
+.cmt-time{font-size:11px;color:var(--subtle);margin-top:4px}
+.vr-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.vr-play{width:40px;height:40px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vr-play svg{width:16px;height:16px;fill:#fff}
+.vr-meta{flex:1}
+.vr-user{font-size:13px;font-weight:700}
+.vr-trans{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3}
+.vr-dur{font-size:11px;color:var(--subtle);margin-top:2px}
+.empty-msg{text-align:center;padding:40px 24px;color:var(--muted);font-size:14px}
+.empty-msg-icon{font-size:40px;margin-bottom:10px}
+.sinput{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--border);
+  background:var(--surface);flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.sinput input{flex:1;background:var(--surface2);border-radius:20px;padding:10px 14px;font-size:14px}
+.sinput input::placeholder{color:var(--subtle)}
+.post-cmt-btn{font-size:14px;font-weight:800;color:var(--accent)}
+.mic-btn{width:34px;height:34px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mic-btn svg{width:16px;height:16px;fill:var(--muted)}
+/* VOICE PANEL */
+#voice-panel{max-height:420px}
+.vpbody{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:20px;padding:24px}
+.rring{width:96px;height:96px;border-radius:50%;background:var(--surface2);
+  border:3px solid var(--border);display:flex;align-items:center;justify-content:center;
+  transition:background .3s,border-color .3s,box-shadow .3s}
+.rring.rec{background:rgba(254,44,85,.12);border-color:var(--accent);animation:pulse 1.4s ease-out infinite}
+.rring svg{width:34px;height:34px;fill:var(--muted)}
+.rring.rec svg{fill:var(--accent)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(254,44,85,.4)}70%{box-shadow:0 0 0 20px rgba(254,44,85,0)}100%{box-shadow:0 0 0 0 rgba(254,44,85,0)}}
+.rstatus{font-size:14px;font-weight:600;color:var(--muted)}
+.rtimer{font-size:44px;font-weight:200;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.vactions{display:flex;gap:12px;width:100%}
+.btn-ghost{flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);
+  font-size:14px;font-weight:700;color:var(--muted);text-align:center}
+.btn-red{flex:1;padding:14px;border-radius:12px;background:var(--accent);
+  font-size:14px;font-weight:800;color:#fff;text-align:center}
+.btn-red:disabled{background:var(--surface2);color:var(--subtle)}
+/* UPLOAD */
+#upload-modal{max-height:88dvh}
+.ubody{flex:1;display:flex;flex-direction:column;gap:14px;padding:14px 16px;overflow-y:auto}
+.uzone{border:2px dashed var(--border);border-radius:16px;padding:44px 20px;
+  text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.uzone p{font-size:14px;color:var(--muted)}
+.btn-sel{background:var(--accent);color:#fff;font-size:14px;font-weight:800;padding:12px 24px;border-radius:24px}
+.uprev{width:100%;border-radius:12px;max-height:220px;object-fit:cover;background:#000}
+.ufield{display:flex;flex-direction:column;gap:6px}
+.ulabel{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.uinput{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:14px;width:100%}
+.uinput::placeholder{color:var(--subtle)}
+.usel{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:14px;width:100%;-webkit-appearance:none}
+.usel option{background:var(--surface)}
+.btn-post{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px;border-radius:12px;width:100%;text-align:center;margin-top:4px}
+.btn-post:disabled{background:var(--surface2);color:var(--subtle)}
+/* AUTH */
+#auth-modal{max-height:82dvh}
+.abody{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.atabs{display:flex;margin-bottom:4px}
+.atab{flex:1;text-align:center;padding:10px;font-size:15px;font-weight:800;
+  color:var(--muted);border-bottom:2px solid var(--border);transition:all .2s}
+.atab.active{color:var(--text);border-bottom-color:var(--accent)}
+.ainput{background:var(--surface2);border-radius:10px;padding:14px 16px;font-size:15px;width:100%}
+.ainput::placeholder{color:var(--subtle)}
+.asub{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px;border-radius:12px;width:100%;text-align:center}
+.adiv{display:flex;align-items:center;gap:10px;color:var(--subtle);font-size:12px}
+.adiv::before,.adiv::after{content:'';flex:1;height:1px;background:var(--border)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;
+  background:#fff;color:#333;font-size:15px;font-weight:700;padding:14px;border-radius:12px;width:100%}
+.aerr{background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ff6b6b}
+.aform-wrap{display:flex;flex-direction:column;gap:10px}
+/* DISCOVER */
+#screen-discover{padding-top:calc(var(--top)+8px);padding-bottom:calc(var(--nav)+8px);overflow-y:auto}
+#screen-discover::-webkit-scrollbar{display:none}
+.discover-inner{padding:8px 16px;display:flex;flex-direction:column;gap:18px}
+.sbar{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:12px;padding:0 14px;height:46px}
+.sbar svg{width:17px;height:17px;fill:var(--subtle);flex-shrink:0}
+.sbar input{flex:1;font-size:15px}
+.sbar input::placeholder{color:var(--subtle)}
+.dsec h3{font-size:16px;font-weight:800;margin-bottom:12px}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface2);border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;color:var(--muted);border:1px solid var(--border);transition:all .2s}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.dgrid-thumb{aspect-ratio:9/16;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative;cursor:pointer}
+.dgrid-thumb img{width:100%;height:100%;object-fit:cover}
+.dgrid-views{position:absolute;bottom:4px;left:4px;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.dres-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.dres-thumb{width:56px;height:72px;border-radius:6px;background:var(--surface2);overflow:hidden;flex-shrink:0}
+.dres-thumb img{width:100%;height:100%;object-fit:cover}
+.dres-title{font-size:14px;font-weight:700;line-height:1.3}
+.dres-meta{font-size:12px;color:var(--muted);margin-top:4px}
+/* NOTIFICATIONS */
+#screen-notifs{padding-top:var(--top);padding-bottom:var(--nav);overflow-y:auto;background:var(--bg)}
+#screen-notifs::-webkit-scrollbar{display:none}
+.ntabs-bar{display:flex;padding:0 16px;border-bottom:1px solid var(--border);overflow-x:auto;
+  scrollbar-width:none;position:sticky;top:0;background:var(--bg);z-index:10}
+.ntabs-bar::-webkit-scrollbar{display:none}
+.ntab{flex-shrink:0;font-size:13px;font-weight:700;padding:12px 14px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.ntab.active{color:var(--text);border-bottom-color:var(--text)}
+.notif-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.notif-item.unread{background:rgba(254,44,85,.04)}
+.nav2{width:42px;height:42px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0}
+.ni-body{flex:1}
+.ni-msg{font-size:13px;line-height:1.4}
+.ni-msg strong{font-weight:800}
+.ni-time{font-size:11px;color:var(--subtle);margin-top:3px}
+.ni-thumb{width:40px;height:40px;border-radius:6px;background:var(--surface2);
+  flex-shrink:0;overflow:hidden;font-size:18px;display:flex;align-items:center;justify-content:center}
+.ni-thumb img{width:100%;height:100%;object-fit:cover}
+/* PROFILE */
+#screen-profile{padding-top:var(--top);padding-bottom:var(--nav);overflow-y:auto;background:var(--bg)}
+#screen-profile::-webkit-scrollbar{display:none}
+.prof-cover{height:140px;background:linear-gradient(135deg,#1a1a2e,#16213e)}
+.prof-header{padding:0 16px 16px;border-bottom:1px solid var(--border)}
+.prof-toprow{display:flex;align-items:flex-end;gap:12px;margin-top:-40px;margin-bottom:12px}
+.prof-pic{width:78px;height:78px;border-radius:50%;border:3px solid var(--bg);background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;flex-shrink:0;overflow:hidden}
+.prof-pic img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.prof-dname{font-size:20px;font-weight:900}
+.prof-handle{font-size:13px;color:var(--muted);margin-top:2px}
+.prof-stats{display:flex;margin-bottom:12px;gap:1px}
+.pstat{flex:1;text-align:center;background:var(--surface2);padding:10px 4px;border-radius:4px}
+.pstat-num{font-size:17px;font-weight:900;display:block}
+.pstat-lbl{font-size:11px;color:var(--muted)}
+.prof-bio{font-size:14px;color:var(--muted);line-height:1.4;margin-bottom:12px}
+.prof-actions{display:flex;gap:8px;margin-bottom:12px}
+.btn-follow{flex:1;padding:10px;border-radius:8px;background:var(--accent);color:#fff;font-weight:800;font-size:14px;text-align:center}
+.btn-follow.ing{background:var(--surface2);color:var(--text)}
+.btn-share-p{width:38px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.btn-share-p svg{width:17px;height:17px;fill:var(--text)}
+.prof-content-tabs{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
+.ptab{flex:1;text-align:center;padding:12px 0;color:var(--muted);border-bottom:2px solid transparent;font-size:12px;font-weight:700;transition:all .2s}
+.ptab.active{color:var(--text);border-bottom-color:var(--text)}
+.ptab svg{width:18px;height:18px;fill:currentColor;display:block;margin:0 auto}
+.pvgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px}
+.pvthumb{aspect-ratio:9/16;background:var(--surface2);position:relative;cursor:pointer;overflow:hidden}
+.pvthumb img{width:100%;height:100%;object-fit:cover}
+.pvph{background:linear-gradient(135deg,#1a1a2e,#16213e);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px}
+.pvviews{position:absolute;bottom:4px;left:4px;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.signin-prompt{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center;gap:14px}
+.sp-icon{font-size:60px}
+.sp-title{font-size:22px;font-weight:900}
+.sp-sub{font-size:14px;color:var(--muted)}
+.btn-signin{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px 48px;border-radius:28px;margin-top:6px}
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--nav)+16px);left:50%;transform:translateX(-50%) translateY(12px);
+  background:rgba(255,255,255,.15);backdrop-filter:blur(10px);color:#fff;font-size:13px;font-weight:700;
+  padding:9px 18px;border-radius:20px;z-index:600;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+</style>
 </head>
 <body>
-    <div class="app" data-authenticated="{{ 'true' if current_user else 'false' }}" data-login-url="/" data-current-user-id="{{ current_user.id if current_user else '' }}">
-        <header class="topbar">
-            <div class="topbar-inner">
-                <div class="brand-block">
-                    <a class="top-logo" href="/feed">MV</a>
-                    <span class="brand-title">MV Pulse</span>
-                </div>
-                <div class="topbar-actions">
-                    <a class="icon-button" href="/feed#conversation-radar" aria-label="Search">⌕</a>
-                    <a class="icon-button" href="/notifications" aria-label="Notifications">◌</a>
-                    {% if current_user %}
-                    <a class="icon-button" href="/profile/{{ current_user.username }}" aria-label="Profile">☺</a>
-                    {% else %}
-                    <button class="icon-button" type="button" data-open-auth-modal data-auth-target="login" aria-label="Profile">☺</button>
-                    {% endif %}
-                </div>
-            </div>
-        </header>
 
-        <main class="screen {% if active_tab == 'home' %}active{% endif %}" data-screen="home">
-            <section class="feed-shell">
-                <div class="feed-stage">
-                    {% for item in feed_items %}
-                    {% if item.kind == 'hot_thread' %}
-                    <article class="thread-slide" id="thread-card-{{ item.highlighted_reply_id or item.reel_id }}">
-                        <div class="thread-slide-backdrop"></div>
-                        <div class="thread-content">
-                            <span class="thread-kicker"><span class="pulse-dot"></span> Hot voice thread</span>
-                            <div class="thread-copy">
-                                <h2><a href="{{ item.target_url }}">{{ item.title }}</a></h2>
-                                <p>{{ item.caption }}</p>
-                            </div>
-                            <div class="chip-row">
-                                <span class="stat-pill">heat {{ item.heat_score }}</span>
-                                <span class="stat-pill">{{ item.reply_count }} replies</span>
-                                <span class="stat-pill">depth {{ item.reply_depth }}</span>
-                                <span class="stat-pill">@{{ item.creator }}</span>
-                                {% if item.premium_room %}
-                                <span class="stat-pill">{{ item.premium_room.label }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="sheet-actions">
-                                <a class="sheet-link primary" href="{{ item.target_url }}">Open voice subtree</a>
-                                <a class="sheet-link" href="/video/{{ item.video_id }}">Open full reel</a>
-                                {% if item.premium_room %}
-                                <a class="sheet-link" href="{{ item.premium_room.target_url }}">{{ item.premium_room.upgrade_cta or 'Join premium room' }}</a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </article>
-                    {% else %}
-                    {% set video = item %}
-                    <article class="reel-slide" id="video-{{ video.id }}">
-                        <video class="reel-video autoplay-video" id="feed-video-{{ video.id }}" src="{{ video.video_url }}" muted loop playsinline preload="metadata"></video>
-                        <div class="reply-card reel-loading" data-video-loading-indicator>
-                            <strong>Loading video</strong>
-                            <div class="waveform"></div>
-                            <p>MV Pulse is buffering the next voice-first reel.</p>
-                        </div>
-                        <div class="reel-shade"></div>
-                        <div class="reel-top">
-                            <div class="creator-pill">
-                                <span class="creator-avatar">{{ (video.creator or 'U')[:1]|upper }}</span>
-                                <div class="creator-meta">
-                                    <strong>
-                                        {% if video.creator_username %}
-                                        <a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a>
-                                        {% else %}
-                                        @{{ video.creator }}
-                                        {% endif %}
-                                    </strong>
-                                    <span>{{ video.region }} · {{ video.topic }} · {{ video.language_label }}</span>
-                                </div>
-                            </div>
-                            <div class="chip-row">
-                                {% if video.thread_summary %}
-                                <span class="pill">{{ video.thread_summary.cluster_label }}</span>
-                                {% endif %}
-                                {% if video.premium_room %}
-                                <span class="pill">{{ video.premium_room.label }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="reel-bottom">
-                            <div class="reel-bottom-inner">
-                                <div class="reel-copy">
-                                    <div class="caption-shell" data-caption-shell>
-                                        <h2 class="creator-handle">
-                                            {% if video.creator_username %}
-                                            <a href="/profile/{{ video.creator_username }}">@{{ video.creator }}</a>
-                                            {% else %}
-                                            @{{ video.creator }}
-                                            {% endif %}
-                                        </h2>
-                                        <p class="caption-text">{{ video.caption or video.title }}</p>
-                                        <button class="caption-toggle" type="button" data-toggle-caption>More</button>
-                                    </div>
-                                </div>
-                                <div class="rail">
-                                    <div class="rail-action">
-                                        <button class="rail-button {% if video.is_liked %}active{% endif %}" type="button" data-video-like-button data-video-id="{{ video.id }}" data-liked="{{ 'true' if video.is_liked else 'false' }}">♥</button>
-                                        <div class="rail-action-label"><strong data-video-like-count>{{ video.likes }}</strong><span>Like</span></div>
-                                    </div>
-                                    <div class="rail-action">
-                                        <button class="rail-button voice-primary" type="button" data-open-feed-voice-sheet data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">🎙</button>
-                                        <div class="rail-action-label"><strong>{{ video.voice_replies }}</strong><span>Voice Replies</span></div>
-                                    </div>
-                                    <div class="rail-action">
-                                        <button class="rail-button" type="button" data-video-repost-button data-video-url="/video/{{ video.id }}#record">↻</button>
-                                        <div class="rail-action-label"><strong>{{ video.text_comments_count }}</strong><span>Repost</span></div>
-                                    </div>
-                                    <div class="rail-action">
-                                        <button class="rail-button" type="button" data-video-share-button data-video-id="{{ video.id }}">↗</button>
-                                        <div class="rail-action-label"><strong data-video-share-count>{{ video.shares_count }}</strong><span>Share</span></div>
-                                    </div>
-                                    <div class="rail-action">
-                                        <button class="rail-button" type="button" data-open-more-menu data-video-id="{{ video.id }}" data-video-url="/video/{{ video.id }}" data-download-url="{{ video.video_url }}">⋯</button>
-                                        <div class="rail-action-label"><strong>Menu</strong><span>More</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="voice-cta" type="button" data-open-feed-voice-sheet data-video-id="{{ video.id }}" data-video-title="{{ video.title|e }}" data-video-creator="{{ video.creator|e }}" data-video-url="/video/{{ video.id }}#record" data-replies="{{ video.voice_replies }}" data-comments="{{ video.text_comments_count }}" data-summary="{{ (video.thread_summary.summary_text if video.thread_summary else '')|e }}" data-follow-user-id="{{ video.creator_id or '' }}" data-following="{{ 'true' if video.creator_is_followed else 'false' }}" data-follow-allowed="{{ 'true' if video.can_follow_creator else 'false' }}" data-video-download-url="{{ video.video_url }}" data-video-profile-url="{{ ('/profile/' ~ video.creator_username) if video.creator_username else '' }}">🎙 Speak Your View</button>
-                    </article>
-                    {% endif %}
-                    {% else %}
-                    <article class="panel" id="conversation-radar">
-                        <h3>No videos yet</h3>
-                        <p>Upload the first Umbono Wami clip and seed the voice thread.</p>
-                    </article>
-                    {% endfor %}
-                </div>
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="topbar-logo" href="/">MV</a>
+  <div id="topbar-home-center" class="feed-tabs">
+    <button class="feed-tab active" data-feed="for_you">For You</button>
+    <button class="feed-tab" data-feed="following">Following</button>
+  </div>
+  <span class="topbar-title hidden" id="topbar-screen-title"></span>
+  <div class="topbar-actions">
+    <button class="icon-btn hidden" id="topbar-search-btn" onclick="switchScreen('discover')" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+  </div>
+</header>
 
-                <div class="secondary-grid">
-                    <article class="panel">
-                        {% if not current_user %}
-                        <div class="project-item">
-                            <strong>Visitors can watch public videos now</strong>
-                            <p>Likes, follows, comments, saves, and voice replies will prompt for sign-in. Watching stays open.</p>
-                        </div>
-                        {% endif %}
-                        <h3>Conversation radar</h3>
-                        <p>Search the existing ranking and conversation intelligence signals without leaving the feed.</p>
-                        <form action="/feed" method="get">
-                            <input type="text" name="q" value="{{ discovery_query }}" placeholder="Search politics, football, religion, funny debates...">
-                            <input type="text" name="topic" value="{{ discovery_topic }}" placeholder="Topic label">
-                            <input type="text" name="tone" value="{{ discovery_tone }}" placeholder="Tone label">
-                            <button class="submit" type="submit">Search conversation intelligence</button>
-                        </form>
-                    </article>
-                    <article class="panel">
-                        <h3>Live thread intelligence</h3>
-                        {% if active_thread_summary %}
-                        <div class="insight-grid">
-                            <div class="insight-card">
-                                <strong>Summary</strong>
-                                <p>{{ active_thread_summary.summary_text }}</p>
-                            </div>
-                            <div class="insight-card">
-                                <strong>Cluster</strong>
-                                <p>{{ active_thread_summary.cluster_label }}</p>
-                                <p>controversy {{ active_thread_summary.controversy_score }} · velocity {{ active_thread_summary.reply_velocity }}</p>
-                            </div>
-                            <div class="insight-card">
-                                <strong>Dominant topics</strong>
-                                <p>{{ active_intelligence.dominant_topics|join(', ') if active_intelligence.dominant_topics else 'Processing replies...' }}</p>
-                            </div>
-                        </div>
-                        {% else %}
-                        <p>No active thread intelligence yet.</p>
-                        {% endif %}
-                    </article>
-                </div>
+<!-- SCREENS -->
+<div class="screens">
+  <div class="screen active" id="screen-home"><div id="feed"></div></div>
 
-                {% if discovery_results %}
-                <section class="reply-list">
-                    {% for result in discovery_results %}
-                    <a class="reply-card" href="{{ result.target_url }}">
-                        <strong>{{ result.cluster_label }}</strong>
-                        <p>{{ result.summary_text }}</p>
-                        <div class="meta-row">
-                            {% if result.tone_label %}<span class="pill">{{ result.tone_label }}</span>{% endif %}
-                            <span class="pill">controversy {{ result.controversy_score }}</span>
-                        </div>
-                    </a>
-                    {% endfor %}
-                </section>
-                {% endif %}
-            </section>
-        </main>
-
-        <main class="screen {% if active_tab == 'upload' %}active{% endif %}" data-screen="upload">
-            <div class="secondary-grid">
-                <article class="panel">
-                    <h3>Upload</h3>
-                    <p>Post a short video and seed the next voice discussion.</p>
-                    {% if current_user %}
-                    <form action="/upload" method="post" enctype="multipart/form-data">
-                        <input type="text" name="title" placeholder="Video title" required>
-                        <textarea name="caption" placeholder="Add a caption in English or isiZulu"></textarea>
-                        <input type="text" name="topic" placeholder="Topic">
-                        <input type="text" name="region" placeholder="Region">
-                        <select name="language_code">
-                            {% for code, label in locale_options.items() %}
-                            <option value="{{ code }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                        <input type="file" name="video" accept="video/*" required>
-                        <button class="submit" type="submit">Upload video</button>
-                    </form>
-                    {% else %}
-                    <div class="project-item">
-                        <strong>Sign in required</strong>
-                        <p>Uploads only save when you are signed in. Public visitors can browse the feed, but they cannot publish a video yet.</p>
-                    </div>
-                    <div class="sheet-actions">
-                        <button class="sheet-link primary" type="button" data-open-auth-modal data-auth-target="login">Sign in to upload</button>
-                    </div>
-                    {% endif %}
-                </article>
-                <article class="panel">
-                    <h3>Saved drafts</h3>
-                    <div class="project-list">
-                        {% if not current_user %}
-                        <div class="project-item">Sign in to see your drafts and uploaded videos.</div>
-                        {% else %}
-                        {% for project in saved_projects %}
-                        <div class="project-item">
-                            <strong>{{ project.title }}</strong>
-                            <p>{{ project.kind }} · {{ project.status }}</p>
-                        </div>
-                        {% else %}
-                        <div class="project-item">No saved drafts yet.</div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                </article>
-            </div>
-        </main>
-
-        <main class="screen {% if active_tab == 'replies' %}active{% endif %}" data-screen="replies">
-            <section class="reply-list">
-                {% for reply in recent_voice_threads %}
-                <article class="reply-card">
-                    <strong>@{{ reply.username }}</strong>
-                    <p>{{ reply.transcript or 'Voice note with no transcript yet.' }}</p>
-                    <div class="waveform"></div>
-                    <audio controls preload="metadata" src="{{ reply.audio_url }}"></audio>
-                    <div class="sheet-actions">
-                        <button class="ghost speed-button" type="button" data-rate="1">1x</button>
-                        <button class="ghost speed-button" type="button" data-rate="1.5">1.5x</button>
-                        <a class="sheet-link" href="/video/{{ reply.video_id }}">Open thread</a>
-                    </div>
-                </article>
-                {% else %}
-                <article class="panel">
-                    <h3>No voice replies yet</h3>
-                    <p>The first replies will surface here with inline playback.</p>
-                </article>
-                {% endfor %}
-            </section>
-        </main>
-
-        <main class="screen {% if active_tab == 'notifications' %}active{% endif %}" data-screen="notifications">
-            <section class="notification-list">
-                {% set group_labels = {'today': 'Today', 'this_week': 'This week', 'older': 'Older'} %}
-                {% set kind_labels = {'voice_reply': 'Voice reply', 'like': 'Like', 'follow': 'Follow', 'save': 'Save', 'comment': 'Comment', 'repost': 'Repost'} %}
-                {% for group_key, label in group_labels.items() %}
-                    {% set items = notification_groups[group_key] %}
-                    {% if items %}
-                    <article class="panel">
-                        <h3>{{ label }}</h3>
-                        <div class="notification-list">
-                            {% for item in items %}
-                            <a class="notification-item" href="{{ item.target_url }}">
-                                <strong>{{ item.message }}</strong>
-                                <div class="notification-meta">
-                                    <span class="pill">{{ kind_labels.get(item.kind, item.kind|replace('_', ' ')|title) }}</span>
-                                    <span>{{ item.created_at }}</span>
-                                </div>
-                            </a>
-                            {% endfor %}
-                        </div>
-                    </article>
-                    {% endif %}
-                {% endfor %}
-                {% if not notification_groups.today and not notification_groups.this_week and not notification_groups.older %}
-                <article class="panel">
-                    <h3>No notifications yet</h3>
-                    <p>Follow events, voice replies, and thread activity will land here.</p>
-                </article>
-                {% endif %}
-            </section>
-        </main>
-
-        <main class="screen {% if active_tab == 'profile' %}active{% endif %}" data-screen="profile">
-            <div class="profile-grid">
-                <article class="profile-panel">
-                    {% if profile_user %}
-                    <h3>@{{ profile_user.username }}</h3>
-                    <p>{{ profile_stats.followers }} followers · {{ profile_stats.following }} following</p>
-                    <p>{{ profile_stats.videos }} videos · {{ profile_stats.replies }} voice replies</p>
-                    <p>Creator score {{ profile_stats.creator_score }}</p>
-                    {% if current_user and profile_user and current_user.username != profile_user.username %}
-                    <button class="submit {% if is_following_profile %}active{% endif %}" type="button" data-follow-button data-target-user-id="{{ profile_user.id }}" data-following="{{ 'true' if is_following_profile else 'false' }}">{% if is_following_profile %}Following{% else %}Follow{% endif %}</button>
-                    {% endif %}
-                    {% else %}
-                    <h3>Profile</h3>
-                    <p>Sign in to unlock your creator profile.</p>
-                    {% endif %}
-                </article>
-                <article class="profile-panel">
-                    <h3>Posted videos</h3>
-                    <div class="profile-video-list">
-                        {% for video in profile_videos %}
-                        <div class="profile-video-item">
-                            <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
-                            <p>{{ video.voice_replies }} voice replies · {{ video.likes }} likes</p>
-                        </div>
-                        {% else %}
-                        <div class="profile-video-item">No posted videos yet.</div>
-                        {% endfor %}
-                    </div>
-                </article>
-            </div>
-        </main>
-
-        <nav class="bottom-nav" aria-label="Bottom navigation">
-            <a href="/feed" class="tab-link {% if active_tab == 'home' %}active{% endif %}">⌂</a>
-            <a href="/feed#conversation-radar" class="tab-link">⌕</a>
-            <a href="/upload" class="tab-link {% if active_tab == 'upload' %}active{% endif %}">＋</a>
-            <a href="/notifications" class="tab-link {% if active_tab == 'notifications' %}active{% endif %}">◌{% if notifications_unread_count %}<span class="badge" data-unread-badge>{{ notifications_unread_count }}</span>{% endif %}</a>
-            {% if current_user %}
-            <a href="/profile/{{ current_user.username }}" class="tab-link {% if active_tab == 'profile' %}active{% endif %}">☺</a>
-            {% else %}
-            <button class="tab-link" type="button" data-open-auth-modal data-auth-target="login">☺</button>
-            {% endif %}
-        </nav>
+  <div class="screen hidden" id="screen-discover">
+    <div class="discover-inner">
+      <div class="sbar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" placeholder="Search videos, people, topics…" autocomplete="off">
+      </div>
+      <div class="dsec" id="topic-section"><h3>Trending Topics</h3><div class="chip-wrap" id="topic-chips"></div></div>
+      <div class="dsec hidden" id="search-results-sec"><h3 id="search-results-title">Results</h3><div id="search-results"></div></div>
+      <div class="dsec"><h3>Videos</h3><div class="dgrid" id="discover-grid"></div></div>
     </div>
+  </div>
 
-    <div class="sheet-backdrop" data-sheet-backdrop></div>
+  <div class="screen hidden" id="screen-notifs">
+    <div class="ntabs-bar">
+      <button class="ntab active" data-kind="all">All</button>
+      <button class="ntab" data-kind="like">Likes</button>
+      <button class="ntab" data-kind="text_comment">Comments</button>
+      <button class="ntab" data-kind="voice_reply">Voice</button>
+      <button class="ntab" data-kind="follow">Followers</button>
+      <button class="ntab" data-kind="mention">Mentions</button>
+    </div>
+    <div id="notifs-list"></div>
+  </div>
 
-    <div class="sheet" data-feed-voice-sheet>
-        <div class="sheet-card">
-            <div class="sheet-handle"></div>
-            <div class="sheet-body">
-                <div class="sheet-header">
-                    <div>
-                        <h3 data-sheet-title>Voice thread</h3>
-                        <p class="meta-copy" data-sheet-summary>Open the full video page to speak and continue the conversation.</p>
-                    </div>
-                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
-                </div>
-                <div class="chip-row">
-                    <span class="pill" data-sheet-replies>0 voice replies</span>
-                    <span class="pill" data-sheet-comments>0 comments</span>
-                </div>
-                <div class="sheet-actions">
-                    <a class="sheet-link primary" href="/feed" data-sheet-open-thread>Open thread</a>
-                    <a class="sheet-link" href="/feed" data-sheet-record>Speak now</a>
-                    <a class="sheet-link" href="/feed" data-sheet-download download>Download</a>
-                    <a class="sheet-link" href="/feed" data-sheet-profile hidden>Creator page</a>
-                    <button class="sheet-link" type="button" data-sheet-follow hidden>Follow creator</button>
-                </div>
-            </div>
+  <div class="screen hidden" id="screen-profile"><div id="profile-content"></div></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-screen="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="nav-label">Home</span>
+  </button>
+  <button class="nav-btn" data-screen="discover">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span class="nav-label">Discover</span>
+  </button>
+  <button class="nav-btn" id="create-nav-btn">
+    <div class="create-pill"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="#000" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+    <span class="nav-label">Create</span>
+  </button>
+  <button class="nav-btn" data-screen="notifs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span class="nbadge hidden" id="notif-badge">0</span>
+    <span class="nav-label">Activity</span>
+  </button>
+  <button class="nav-btn" data-screen="profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span class="nav-label">Profile</span>
+  </button>
+</nav>
+
+<!-- BACKDROP -->
+<div class="backdrop" id="backdrop" onclick="closeAllSheets()"></div>
+
+<!-- COMMENTS + VOICE SHEET -->
+<div class="sheet" id="comments-sheet">
+  <div class="shandle"></div>
+  <div class="sheader">
+    <div class="stabs" id="comment-tabs">
+      <button class="stab active" data-tab="comments">Comments</button>
+      <button class="stab" data-tab="voice">Voice Replies</button>
+    </div>
+    <button class="sclose" onclick="closeSheet('comments-sheet')">✕</button>
+  </div>
+  <div class="sbody" id="comments-body"></div>
+  <div class="sinput">
+    <input type="text" id="comment-input" placeholder="Add a comment…" maxlength="280">
+    <button class="mic-btn" onclick="openVoicePanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <button class="post-cmt-btn" onclick="submitComment()">Post</button>
+  </div>
+</div>
+
+<!-- VOICE PANEL -->
+<div class="sheet" id="voice-panel">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Record Voice Reply</span><button class="sclose" onclick="closeSheet('voice-panel')">✕</button></div>
+  <div class="vpbody">
+    <button class="rring" id="record-ring" onclick="toggleRecording()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+    </button>
+    <p class="rstatus" id="record-status">Tap to Record</p>
+    <p class="rtimer" id="record-timer">00:00</p>
+    <div class="vactions">
+      <button class="btn-ghost" onclick="cancelRecording()">Cancel</button>
+      <button class="btn-red" id="send-voice-btn" disabled onclick="sendVoiceReply()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="sheet" id="upload-modal">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Create Post</span><button class="sclose" onclick="closeSheet('upload-modal')">✕</button></div>
+  <div class="ubody">
+    <div class="uzone" id="upload-zone">
+      <div style="font-size:48px">📹</div>
+      <p>Add a video to share</p>
+      <button class="btn-sel" onclick="document.getElementById('vid-file').click()">Select Video</button>
+    </div>
+    <div id="upload-form" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+      <video class="uprev" id="upload-preview" controls muted playsinline></video>
+      <div class="ufield"><label class="ulabel">Title *</label><input class="uinput" id="up-title" placeholder="Give your video a title…"></div>
+      <div class="ufield"><label class="ulabel">Caption</label><input class="uinput" id="up-caption" placeholder="Describe your video…"></div>
+      <div class="ufield"><label class="ulabel">Topic</label>
+        <select class="usel" id="up-topic"><option value="general">General</option><option value="sports">Sports</option><option value="music">Music</option><option value="comedy">Comedy</option><option value="news">News</option><option value="education">Education</option></select></div>
+      <div class="ufield"><label class="ulabel">Region</label>
+        <select class="usel" id="up-region"><option value="Durban">Durban</option><option value="Johannesburg">Johannesburg</option><option value="Cape Town">Cape Town</option><option value="Pretoria">Pretoria</option><option value="Other">Other</option></select></div>
+      <button class="btn-post" id="upload-submit" onclick="submitUpload()">Post Video</button>
+    </div>
+  </div>
+  <input type="file" id="vid-file" accept="video/*" style="display:none">
+</div>
+
+<!-- AUTH MODAL -->
+<div class="sheet" id="auth-modal">
+  <div class="shandle"></div>
+  <div class="abody">
+    <div class="atabs">
+      <button class="atab active" data-aform="login">Sign In</button>
+      <button class="atab" data-aform="signup">Sign Up</button>
+    </div>
+    {% if auth_message %}<div class="aerr">{{ auth_message }}</div>{% endif %}
+    <a class="gbtn" href="/auth/google">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </a>
+    <div class="adiv">or</div>
+    <form id="login-form" action="/login" method="POST">
+      <input type="hidden" name="remember_me" value="true">
+      <div class="aform-wrap">
+        <input class="ainput" name="email" type="email" placeholder="Email" required autocomplete="email">
+        <input class="ainput" name="password" type="password" placeholder="Password" required autocomplete="current-password">
+        <button class="asub" type="submit">Sign In</button>
+      </div>
+    </form>
+    <form id="signup-form" action="/signup" method="POST" class="hidden">
+      <div class="aform-wrap">
+        <input class="ainput" name="username" type="text" placeholder="Username" required autocomplete="username">
+        <input class="ainput" name="email" type="email" placeholder="Email" required autocomplete="email">
+        <input class="ainput" name="password" type="password" placeholder="Password (min 8 chars)" required autocomplete="new-password">
+        <input class="ainput" name="password_confirmation" type="password" placeholder="Confirm password" required>
+        <button class="asub" type="submit">Create Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- SERVER DATA -->
+<script>
+window.FEED_ITEMS = {{ feed_items | tojson }};
+window.CURRENT_USER = {{ current_user_payload | tojson }};
+window.PROFILE_STATS = {{ profile_stats | tojson }};
+window.PROFILE_VIDEOS = {{ profile_videos | tojson }};
+window.PROFILE_USER = {{ (profile_user.username if profile_user else '') | tojson }};
+window.PROFILE_AVATAR = {{ (profile_user.avatar_url if profile_user else '') | tojson }};
+window.PROFILE_IS_OWNER = {{ profile_is_owner | tojson }};
+window.NOTIFICATIONS = {{ notifications | tojson }};
+window.NOTIFS_UNREAD = {{ notifications_unread_count | default(0) }};
+window.IS_FOLLOWING = {{ is_following_profile | tojson }};
+window.ACTIVE_TAB = {{ active_tab | tojson }};
+</script>
+<script>
+// ── STATE ──
+const S={screen:'home',feedTab:'for_you',currentIdx:0,muted:false,openSheet:null,
+  commentVideoId:null,commentTab:'comments',recording:false,mediaRecorder:null,
+  recordedChunks:[],recordTimer:null,recordSeconds:0,progressAF:null,
+  liked:new Set(),saved:new Set()};
+
+const FEED=window.FEED_ITEMS||[];
+const ME=window.CURRENT_USER;
+const PROF_STATS=window.PROFILE_STATS||{followers:0,following:0,videos:0,replies:0};
+const PROF_VIDEOS=window.PROFILE_VIDEOS||[];
+const PROF_USER=window.PROFILE_USER||'';
+const PROF_AVATAR=window.PROFILE_AVATAR||'';
+const PROF_IS_OWNER=window.PROFILE_IS_OWNER||false;
+const NOTIFS=window.NOTIFICATIONS||[];
+const NOTIFS_UNREAD=window.NOTIFS_UNREAD||0;
+const IS_FOLLOWING=window.IS_FOLLOWING||false;
+
+FEED.forEach(i=>{if(i.kind==='video'){if(i.is_liked)S.liked.add(i.id);if(i.is_saved)S.saved.add(i.id);}});
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  initBadge();renderFeed();initNavigation();initFeedTabs();
+  initDiscoverScreen();initNotifScreen();renderProfileScreen();
+  initSheetGestures();initUploadInput();initAuthTabs();initCommentTabs();
+  if(window.ACTIVE_TAB&&window.ACTIVE_TAB!=='home')switchScreen(window.ACTIVE_TAB);
+});
+
+// ── TOAST ──
+let _tt;
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('show'),2400);}
+
+// ── BADGE ──
+function initBadge(){const b=document.getElementById('notif-badge');if(NOTIFS_UNREAD>0){b.textContent=NOTIFS_UNREAD>99?'99+':NOTIFS_UNREAD;b.classList.remove('hidden');}}
+
+// ── NAVIGATION ──
+function switchScreen(name){
+  if(S.screen===name)return;
+  pauseCurrentVideo();
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.classList.add('hidden');});
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const scr=document.getElementById('screen-'+name);
+  if(scr){scr.classList.remove('hidden');scr.classList.add('active');}
+  const nb=document.querySelector(`.nav-btn[data-screen="${name}"]`);
+  if(nb)nb.classList.add('active');
+  const hc=document.getElementById('topbar-home-center');
+  const ot=document.getElementById('topbar-screen-title');
+  const sb=document.getElementById('topbar-search-btn');
+  const titles={discover:'Discover',notifs:'Activity',profile:'Profile'};
+  if(name==='home'){
+    hc.classList.remove('hidden');ot.classList.add('hidden');sb.classList.add('hidden');
+    if(S.screen!=='home')resumeCurrentVideo();
+  }else{
+    hc.classList.add('hidden');ot.textContent=titles[name]||'';ot.classList.remove('hidden');sb.classList.remove('hidden');
+  }
+  S.screen=name;
+}
+
+function initNavigation(){
+  document.querySelectorAll('.nav-btn[data-screen]').forEach(b=>b.addEventListener('click',()=>switchScreen(b.dataset.screen)));
+  document.getElementById('create-nav-btn').addEventListener('click',()=>{if(!ME){openAuthModal();return;}openSheet('upload-modal');});
+}
+
+// ── HELPERS ──
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function fmtInit(s){return(String(s||'?')[0]).toUpperCase();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function timeAgo(iso){if(!iso)return'';const d=new Date(iso),n=new Date(),sec=Math.floor((n-d)/1000);if(sec<60)return sec+'s';if(sec<3600)return Math.floor(sec/60)+'m';if(sec<86400)return Math.floor(sec/3600)+'h';return Math.floor(sec/86400)+'d';}
+async function api(url,method='GET',body=null){
+  const o={method,credentials:'same-origin',headers:{Accept:'application/json'}};
+  if(body){o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}
+  const r=await fetch(url,o);
+  if(r.status===401){openAuthModal();throw new Error('unauth');}
+  if(!r.ok)throw new Error('api '+r.status);
+  return r.json();
+}
+
+// ── SVG ICONS ──
+const SVG={
+  heart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  comment:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  share:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+  mic:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>`,
+  bookmark:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
+  soundOn:`<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
+  soundOff:`<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2"/></svg>`,
+  play:`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg>`,
+};
+
+// ── FEED ──
+function renderFeed(){
+  const feed=document.getElementById('feed');
+  if(!FEED.length){
+    feed.innerHTML=`<div class="vslide"><div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">No videos yet</p><p class="vplaceholder-sub">Be the first to upload</p></div></div>`;
+    return;
+  }
+  FEED.forEach((item,idx)=>{
+    const slide=document.createElement('div');
+    slide.className='vslide';slide.dataset.idx=idx;
+    if(item.kind==='hot_thread'){
+      slide.innerHTML=`<div class="ht-slide"><span class="ht-label">🔥 Hot Thread</span><h2 class="ht-title">${esc(item.title||'')}</h2><p class="ht-meta">${fmtNum(item.reply_count)} replies · ${esc(item.creator||'')}</p><p class="ht-meta">${esc(item.caption||'')}</p><a class="ht-cta" href="${esc(item.target_url||'#')}">${esc(item.cta_text||'Join Discussion')}</a></div>`;
+    } else {
+      slide.dataset.videoid=item.id;
+      const liked=S.liked.has(item.id),saved=S.saved.has(item.id),hasV=item.video_url&&item.video_url!=='null';
+      slide.innerHTML=`
+        ${hasV?`<video class="slide-vid" preload="metadata" playsinline loop muted data-src="${esc(item.video_url)}"></video>`:''}
+        ${!hasV?`<div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">${esc(item.title||'Video')}</p><p class="vplaceholder-sub">${esc(item.caption||'')}</p></div>`:''}
+        <div class="grad-top"></div><div class="grad-bot"></div>
+        <div class="play-flash" id="pf-${idx}"><div class="play-circle">${SVG.play}</div></div>
+        <div class="heart-burst" id="hb-${idx}"><span>❤️</span></div>
+        <button class="sound-btn" onclick="toggleMute(event)">${S.muted?SVG.soundOff:SVG.soundOn}</button>
+        <div class="creator-info">
+          <div class="creator-row">
+            <div class="cavatar">${fmtInit(item.creator||'?')}</div>
+            <span class="cname">@${esc(item.creator_username||item.creator||'unknown')}</span>
+            ${item.can_follow_creator?`<button class="follow-pill${item.creator_is_followed?' following':''}" data-creator="${esc(item.creator_username||'')}" onclick="followUser(this,event)">${item.creator_is_followed?'Following':'+ Follow'}</button>`:''}
+          </div>
+          <p class="vcaption" onclick="this.classList.toggle('exp')">${esc(item.caption||item.title||'')}</p>
+          ${item.topic?`<span class="vtags">#${esc(item.topic)} #${esc(item.region||'')}</span>`:''}
         </div>
-    </div>
-
-    <div class="sheet" data-more-sheet>
-        <div class="sheet-card">
-            <div class="sheet-handle"></div>
-            <div class="sheet-body">
-                <div class="sheet-header">
-                    <div>
-                        <h3>More actions</h3>
-                        <p class="meta-copy">Share, repost, save, report, or copy a direct link.</p>
-                    </div>
-                    <button class="menu-button" type="button" data-close-sheet aria-label="Close overlay">&times;</button>
-                </div>
-                <div class="sheet-actions">
-                    <button class="sheet-link primary" type="button" data-more-share>Share</button>
-                    <a class="sheet-link" href="/feed" data-more-repost>Repost in thread</a>
-                    <button class="sheet-link" type="button" data-more-save>Save</button>
-                    <button class="sheet-link" type="button" data-more-copy>Copy link</button>
-                    <a class="sheet-link" href="mailto:support@mv-pulse.local?subject=Report%20video" data-more-report>Report</a>
-                    <a class="sheet-link" href="/feed" data-more-download download>Download</a>
-                </div>
-            </div>
+        <div class="action-bar">
+          <button class="abtn" onclick="likeVideo(${item.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count" id="lc-${item.id}">${fmtNum(item.likes)}</span></button>
+          <button class="abtn" onclick="openComments(${item.id})"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((item.text_comments_count||0)+(item.voice_replies||0))}</span></button>
+          <button class="abtn" onclick="shareVideo(${item.id})"><div class="abtn-icon">${SVG.share}</div><span class="abtn-count">${fmtNum(item.shares_count)}</span></button>
+          <button class="abtn" onclick="openVoicePanelForVideo(${item.id})"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(item.voice_replies)}</span></button>
+          <button class="abtn" onclick="saveVideo(${item.id},this)"><div class="abtn-icon${saved?' saved':''}">${SVG.bookmark}</div><span class="abtn-count">${fmtNum(item.saves_count)}</span></button>
         </div>
+        <div class="vprogress"><div class="vprogress-fill" id="progfill-${idx}"></div></div>
+        <div class="speed-picker" id="sp-${idx}">
+          <button class="spd" onclick="setSpeed(.5,${idx},this)">0.5x</button>
+          <button class="spd active" onclick="setSpeed(1,${idx},this)">1x</button>
+          <button class="spd" onclick="setSpeed(1.5,${idx},this)">1.5x</button>
+          <button class="spd" onclick="setSpeed(2,${idx},this)">2x</button>
+        </div>`;
+      attachGestures(slide,item,idx);
+    }
+    feed.appendChild(slide);
+  });
+  initIntersectionObserver();
+}
+
+function attachGestures(slide,item,idx){
+  let tapTimer=null,tapCount=0,longTimer=null;
+  slide.addEventListener('touchstart',()=>{
+    longTimer=setTimeout(()=>{document.getElementById('sp-'+idx)?.classList.add('open');longTimer=null;},500);
+  },{passive:true});
+  slide.addEventListener('touchend',e=>{
+    if(longTimer){clearTimeout(longTimer);longTimer=null;}
+    const sp=document.getElementById('sp-'+idx);
+    if(sp?.classList.contains('open')){sp.classList.remove('open');return;}
+    if(e.target.closest('.action-bar,.sound-btn,.follow-pill'))return;
+    tapCount++;
+    if(tapCount===1){tapTimer=setTimeout(()=>{tapCount=0;togglePlay(idx);},250);}
+    else if(tapCount>=2){clearTimeout(tapTimer);tapCount=0;doubleTapLike(item.id,idx);}
+  },{passive:true});
+}
+
+function initIntersectionObserver(){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      const slide=entry.target,idx=parseInt(slide.dataset.idx),vid=slide.querySelector('video');
+      if(entry.isIntersecting&&entry.intersectionRatio>=0.6){
+        S.currentIdx=idx;
+        if(vid&&!vid.src&&vid.dataset.src){vid.src=vid.dataset.src;vid.load();}
+        if(vid){vid.muted=S.muted;vid.play().catch(()=>{});}
+        startProgress(idx,vid);preloadAdj(idx);
+      } else {
+        if(vid){vid.pause();vid.currentTime=0;}
+        stopProgress();
+      }
+    });
+  },{threshold:[0.6]});
+  document.querySelectorAll('.vslide').forEach(s=>obs.observe(s));
+}
+
+function preloadAdj(idx){
+  [1,2,-1].forEach(d=>{
+    const next=document.querySelector(`.vslide[data-idx="${idx+d}"]`);
+    if(!next)return;const vid=next.querySelector('video');
+    if(vid&&!vid.src&&vid.dataset.src){vid.src=vid.dataset.src;vid.load();}
+  });
+}
+
+function startProgress(idx,vid){
+  stopProgress();if(!vid)return;
+  const fill=document.getElementById('progfill-'+idx);if(!fill)return;
+  function tick(){if(vid.duration)fill.style.width=(vid.currentTime/vid.duration*100)+'%';S.progressAF=requestAnimationFrame(tick);}
+  S.progressAF=requestAnimationFrame(tick);
+}
+function stopProgress(){if(S.progressAF){cancelAnimationFrame(S.progressAF);S.progressAF=null;}}
+
+function togglePlay(idx){
+  const vid=document.querySelector(`.vslide[data-idx="${idx}"] video`);if(!vid)return;
+  const flash=document.getElementById('pf-'+idx);
+  if(vid.paused){vid.play();}else{vid.pause();flash?.classList.add('show');setTimeout(()=>flash?.classList.remove('show'),600);}
+}
+function pauseCurrentVideo(){document.querySelector(`.vslide[data-idx="${S.currentIdx}"] video`)?.pause();}
+function resumeCurrentVideo(){document.querySelector(`.vslide[data-idx="${S.currentIdx}"] video`)?.play().catch(()=>{});}
+
+function toggleMute(e){
+  e.stopPropagation();S.muted=!S.muted;
+  document.querySelectorAll('video').forEach(v=>v.muted=S.muted);
+  document.querySelectorAll('.sound-btn').forEach(b=>b.innerHTML=S.muted?SVG.soundOff:SVG.soundOn);
+}
+
+function initFeedTabs(){
+  document.querySelectorAll('.feed-tab').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.feed-tab').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');S.feedTab=b.dataset.feed;
+    });
+  });
+}
+
+// ── ACTIONS ──
+async function likeVideo(id,btn){
+  if(!ME){openAuthModal();return;}
+  const icon=btn.querySelector('.abtn-icon'),count=document.getElementById('lc-'+id),isLiked=S.liked.has(id);
+  isLiked?S.liked.delete(id):S.liked.add(id);icon.classList.toggle('liked',!isLiked);
+  try{const r=await api('/api/videos/'+id+'/like','POST');if(r&&count)count.textContent=fmtNum(r.likes||r.likes_count||0);}
+  catch(e){isLiked?S.liked.add(id):S.liked.delete(id);icon.classList.toggle('liked',isLiked);toast('Could not like — try again');}
+}
+
+function doubleTapLike(id,idx){
+  const burst=document.getElementById('hb-'+idx);
+  if(burst){burst.classList.remove('fire');void burst.offsetWidth;burst.classList.add('fire');}
+  if(!S.liked.has(id)&&ME){const btn=document.querySelector(`[onclick="likeVideo(${id},this)"]`);if(btn)likeVideo(id,btn);}
+}
+
+async function saveVideo(id,btn){
+  if(!ME){openAuthModal();return;}
+  const icon=btn.querySelector('.abtn-icon'),isSaved=S.saved.has(id);
+  isSaved?S.saved.delete(id):S.saved.add(id);icon.classList.toggle('saved',!isSaved);
+  if(!isSaved)toast('Saved');
+  try{await api('/api/videos/'+id+'/save','POST');}
+  catch(e){isSaved?S.saved.add(id):S.saved.delete(id);icon.classList.toggle('saved',isSaved);}
+}
+
+async function shareVideo(id){
+  const url=location.origin+'/video/'+id;
+  try{if(navigator.share)await navigator.share({title:'MV Pulse',url});else{await navigator.clipboard.writeText(url);toast('Link copied!');}
+  api('/api/videos/'+id+'/share','POST').catch(()=>{});}catch(e){toast('Link copied!');}
+}
+
+async function followUser(btn,e){
+  e.stopPropagation();if(!ME){openAuthModal();return;}
+  const username=btn.dataset.creator,following=btn.classList.contains('following');
+  btn.textContent=following?'+ Follow':'Following';btn.classList.toggle('following',!following);
+  try{await api('/api/profile/'+username+'/follow','POST');}
+  catch(e){btn.textContent=following?'Following':'+ Follow';btn.classList.toggle('following',following);}
+}
+
+function setSpeed(r,idx,btn){
+  const vid=document.querySelector(`.vslide[data-idx="${idx}"] video`);if(vid)vid.playbackRate=r;
+  document.querySelectorAll(`#sp-${idx} .spd`).forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+}
+
+// ── COMMENTS ──
+function initCommentTabs(){
+  document.querySelectorAll('#comment-tabs .stab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('#comment-tabs .stab').forEach(b=>b.classList.remove('active'));
+      t.classList.add('active');S.commentTab=t.dataset.tab;loadComments(S.commentVideoId);
+    });
+  });
+}
+
+function openComments(id){
+  S.commentVideoId=id;S.commentTab='comments';
+  document.querySelectorAll('#comment-tabs .stab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  openSheet('comments-sheet');loadComments(id);
+}
+
+async function loadComments(id){
+  if(!id)return;
+  const body=document.getElementById('comments-body');
+  body.innerHTML='<div class="empty-msg">Loading…</div>';
+  try{
+    if(S.commentTab==='comments'){
+      const r=await api('/api/videos/'+id+'/comments');const items=r.items||[];
+      if(!items.length){body.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">💬</div>No comments yet. Be first!</div>';return;}
+      body.innerHTML=items.map(c=>`<div class="cmt-item"><div class="cmt-av">${fmtInit(c.username)}</div><div class="cmt-body"><span class="cmt-user">${esc(c.username)}</span><p class="cmt-text">${esc(c.content)}</p><span class="cmt-time">${timeAgo(c.created_at)}</span></div></div>`).join('');
+    } else {
+      const r=await api('/api/video/'+id+'/replies');const items=r.replies||[];
+      if(!items.length){body.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">🎤</div>No voice replies yet</div>';return;}
+      body.innerHTML=items.map(vr=>`<div class="vr-item"><button class="vr-play" onclick="playVoiceReply('${esc(vr.audio_url||'')}',this)"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg></button><div class="vr-meta"><span class="vr-user">${esc(vr.username)}</span><p class="vr-trans">${esc(vr.transcript||'(voice reply)')}</p><span class="vr-dur">${vr.duration?(vr.duration|0)+'s':''}</span></div></div>`).join('');
+    }
+  }catch(e){body.innerHTML='<div class="empty-msg">Failed to load. Try again.</div>';}
+}
+
+async function submitComment(){
+  if(!ME){openAuthModal();return;}
+  const input=document.getElementById('comment-input'),content=input.value.trim();
+  if(!content||!S.commentVideoId)return;input.value='';
+  try{await api('/api/videos/'+S.commentVideoId+'/comments','POST',{content});toast('Comment posted!');loadComments(S.commentVideoId);}
+  catch(e){toast('Could not post comment');}
+}
+
+let vrAudio=null;
+function playVoiceReply(url,btn){
+  if(vrAudio){vrAudio.pause();vrAudio=null;if(btn)btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg>';return;}
+  if(!url)return;vrAudio=new Audio(url);vrAudio.play();
+  if(btn)btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="white"/><rect x="14" y="4" width="4" height="16" fill="white"/></svg>';
+  vrAudio.onended=()=>{vrAudio=null;if(btn)btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg>';};
+}
+
+// ── VOICE RECORDING ──
+function openVoicePanel(){closeSheet('comments-sheet');setTimeout(()=>openVoicePanelForVideo(S.commentVideoId),300);}
+function openVoicePanelForVideo(id){if(!ME){openAuthModal();return;}S.commentVideoId=id;openSheet('voice-panel');resetRecording();}
+
+function resetRecording(){
+  S.recording=false;S.recordedChunks=[];S.recordSeconds=0;clearInterval(S.recordTimer);
+  document.getElementById('record-ring').classList.remove('rec');
+  document.getElementById('record-status').textContent='Tap to Record';
+  document.getElementById('record-timer').textContent='00:00';
+  document.getElementById('send-voice-btn').disabled=true;
+}
+
+function cancelRecording(){if(S.mediaRecorder&&S.recording)S.mediaRecorder.stop();closeSheet('voice-panel');resetRecording();}
+
+async function toggleRecording(){
+  if(!S.recording){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      S.mediaRecorder=new MediaRecorder(stream);S.recordedChunks=[];
+      S.mediaRecorder.ondataavailable=e=>{if(e.data.size)S.recordedChunks.push(e.data);};
+      S.mediaRecorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('send-voice-btn').disabled=false;document.getElementById('record-status').textContent='🎵 Ready to send';};
+      S.mediaRecorder.start(100);S.recording=true;
+      document.getElementById('record-ring').classList.add('rec');
+      document.getElementById('record-status').textContent='🎙 Recording…';
+      S.recordSeconds=0;
+      S.recordTimer=setInterval(()=>{
+        S.recordSeconds++;
+        const m=String(Math.floor(S.recordSeconds/60)).padStart(2,'0'),s=String(S.recordSeconds%60).padStart(2,'0');
+        document.getElementById('record-timer').textContent=m+':'+s;
+        if(S.recordSeconds>=60)toggleRecording();
+      },1000);
+    }catch(e){toast('Microphone access denied');}
+  } else {
+    S.mediaRecorder.stop();S.recording=false;clearInterval(S.recordTimer);
+    document.getElementById('record-ring').classList.remove('rec');
+  }
+}
+
+async function sendVoiceReply(){
+  if(!S.recordedChunks.length||!S.commentVideoId)return;
+  const btn=document.getElementById('send-voice-btn');btn.disabled=true;btn.textContent='Sending…';
+  const blob=new Blob(S.recordedChunks,{type:'audio/webm'});
+  const fd=new FormData();fd.append('audio',blob,'voice_reply.webm');fd.append('video_id',S.commentVideoId);fd.append('duration',S.recordSeconds);fd.append('language_code','en');
+  try{
+    const r=await fetch('/voice/reply',{method:'POST',body:fd,credentials:'same-origin'});
+    if(r.ok){toast('Voice reply posted!');closeSheet('voice-panel');resetRecording();}
+    else{toast('Could not send — try again');btn.disabled=false;btn.textContent='Send';}
+  }catch(e){toast('Network error');btn.disabled=false;btn.textContent='Send';}
+}
+
+// ── UPLOAD ──
+function initUploadInput(){
+  document.getElementById('vid-file').addEventListener('change',function(){
+    const file=this.files[0];if(!file)return;
+    const url=URL.createObjectURL(file);
+    document.getElementById('upload-preview').src=url;
+    document.getElementById('upload-zone').classList.add('hidden');
+    document.getElementById('upload-form').classList.remove('hidden');
+  });
+}
+
+async function submitUpload(){
+  const title=document.getElementById('up-title').value.trim();
+  const file=document.getElementById('vid-file').files[0];
+  if(!title){toast('Please add a title');return;}if(!file){toast('Please select a video');return;}
+  const btn=document.getElementById('upload-submit');btn.disabled=true;btn.textContent='Uploading…';
+  const fd=new FormData();fd.append('video',file);fd.append('title',title);fd.append('caption',document.getElementById('up-caption').value.trim());fd.append('topic',document.getElementById('up-topic').value);fd.append('region',document.getElementById('up-region').value);
+  try{
+    const r=await fetch('/upload',{method:'POST',body:fd,credentials:'same-origin'});
+    if(r.ok||r.redirected){closeSheet('upload-modal');toast('Uploaded! Refreshing…');setTimeout(()=>location.reload(),1200);}
+    else{toast('Upload failed');btn.disabled=false;btn.textContent='Post Video';}
+  }catch(e){toast('Network error');btn.disabled=false;btn.textContent='Post Video';}
+}
+
+// ── DISCOVER ──
+const TOPICS=['Sports','Music','Comedy','News','Politics','Education','Fashion','Food','Tech','Travel'];
+function initDiscoverScreen(){
+  const wrap=document.getElementById('topic-chips');
+  TOPICS.forEach(t=>{const c=document.createElement('button');c.className='chip';c.textContent=t;c.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');searchVideos(t.toLowerCase());};wrap.appendChild(c);});
+  let debounce;
+  document.getElementById('search-input').addEventListener('input',function(){
+    clearTimeout(debounce);debounce=setTimeout(()=>{this.value.trim()?searchVideos(this.value.trim()):showDefaultDiscover();},400);
+  });
+  renderDiscoverGrid();
+}
+
+function renderDiscoverGrid(){
+  const grid=document.getElementById('discover-grid');
+  const videos=FEED.filter(i=>i.kind==='video').slice(0,18);
+  grid.innerHTML=videos.map(v=>`<div class="dgrid-thumb" onclick="location.href='/video/${v.id}'">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:'<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e)"></div>'}<span class="dgrid-views">▶ ${fmtNum(v.views)}</span></div>`).join('');
+}
+
+function showDefaultDiscover(){document.getElementById('search-results-sec').classList.add('hidden');document.getElementById('topic-section').classList.remove('hidden');}
+
+async function searchVideos(q){
+  document.getElementById('topic-section').classList.add('hidden');
+  document.getElementById('search-results-sec').classList.remove('hidden');
+  document.getElementById('search-results-title').textContent=`Results for "${q}"`;
+  const el=document.getElementById('search-results');el.innerHTML='<div class="empty-msg">Searching…</div>';
+  try{
+    const r=await api('/api/discovery?q='+encodeURIComponent(q));const items=r.items||[];
+    if(!items.length){el.innerHTML='<div class="empty-msg">No results found</div>';return;}
+    el.innerHTML=items.map(it=>`<div class="dres-item" onclick="location.href='/video/${it.video_id||it.id||0}'">${it.thumbnail_url?`<div class="dres-thumb"><img src="${esc(it.thumbnail_url)}" loading="lazy" alt=""></div>`:'<div class="dres-thumb" style="background:#1a1a2e"></div>'}<div><p class="dres-title">${esc(it.title||it.query||'')}</p><p class="dres-meta">${esc(it.creator||'')} · ${fmtNum(it.views||0)} views</p></div></div>`).join('');
+  }catch(e){el.innerHTML='<div class="empty-msg">Search failed</div>';}
+}
+
+// ── NOTIFICATIONS ──
+function initNotifScreen(){
+  renderNotifs('all');
+  document.querySelectorAll('.ntab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('active'));t.classList.add('active');renderNotifs(t.dataset.kind);}));
+}
+
+function renderNotifs(kind){
+  const list=document.getElementById('notifs-list');
+  const filtered=kind==='all'?NOTIFS:NOTIFS.filter(n=>n.kind===kind);
+  if(!filtered.length){list.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">🔔</div>No notifications here yet</div>';return;}
+  const icons={like:'❤️',text_comment:'💬',voice_reply:'🎤',follow:'👤',mention:'@'};
+  list.innerHTML=filtered.map(n=>`<div class="notif-item${n.is_read===false?' unread':''}"><div class="nav2">${icons[n.kind]||'🔔'}</div><div class="ni-body"><p class="ni-msg">${esc(n.message||n.body||'')}</p><span class="ni-time">${timeAgo(n.created_at)}</span></div>${n.video_id?`<div class="ni-thumb" onclick="location.href='/video/${n.video_id}'">🎬</div>`:''}</div>`).join('');
+  if(NOTIFS_UNREAD>0)api('/api/notifications/read','POST').then(()=>document.getElementById('notif-badge').classList.add('hidden')).catch(()=>{});
+}
+
+// ── PROFILE ──
+function renderProfileScreen(){
+  const el=document.getElementById('profile-content');
+  if(!ME&&!PROF_USER){
+    el.innerHTML=`<div class="signin-prompt"><div class="sp-icon">👤</div><h2 class="sp-title">Sign in to MV Pulse</h2><p class="sp-sub">Upload videos, voice reply, and follow creators.</p><button class="btn-signin" onclick="openAuthModal()">Sign In / Sign Up</button></div>`;return;
+  }
+  const username=ME?.username||PROF_USER||'User';
+  const stats=PROF_STATS;
+  el.innerHTML=`<div class="prof-cover"></div>
+    <div class="prof-header">
+      <div class="prof-toprow">
+        <div class="prof-pic">${PROF_AVATAR?`<img src="${esc(PROF_AVATAR)}" alt="">`:fmtInit(username)}</div>
+        <div><p class="prof-dname">${esc(username)}</p><p class="prof-handle">@${esc(username)}</p></div>
+      </div>
+      <div class="prof-stats">
+        <div class="pstat"><span class="pstat-num">${fmtNum(stats.videos||0)}</span><span class="pstat-lbl">Videos</span></div>
+        <div class="pstat"><span class="pstat-num">${fmtNum(stats.followers||0)}</span><span class="pstat-lbl">Followers</span></div>
+        <div class="pstat"><span class="pstat-num">${fmtNum(stats.following||0)}</span><span class="pstat-lbl">Following</span></div>
+        <div class="pstat"><span class="pstat-num">${fmtNum(stats.replies||0)}</span><span class="pstat-lbl">Voice</span></div>
+      </div>
+      <div class="prof-actions">
+        ${PROF_IS_OWNER?`<button class="btn-follow ing" onclick="location.href='/profile/${esc(username)}'">Edit Profile</button>`:
+          `<button class="btn-follow${IS_FOLLOWING?' ing':''}" id="pfb" onclick="toggleProfileFollow()">${IS_FOLLOWING?'Following':'Follow'}</button>`}
+        <button class="btn-share-p" onclick="shareProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+      </div>
     </div>
-
-    <div class="modal-backdrop" data-auth-modal>
-        <div class="modal-card" data-auth-modal-card>
-            <div class="sheet-header">
-                <div>
-                    <h3>Sign in to interact</h3>
-                    <p class="meta-copy">Likes, saves, follows, comments, and voice replies are tied to your account.</p>
-                </div>
-                <button class="menu-button" type="button" data-close-modal aria-label="Close overlay">&times;</button>
-            </div>
-            <div class="auth-tabs">
-                <button class="tab-link active" type="button" data-auth-tab="login">Sign in</button>
-                <button class="tab-link" type="button" data-auth-tab="signup">Create account</button>
-            </div>
-            <div class="auth-status" data-auth-status></div>
-            <form class="auth-panel active" data-auth-panel="login" data-auth-form data-auth-endpoint="/login">
-                <input type="email" name="email" placeholder="Email" required autocomplete="email">
-                <div class="password-row">
-                    <input type="password" name="password" placeholder="Password" required data-password-input autocomplete="current-password">
-                    <button class="ghost" type="button" data-toggle-password>Show</button>
-                </div>
-                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
-                <button class="sheet-link primary" type="submit">Sign in</button>
-            </form>
-            <form class="auth-panel" data-auth-panel="signup" data-auth-form data-auth-endpoint="/signup">
-                <input type="text" name="username" placeholder="Username" required autocomplete="username">
-                <input type="email" name="email" placeholder="Email" required autocomplete="email">
-                <div class="password-row">
-                    <input type="password" name="password" placeholder="Password" required minlength="8" data-password-input autocomplete="new-password">
-                    <button class="ghost" type="button" data-toggle-password>Show</button>
-                </div>
-                <div class="password-row">
-                    <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" data-password-input autocomplete="new-password">
-                    <button class="ghost" type="button" data-toggle-password>Show</button>
-                </div>
-                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
-                <button class="sheet-link primary" type="submit">Create account</button>
-            </form>
-            <div class="sheet-actions">
-                <button class="sheet-link" type="button" data-close-modal>Keep browsing</button>
-            </div>
-        </div>
+    <div class="prof-content-tabs">
+      <button class="ptab active" data-ptab="videos"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor"/><rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor"/></svg></button>
+      <button class="ptab" data-ptab="liked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+      <button class="ptab" data-ptab="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
     </div>
+    <div class="pvgrid" id="pvgrid"></div>`;
 
-    <script>
-        const appShell = document.querySelector('.app');
-        const isAuthenticated = appShell?.dataset.authenticated === 'true';
-        const authModal = document.querySelector('[data-auth-modal]');
-        const authModalCard = document.querySelector('[data-auth-modal-card]');
-        const authStatus = document.querySelector('[data-auth-status]');
-        const sheetBackdrop = document.querySelector('[data-sheet-backdrop]');
-        const feedVoiceSheet = document.querySelector('[data-feed-voice-sheet]');
-        const moreSheet = document.querySelector('[data-more-sheet]');
-        const unreadBadges = document.querySelectorAll('[data-unread-badge]');
-        let activeSheet = null;
-        let activeMoreContext = null;
-        let overlayHistoryDepth = 0;
-        let authGesture = null;
-        let sheetGesture = null;
-        let immersiveTimer = null;
+  renderPVGrid(PROF_VIDEOS);
+  document.querySelectorAll('.ptab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));t.classList.add('active');
+    const tab=t.dataset.ptab;
+    if(tab==='videos')renderPVGrid(PROF_VIDEOS);
+    else if(tab==='liked')loadLiked();
+    else if(tab==='saved')loadSaved();
+  }));
+}
 
-        const setPending = (button, pending) => {
-            if (!button) {
-                return false;
-            }
-            if (pending && button.dataset.pending === 'true') {
-                return true;
-            }
-            button.dataset.pending = pending ? 'true' : 'false';
-            button.disabled = pending;
-            return false;
-        };
+function renderPVGrid(videos){
+  const grid=document.getElementById('pvgrid');if(!grid)return;
+  if(!videos.length){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">No videos yet</div>';return;}
+  grid.innerHTML=videos.map(v=>`<div class="pvthumb" onclick="location.href='/video/${v.id}'">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:`<div class="pvph">🎬</div>`}<span class="pvviews">▶ ${fmtNum(v.views)}</span></div>`).join('');
+}
 
-        const setAuthStatus = (message = '', tone = 'error') => {
-            if (!authStatus) {
-                return;
-            }
-            authStatus.textContent = message;
-            authStatus.classList.toggle('visible', Boolean(message));
-            authStatus.classList.toggle('error', tone === 'error');
-            authStatus.classList.toggle('success', tone === 'success');
-        };
+async function loadLiked(){
+  const grid=document.getElementById('pvgrid');if(!grid)return;
+  if(!ME){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Sign in to see liked videos</div>';return;}
+  grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Loading…</div>';
+  try{const r=await api('/api/me/likes');renderPVGrid(r.items||[]);}catch(e){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Could not load</div>';}
+}
 
-        const showAuthPanel = (target) => {
-            document.querySelectorAll('[data-auth-tab]').forEach((button) => {
-                button.classList.toggle('active', button.dataset.authTab === target);
-            });
-            document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
-                panel.classList.toggle('active', panel.dataset.authPanel === target);
-            });
-            document.querySelector(`[data-auth-panel="${target}"] input`)?.focus({ preventScroll: true });
-        };
+async function loadSaved(){
+  const grid=document.getElementById('pvgrid');if(!grid)return;
+  if(!ME){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Sign in to see saved videos</div>';return;}
+  grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Loading…</div>';
+  try{const r=await api('/api/me/saved/videos');renderPVGrid(r.items||[]);}catch(e){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Could not load</div>';}
+}
 
-        const syncOverlayState = () => {
-            document.body.classList.toggle('overlay-open', Boolean(activeSheet || authModal?.classList.contains('active')));
-        };
+async function toggleProfileFollow(){
+  if(!ME){openAuthModal();return;}
+  const btn=document.getElementById('pfb');if(!btn)return;
+  const following=btn.classList.contains('ing');
+  btn.textContent=following?'Follow':'Following';btn.classList.toggle('ing',!following);
+  try{await api('/api/profile/'+PROF_USER+'/follow','POST');}
+  catch(e){btn.textContent=following?'Following':'Follow';btn.classList.toggle('ing',following);}
+}
 
-        const homeScreenIsActive = () => document.querySelector('.screen.active[data-screen="home"]');
+function shareProfile(){
+  const url=location.origin+'/profile/'+(PROF_USER||(ME?.username||''));
+  if(navigator.share)navigator.share({title:'MV Pulse Profile',url}).catch(()=>{});
+  else navigator.clipboard.writeText(url).then(()=>toast('Profile link copied!'));
+}
 
-        const setImmersiveVisibility = (visible) => {
-            appShell?.classList.toggle('ui-hidden', !visible);
-        };
+// ── SHEETS ──
+function openSheet(id){
+  if(S.openSheet&&S.openSheet!==id)closeSheet(S.openSheet);
+  document.getElementById(id)?.classList.add('open');
+  document.getElementById('backdrop').classList.add('vis');
+  S.openSheet=id;
+}
+function closeSheet(id){document.getElementById(id)?.classList.remove('open');document.getElementById('backdrop').classList.remove('vis');if(S.openSheet===id)S.openSheet=null;}
+function closeAllSheets(){document.querySelectorAll('.sheet.open').forEach(s=>s.classList.remove('open'));document.getElementById('backdrop').classList.remove('vis');S.openSheet=null;}
 
-        const scheduleImmersiveHide = () => {
-            if (immersiveTimer) {
-                window.clearTimeout(immersiveTimer);
-            }
-            setImmersiveVisibility(true);
-            if (!homeScreenIsActive() || activeSheet || authModal?.classList.contains('active')) {
-                return;
-            }
-            immersiveTimer = window.setTimeout(() => {
-                setImmersiveVisibility(false);
-            }, 3000);
-        };
+function initSheetGestures(){
+  document.querySelectorAll('.sheet').forEach(sheet=>{
+    let startY=0,dragging=false;
+    const h=sheet.querySelector('.shandle');if(!h)return;
+    h.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;dragging=true;},{passive:true});
+    h.addEventListener('touchmove',e=>{if(!dragging)return;const dy=e.touches[0].clientY-startY;if(dy>0)sheet.style.transform=`translateY(${dy}px)`;},{passive:true});
+    h.addEventListener('touchend',e=>{const dy=e.changedTouches[0].clientY-startY;sheet.style.transform='';if(dy>80)closeSheet(sheet.id);dragging=false;},{passive:true});
+  });
+}
 
-        const syncKeyboardViewport = () => {
-            const viewportHeight = window.visualViewport?.height || window.innerHeight;
-            const keyboardOffset = Math.max(0, window.innerHeight - viewportHeight);
-            document.documentElement.style.setProperty('--keyboard-offset', `${keyboardOffset}px`);
-            const focusedField = document.activeElement?.matches('input, textarea, select');
-            appShell?.classList.toggle('keyboard-open', keyboardOffset > 120 || Boolean(focusedField));
-        };
+// ── AUTH ──
+function openAuthModal(){
+  {% if current_user %}return;{% endif %}
+  openSheet('auth-modal');
+}
 
-        const pushOverlayHistory = () => {
-            window.history.pushState({ overlay: true }, '');
-            overlayHistoryDepth += 1;
-        };
-
-        const hardCloseAuthModal = () => {
-            authModal?.classList.remove('active');
-            syncOverlayState();
-            scheduleImmersiveHide();
-        };
-
-        const hardCloseSheets = () => {
-            activeSheet?.classList.remove('active');
-            feedVoiceSheet?.classList.remove('active');
-            moreSheet?.classList.remove('active');
-            sheetBackdrop?.classList.remove('active');
-            activeSheet = null;
-            syncOverlayState();
-            scheduleImmersiveHide();
-        };
-
-        const dismissOverlay = () => {
-            if (overlayHistoryDepth > 0) {
-                window.history.back();
-                return;
-            }
-            hardCloseSheets();
-            hardCloseAuthModal();
-        };
-
-        const openAuthModal = (target = 'login') => {
-            hardCloseSheets();
-            authModal?.classList.add('active');
-            showAuthPanel(target);
-            syncOverlayState();
-            setImmersiveVisibility(true);
-            pushOverlayHistory();
-        };
-        const closeAuthModal = () => dismissOverlay();
-
-        const openSheet = (sheet) => {
-            if (!sheet) {
-                return;
-            }
-            hardCloseAuthModal();
-            hardCloseSheets();
-            sheetBackdrop?.classList.add('active');
-            sheet.classList.add('active');
-            activeSheet = sheet;
-            syncOverlayState();
-            setImmersiveVisibility(true);
-            pushOverlayHistory();
-        };
-
-        const closeSheets = () => {
-            dismissOverlay();
-        };
-
-        document.querySelectorAll('[data-close-modal]').forEach((button) => {
-            button.addEventListener('click', closeAuthModal);
-        });
-
-        document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
-            button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
-        });
-
-        document.querySelectorAll('[data-toggle-caption]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const shell = button.closest('[data-caption-shell]');
-                const expanded = shell?.classList.toggle('expanded');
-                button.textContent = expanded ? 'Less' : 'More';
-                scheduleImmersiveHide();
-            });
-        });
-
-        document.querySelectorAll('[data-auth-tab]').forEach((button) => {
-            button.addEventListener('click', () => showAuthPanel(button.dataset.authTab));
-        });
-
-        document.querySelectorAll('[data-close-sheet]').forEach((button) => {
-            button.addEventListener('click', closeSheets);
-        });
-
-        sheetBackdrop?.addEventListener('click', closeSheets);
-        authModal?.addEventListener('click', (event) => {
-            if (event.target === authModal) {
-                closeAuthModal();
-            }
-        });
-
-        const bindSwipeDismiss = (target, setState) => {
-            if (!target) {
-                return;
-            }
-            target.addEventListener('pointerdown', (event) => {
-                if (event.target.closest('input, textarea, select, button, a, audio, label')) {
-                    return;
-                }
-                setState({ pointerId: event.pointerId, startY: event.clientY, startX: event.clientX, active: true });
-                target.setPointerCapture?.(event.pointerId);
-            });
-            target.addEventListener('pointermove', (event) => {
-                const state = setState();
-                if (!state?.active || state.pointerId !== event.pointerId) {
-                    return;
-                }
-                const deltaY = Math.max(event.clientY - state.startY, 0);
-                const deltaX = Math.abs(event.clientX - state.startX);
-                if (deltaY > 0 && deltaX < 90) {
-                    target.style.transform = `translateY(${Math.min(deltaY, 120)}px)`;
-                }
-            });
-            const endGesture = (event) => {
-                const state = setState();
-                if (!state?.active || state.pointerId !== event.pointerId) {
-                    return;
-                }
-                const deltaY = event.clientY - state.startY;
-                target.style.transform = '';
-                setState(null);
-                if (deltaY > 90) {
-                    dismissOverlay();
-                }
-            };
-            target.addEventListener('pointerup', endGesture);
-            target.addEventListener('pointercancel', endGesture);
-        };
-
-        bindSwipeDismiss(authModalCard, (next) => {
-            if (typeof next !== 'undefined') {
-                authGesture = next;
-            }
-            return authGesture;
-        });
-
-        document.querySelectorAll('.sheet .sheet-card').forEach((card) => {
-            bindSwipeDismiss(card, (next) => {
-                if (typeof next !== 'undefined') {
-                    sheetGesture = next;
-                }
-                return sheetGesture;
-            });
-        });
-
-        document.querySelectorAll('[data-toggle-password]').forEach((button) => {
-            if (button.dataset.bound === 'true') {
-                return;
-            }
-            button.dataset.bound = 'true';
-            button.addEventListener('click', () => {
-                const input = button.parentElement.querySelector('[data-password-input]');
-                if (!input) {
-                    return;
-                }
-                const showing = input.type === 'text';
-                input.type = showing ? 'password' : 'text';
-                button.textContent = showing ? 'Show' : 'Hide';
-            });
-        });
-
-        document.querySelectorAll('[data-auth-form]').forEach((form) => {
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const submitButton = form.querySelector('button[type="submit"]');
-                if (setPending(submitButton, true)) {
-                    return;
-                }
-                setAuthStatus('');
-                try {
-                    const payload = Object.fromEntries(new FormData(form).entries());
-                    const response = await fetch(form.dataset.authEndpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'fetch',
-                        },
-                        body: JSON.stringify(payload),
-                    });
-                    const result = await response.json().catch(() => ({}));
-                    if (!response.ok || result.ok === false) {
-                        throw new Error(result.error || 'Authentication failed.');
-                    }
-                    setAuthStatus('Signed in. Reloading your session...', 'success');
-                    window.location.reload();
-                } catch (error) {
-                    setAuthStatus(error.message || 'Authentication failed.', 'error');
-                } finally {
-                    setPending(submitButton, false);
-                }
-            });
-        });
-
-        const requestJson = async (url, options = {}) => {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'fetch',
-                    ...(options.headers || {}),
-                },
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (response.status === 401) {
-                openAuthModal();
-                const error = new Error(payload.error || 'auth');
-                error.code = payload.code || 'auth_required';
-                throw error;
-            }
-            if (!response.ok) {
-                const error = new Error(payload.error || 'request failed');
-                error.code = payload.code || 'request_error';
-                throw error;
-            }
-            return payload;
-        };
-
-        const setCount = (node, value) => {
-            if (node) {
-                node.textContent = value;
-            }
-        };
-
-        const setToggleButton = (button, active, activeLabel, idleLabel) => {
-            button.classList.toggle('active', active);
-            button.textContent = active ? activeLabel : idleLabel;
-        };
-
-        const animateLikeBurst = (button) => {
-            if (!button) {
-                return;
-            }
-            button.classList.remove('like-burst');
-            void button.offsetWidth;
-            button.classList.add('like-burst');
-            window.setTimeout(() => button.classList.remove('like-burst'), 430);
-        };
-
-        const updateVideoAudioToggle = (button, video) => {
-            if (!button || !video) {
-                return;
-            }
-            button.textContent = video.muted ? 'Audio' : 'Muted';
-            const label = button.closest('.rail-action')?.querySelector('.rail-action-label strong');
-            if (label) {
-                label.textContent = video.muted ? 'Off' : 'On';
-            }
-            button.classList.toggle('active', !video.muted);
-        };
-
-        const muteOtherVideos = (activeVideo) => {
-            document.querySelectorAll('.autoplay-video').forEach((video) => {
-                if (video !== activeVideo) {
-                    video.muted = true;
-                }
-            });
-            document.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
-                const target = document.getElementById(button.dataset.targetVideo);
-                updateVideoAudioToggle(button, target);
-            });
-        };
-
-        const preloadAdjacentVideos = (video) => {
-            const currentSlide = video.closest('.reel-slide');
-            const candidateSlides = [currentSlide?.nextElementSibling, currentSlide?.previousElementSibling];
-            candidateSlides.forEach((slide) => {
-                const adjacentVideo = slide?.querySelector('.autoplay-video');
-                if (adjacentVideo && adjacentVideo.preload !== 'auto') {
-                    adjacentVideo.preload = 'auto';
-                    adjacentVideo.load();
-                }
-            });
-        };
-
-        document.querySelectorAll('.autoplay-video').forEach((video) => {
-            video.muted = true;
-            const parentSlide = video.closest('.reel-slide');
-            const markLoaded = () => parentSlide?.classList.add('loaded');
-            video.addEventListener('loadeddata', markLoaded, { once: true });
-            video.addEventListener('canplay', markLoaded, { once: true });
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        preloadAdjacentVideos(video);
-                        video.play().catch(() => {});
-                    } else {
-                        video.pause();
-                    }
-                });
-            }, { threshold: 0.7 });
-            observer.observe(video);
-        });
-
-        document.querySelectorAll('[data-video-audio-toggle]').forEach((button) => {
-            const video = document.getElementById(button.dataset.targetVideo);
-            updateVideoAudioToggle(button, video);
-            button.addEventListener('click', () => {
-                if (!video) {
-                    return;
-                }
-                if (video.muted) {
-                    muteOtherVideos(video);
-                    video.muted = false;
-                } else {
-                    video.muted = true;
-                }
-                if (video.paused) {
-                    video.play().catch(() => {});
-                }
-                updateVideoAudioToggle(button, video);
-            });
-            video?.addEventListener('volumechange', () => updateVideoAudioToggle(button, video));
-        });
-
-        document.querySelectorAll('.speed-button').forEach((button) => {
-            button.addEventListener('click', () => {
-                const audio = button.closest('.reply-card')?.querySelector('audio');
-                if (audio) {
-                    audio.playbackRate = Number(button.dataset.rate || 1);
-                }
-            });
-        });
-
-        document.querySelectorAll('[data-video-like-button]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                if (setPending(button, true)) {
-                    return;
-                }
-                const countNode = button.closest('.rail-action')?.querySelector('[data-video-like-count]');
-                const previous = button.dataset.liked === 'true';
-                const previousCount = Number(countNode?.textContent || '0');
-                button.dataset.liked = previous ? 'false' : 'true';
-                button.classList.toggle('active', !previous);
-                setCount(countNode, previous ? Math.max(previousCount - 1, 0) : previousCount + 1);
-                try {
-                    const payload = await requestJson(`/api/videos/${button.dataset.videoId}/like`, { method: 'POST' });
-                    button.dataset.liked = payload.liked ? 'true' : 'false';
-                    button.classList.toggle('active', payload.liked);
-                    setCount(countNode, payload.likes);
-                    if (payload.liked) {
-                        animateLikeBurst(button);
-                    }
-                } catch (error) {
-                    button.dataset.liked = previous ? 'true' : 'false';
-                    button.classList.toggle('active', previous);
-                    setCount(countNode, previousCount);
-                    if (error.code !== 'auth_required') {
-                        console.error(error);
-                    }
-                } finally {
-                    setPending(button, false);
-                }
-            });
-        });
-
-        document.querySelectorAll('[data-video-save-button]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                if (setPending(button, true)) {
-                    return;
-                }
-                const countNode = button.closest('.rail-action')?.querySelector('[data-video-save-count]');
-                const previous = button.dataset.saved === 'true';
-                const previousCount = Number(countNode?.textContent || '0');
-                button.dataset.saved = previous ? 'false' : 'true';
-                button.classList.toggle('active', !previous);
-                setCount(countNode, previous ? Math.max(previousCount - 1, 0) : previousCount + 1);
-                try {
-                    const payload = await requestJson(`/api/videos/${button.dataset.videoId}/save`, { method: 'POST' });
-                    button.dataset.saved = payload.saved ? 'true' : 'false';
-                    button.classList.toggle('active', payload.saved);
-                    setCount(countNode, payload.saves_count);
-                } catch (error) {
-                    button.dataset.saved = previous ? 'true' : 'false';
-                    button.classList.toggle('active', previous);
-                    setCount(countNode, previousCount);
-                    if (error.code !== 'auth_required') {
-                        console.error(error);
-                    }
-                } finally {
-                    setPending(button, false);
-                }
-            });
-        });
-
-        const performShare = async (videoId, fallbackUrl, countNode = null, trigger = null) => {
-            const previousCount = Number(countNode?.textContent || '0');
-            if (countNode) {
-                countNode.textContent = previousCount + 1;
-            }
-            try {
-                if (navigator.share) {
-                    navigator.share({ url: new URL(fallbackUrl, window.location.origin).toString() }).catch(() => {});
-                } else if (navigator.clipboard) {
-                    navigator.clipboard.writeText(new URL(fallbackUrl, window.location.origin).toString()).catch(() => {});
-                }
-                const payload = await requestJson(`/api/videos/${videoId}/share`, { method: 'POST' });
-                setCount(countNode, payload.shares_count);
-                return payload;
-            } catch (error) {
-                setCount(countNode, previousCount);
-                if (error.code !== 'auth_required') {
-                    console.error(error);
-                }
-                throw error;
-            } finally {
-                if (trigger) {
-                    setPending(trigger, false);
-                }
-            }
-        };
-
-        document.querySelectorAll('[data-video-share-button]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                if (setPending(button, true)) {
-                    return;
-                }
-                const countNode = button.closest('.rail-action')?.querySelector('[data-video-share-count]');
-                await performShare(button.dataset.videoId, `/video/${button.dataset.videoId}`, countNode, button).catch(() => {});
-            });
-        });
-
-        document.querySelectorAll('[data-video-repost-button]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const targetUrl = button.dataset.videoUrl || '/feed';
-                window.location.href = targetUrl;
-            });
-        });
-
-        const updateFollowerLabels = (userId, following, followersCount = null) => {
-            document.querySelectorAll(`[data-follow-button][data-target-user-id="${userId}"]`).forEach((button) => {
-                button.dataset.following = following ? 'true' : 'false';
-                setToggleButton(button, following, 'Following', button.closest('.sheet-actions') ? 'Follow creator' : 'Follow creator');
-            });
-            if (followersCount !== null) {
-                document.querySelectorAll(`[data-followers-for="${userId}"]`).forEach((node) => {
-                    node.textContent = `${followersCount} followers`;
-                });
-            }
-        };
-
-        document.querySelectorAll('[data-follow-button]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                if (setPending(button, true)) {
-                    return;
-                }
-                const userId = button.dataset.targetUserId;
-                const previous = button.dataset.following === 'true';
-                button.dataset.following = previous ? 'false' : 'true';
-                setToggleButton(button, !previous, 'Following', 'Follow creator');
-                try {
-                    const payload = await requestJson(`/api/follow/${userId}`, {
-                        method: previous ? 'DELETE' : 'POST',
-                    });
-                    updateFollowerLabels(userId, payload.following, payload.followers);
-                } catch (error) {
-                    button.dataset.following = previous ? 'true' : 'false';
-                    setToggleButton(button, previous, 'Following', 'Follow creator');
-                    if (error.code !== 'auth_required') {
-                        console.error(error);
-                    }
-                } finally {
-                    setPending(button, false);
-                }
-            });
-        });
-
-        const voiceSheetTitle = document.querySelector('[data-sheet-title]');
-        const voiceSheetSummary = document.querySelector('[data-sheet-summary]');
-        const voiceSheetReplies = document.querySelector('[data-sheet-replies]');
-        const voiceSheetComments = document.querySelector('[data-sheet-comments]');
-        const voiceSheetOpenThread = document.querySelector('[data-sheet-open-thread]');
-        const voiceSheetRecord = document.querySelector('[data-sheet-record]');
-        const voiceSheetDownload = document.querySelector('[data-sheet-download]');
-        const voiceSheetProfile = document.querySelector('[data-sheet-profile]');
-        const voiceSheetFollow = document.querySelector('[data-sheet-follow]');
-
-        document.querySelectorAll('[data-open-feed-voice-sheet]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const title = button.dataset.videoTitle || 'Voice thread';
-                const creator = button.dataset.videoCreator || 'creator';
-                const summary = button.dataset.summary || 'Open the full thread to record, reply, and continue the conversation.';
-                voiceSheetTitle.textContent = `${title} by @${creator}`;
-                voiceSheetSummary.textContent = summary;
-                voiceSheetReplies.textContent = `${button.dataset.replies || 0} voice replies`;
-                voiceSheetComments.textContent = `${button.dataset.comments || 0} comments`;
-                voiceSheetOpenThread.href = button.hasAttribute('data-open-feed-comments') ? `${button.dataset.videoUrl || '/feed'}#comments` : (button.dataset.videoUrl || '/feed');
-                voiceSheetRecord.href = button.hasAttribute('data-open-feed-comments') ? `${button.dataset.videoUrl || '/feed'}#comments` : `${button.dataset.videoUrl || '/feed'}#record`;
-                voiceSheetRecord.textContent = button.hasAttribute('data-open-feed-comments') ? 'Open comments' : 'Speak now';
-                voiceSheetDownload.href = button.dataset.videoDownloadUrl || button.dataset.videoUrl || '/feed';
-                if (button.dataset.videoProfileUrl) {
-                    voiceSheetProfile.hidden = false;
-                    voiceSheetProfile.href = button.dataset.videoProfileUrl;
-                } else {
-                    voiceSheetProfile.hidden = true;
-                }
-                if (button.dataset.followAllowed === 'true') {
-                    voiceSheetFollow.hidden = false;
-                    voiceSheetFollow.dataset.targetUserId = button.dataset.followUserId || '';
-                    voiceSheetFollow.dataset.following = button.dataset.following || 'false';
-                    setToggleButton(voiceSheetFollow, button.dataset.following === 'true', 'Following', 'Follow creator');
-                } else {
-                    voiceSheetFollow.hidden = true;
-                }
-                if (button.hasAttribute('data-open-feed-comments')) {
-                    voiceSheetComments.textContent = `${button.dataset.comments || 0} comments · text-first view`;
-                }
-                openSheet(feedVoiceSheet);
-            });
-        });
-
-        voiceSheetFollow?.addEventListener('click', async () => {
-            if (!voiceSheetFollow.dataset.targetUserId) {
-                return;
-            }
-            if (setPending(voiceSheetFollow, true)) {
-                return;
-            }
-            const userId = voiceSheetFollow.dataset.targetUserId;
-            const previous = voiceSheetFollow.dataset.following === 'true';
-            voiceSheetFollow.dataset.following = previous ? 'false' : 'true';
-            setToggleButton(voiceSheetFollow, !previous, 'Following', 'Follow creator');
-            try {
-                const payload = await requestJson(`/api/follow/${userId}`, {
-                    method: previous ? 'DELETE' : 'POST',
-                });
-                voiceSheetFollow.dataset.following = payload.following ? 'true' : 'false';
-                updateFollowerLabels(userId, payload.following, payload.followers);
-            } catch (error) {
-                voiceSheetFollow.dataset.following = previous ? 'true' : 'false';
-                setToggleButton(voiceSheetFollow, previous, 'Following', 'Follow creator');
-                if (error.code !== 'auth_required') {
-                    console.error(error);
-                }
-            } finally {
-                setPending(voiceSheetFollow, false);
-            }
-        });
-
-        const moreShare = document.querySelector('[data-more-share]');
-        const moreRepost = document.querySelector('[data-more-repost]');
-        const moreSave = document.querySelector('[data-more-save]');
-        const moreCopy = document.querySelector('[data-more-copy]');
-        const moreDownload = document.querySelector('[data-more-download]');
-        const moreReport = document.querySelector('[data-more-report]');
-
-        document.querySelectorAll('[data-open-more-menu]').forEach((button) => {
-            button.addEventListener('click', () => {
-                activeMoreContext = {
-                    videoId: button.dataset.videoId,
-                    videoUrl: button.dataset.videoUrl || `/video/${button.dataset.videoId}`,
-                    downloadUrl: button.dataset.downloadUrl || button.dataset.videoUrl || `/video/${button.dataset.videoId}`,
-                };
-                moreRepost.href = activeMoreContext.videoUrl;
-                moreDownload.href = activeMoreContext.downloadUrl;
-                moreReport.href = `mailto:support@mv-pulse.local?subject=Report%20video%20${activeMoreContext.videoId}`;
-                openSheet(moreSheet);
-            });
-        });
-
-        moreShare?.addEventListener('click', async () => {
-            if (!activeMoreContext || setPending(moreShare, true)) {
-                return;
-            }
-            await performShare(activeMoreContext.videoId, activeMoreContext.videoUrl, null, moreShare).catch(() => {});
-        });
-
-        moreSave?.addEventListener('click', async () => {
-            if (!activeMoreContext || setPending(moreSave, true)) {
-                return;
-            }
-            try {
-                const payload = await requestJson(`/api/videos/${activeMoreContext.videoId}/save`, { method: 'POST' });
-                document.querySelectorAll(`[data-video-save-button][data-video-id="${activeMoreContext.videoId}"]`).forEach((button) => {
-                    button.dataset.saved = payload.saved ? 'true' : 'false';
-                    button.classList.toggle('active', payload.saved);
-                    setCount(button.closest('.rail-action')?.querySelector('[data-video-save-count]'), payload.saves_count);
-                });
-                moreSave.textContent = payload.saved ? 'Saved' : 'Save';
-            } catch (error) {
-                if (error.code !== 'auth_required') {
-                    console.error(error);
-                }
-            } finally {
-                setPending(moreSave, false);
-            }
-        });
-
-        moreCopy?.addEventListener('click', async () => {
-            if (!activeMoreContext || !navigator.clipboard) {
-                return;
-            }
-            try {
-                await navigator.clipboard.writeText(new URL(activeMoreContext.videoUrl, window.location.origin).toString());
-                moreCopy.textContent = 'Copied';
-                window.setTimeout(() => {
-                    moreCopy.textContent = 'Copy link';
-                }, 1600);
-            } catch (error) {
-                console.error(error);
-            }
-        });
-
-        const bindFeedHoldMenus = () => {
-            const holdButtons = document.querySelectorAll('[data-video-share-button], [data-open-more-menu], [data-video-save-button], [data-video-like-button]');
-            holdButtons.forEach((button) => {
-                let holdTimer = null;
-                button.addEventListener('pointerdown', () => {
-                    holdTimer = window.setTimeout(() => {
-                        if (button.hasAttribute('data-video-share-button') || button.hasAttribute('data-open-more-menu')) {
-                            button.closest('.reel-slide')?.querySelector('[data-open-more-menu]')?.click();
-                        } else if (button.hasAttribute('data-video-like-button')) {
-                            animateLikeBurst(button);
-                        }
-                    }, 520);
-                });
-                ['pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => {
-                    button.addEventListener(eventName, () => {
-                        if (holdTimer) {
-                            window.clearTimeout(holdTimer);
-                            holdTimer = null;
-                        }
-                    });
-                });
-            });
-        };
-
-        bindFeedHoldMenus();
-
-        document.querySelectorAll('.reel-slide').forEach((slide) => {
-            slide.addEventListener('pointerdown', (event) => {
-                if (event.target.closest('button, a, input, textarea, select, audio')) {
-                    return;
-                }
-                if (appShell?.classList.contains('ui-hidden')) {
-                    setImmersiveVisibility(true);
-                    scheduleImmersiveHide();
-                    return;
-                }
-                scheduleImmersiveHide();
-            });
-        });
-
-        document.querySelector('.feed-stage')?.addEventListener('scroll', () => {
-            scheduleImmersiveHide();
-        }, { passive: true });
-
-        document.addEventListener('pointermove', () => {
-            if (!homeScreenIsActive()) {
-                return;
-            }
-            scheduleImmersiveHide();
-        }, { passive: true });
-
-        window.visualViewport?.addEventListener('resize', syncKeyboardViewport);
-        window.addEventListener('focusin', syncKeyboardViewport);
-        window.addEventListener('focusout', () => window.setTimeout(syncKeyboardViewport, 60));
-        syncKeyboardViewport();
-
-        scheduleImmersiveHide();
-
-        window.addEventListener('popstate', () => {
-            if (overlayHistoryDepth > 0 && (activeSheet || authModal?.classList.contains('active'))) {
-                overlayHistoryDepth = Math.max(overlayHistoryDepth - 1, 0);
-                hardCloseSheets();
-                hardCloseAuthModal();
-            }
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                dismissOverlay();
-            }
-        });
-
-        unreadBadges.forEach((badge) => {
-            if (!badge.textContent.trim()) {
-                badge.style.display = 'none';
-            }
-        });
-    </script>
-    <script src="/static/pwa.js"></script>
+function initAuthTabs(){
+  document.querySelectorAll('.atab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.atab').forEach(b=>b.classList.remove('active'));t.classList.add('active');
+    const form=t.dataset.aform;
+    document.getElementById('login-form').classList.toggle('hidden',form!=='login');
+    document.getElementById('signup-form').classList.toggle('hidden',form!=='signup');
+  }));
+  {% if not current_user and auth_message %}setTimeout(()=>openSheet('auth-modal'),200);{% endif %}
+}
+</script>
 </body>
 </html>
