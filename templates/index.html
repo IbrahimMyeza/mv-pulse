@@ -1,645 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#030507">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MV Pulse">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/static/icons/mv-icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/static/icons/mv-icon.svg">
-    <title>MV Pulse</title>
-    <style>
-        :root {
-            --ink: #172126;
-            --muted: #5f6a6d;
-            --accent: #0f9d7a;
-            --warm: #f17c45;
-            --panel: rgba(255, 251, 246, 0.86);
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-right: env(safe-area-inset-right, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-left: env(safe-area-inset-left, 0px);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="MV Pulse">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/icons/mv-icon.svg" type="image/svg+xml">
+<title>MV Pulse — Voice-first video from Africa</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#fe2c55;--accent2:#25f4ee;--bg:#000;--surface:#161616;--surface2:#2a2a2a;--border:rgba(255,255,255,.12);--text:#fff;--muted:rgba(255,255,255,.65);--subtle:rgba(255,255,255,.35)}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,a{cursor:pointer;border:none;background:none;color:inherit;font:inherit;text-decoration:none}
+input{font:inherit;color:inherit;background:none;border:none;outline:none}
 
-        * { box-sizing: border-box; }
+/* ── HERO ── */
+.hero{position:relative;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg video{width:100%;height:100%;object-fit:cover;opacity:.45}
+.hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.3) 0%,rgba(0,0,0,.1) 40%,rgba(0,0,0,.75) 80%,rgba(0,0,0,.96) 100%)}
+.hero-bg-static{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(254,44,85,.35),transparent 55%),radial-gradient(ellipse at 70% 80%,rgba(37,244,238,.25),transparent 55%),linear-gradient(180deg,#0a0a0a,#000)}
 
-        html {
-            scroll-behavior: smooth;
-        }
+/* ── TOPBAR ── */
+.site-nav{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100}
+.logo{font-size:22px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-auth{display:flex;gap:10px;align-items:center}
+.btn-login{font-size:14px;font-weight:700;color:var(--text);padding:8px 18px;border-radius:8px;border:1px solid var(--border)}
+.btn-signup-sm{font-size:14px;font-weight:800;color:#fff;padding:8px 18px;border-radius:8px;background:var(--accent)}
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: "Segoe UI", sans-serif;
-            color: var(--ink);
-            background:
-                radial-gradient(circle at top left, rgba(15, 157, 122, 0.22), transparent 24%),
-                radial-gradient(circle at bottom right, rgba(241, 124, 69, 0.22), transparent 24%),
-                linear-gradient(180deg, #f4efe6 0%, #efe5d5 100%);
-            padding: calc(24px + var(--safe-top)) calc(24px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(24px + var(--safe-left));
-            overflow-x: hidden;
-            overflow-y: auto;
-            -webkit-text-size-adjust: 100%;
-        }
+/* ── HERO CONTENT ── */
+.hero-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:100dvh;padding:24px 24px calc(48px + env(safe-area-inset-bottom,0px));text-align:center;gap:20px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
+.hero-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hero-title{font-size:clamp(32px,8vw,52px);font-weight:900;line-height:1.1;letter-spacing:-1.5px;max-width:360px}
+.hero-title span{background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:16px;color:var(--muted);line-height:1.5;max-width:300px}
+.cta-group{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+.btn-primary-cta{background:var(--accent);color:#fff;font-size:17px;font-weight:800;padding:17px 24px;border-radius:12px;text-align:center;width:100%;letter-spacing:.2px}
+.btn-google-cta{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;font-size:15px;font-weight:700;padding:15px 24px;border-radius:12px;width:100%}
+.btn-google-cta svg{flex-shrink:0}
+.cta-divider{display:flex;align-items:center;gap:10px;color:var(--subtle);font-size:12px;width:100%;max-width:340px}
+.cta-divider::before,.cta-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.sign-in-link{font-size:14px;color:var(--muted);margin-top:4px}
+.sign-in-link a{color:var(--text);font-weight:700}
 
-        body.overlay-open {
-            overflow: hidden;
-        }
+/* ── AUTH OVERLAY ── */
+.auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.auth-overlay.open{opacity:1;pointer-events:all}
+.auth-panel{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.auth-overlay.open .auth-panel{transform:translateY(0)}
+.auth-handle{width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 8px}
+.auth-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px}
+.auth-tab{flex:1;text-align:center;padding:11px;font-size:15px;font-weight:800;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
+.auth-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.aerr{background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ff6b6b}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;font-size:15px;font-weight:700;padding:14px;border-radius:12px;width:100%}
+.adiv{display:flex;align-items:center;gap:10px;color:var(--subtle);font-size:12px}
+.adiv::before,.adiv::after{content:'';flex:1;height:1px;background:var(--border)}
+.ainput{display:block;background:var(--surface2);border-radius:10px;padding:14px 16px;font-size:15px;color:var(--text);width:100%}
+.ainput::placeholder{color:var(--subtle)}
+.asub{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px;border-radius:12px;width:100%;text-align:center;display:block}
+.aform-wrap{display:flex;flex-direction:column;gap:10px}
 
-        a { color: inherit; text-decoration: none; }
-        p { color: var(--muted); line-height: 1.5; }
+/* ── FEATURES STRIP ── */
+.features{background:var(--surface);padding:32px 20px;display:flex;flex-direction:column;gap:20px}
+.feat-title{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--accent);text-transform:uppercase;text-align:center}
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.feat-card{background:var(--surface2);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px}
+.feat-icon{font-size:28px}
+.feat-label{font-size:14px;font-weight:800;line-height:1.2}
+.feat-desc{font-size:12px;color:var(--muted);line-height:1.4}
 
-        .shell {
-            max-width: 1040px;
-            margin: 0 auto;
-            display: grid;
-            gap: 18px;
-        }
+/* ── VIDEO PREVIEW STRIP ── */
+.preview-strip{padding:24px 20px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+.preview-strip h2{font-size:18px;font-weight:900}
+.video-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.video-row::-webkit-scrollbar{display:none}
+.preview-thumb{flex-shrink:0;width:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;aspect-ratio:9/16;background:var(--surface2)}
+.preview-thumb img{width:100%;height:100%;object-fit:cover}
+.preview-thumb-ph{width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:28px}
+.preview-views{position:absolute;bottom:6px;left:6px;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 
-        .hero,
-        .panel {
-            border-radius: 24px;
-            padding: 24px;
-            background: var(--panel);
-            box-shadow: 0 18px 40px rgba(23, 33, 38, 0.1);
-        }
-
-        .hero {
-            background: linear-gradient(145deg, rgba(23, 33, 38, 0.96), rgba(29, 48, 55, 0.93));
-            color: #fff8ef;
-        }
-
-        .hero h1,
-        h2,
-        h3 {
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-
-        .hero-copy {
-            max-width: 42rem;
-            color: rgba(255, 248, 239, 0.84);
-            line-height: 1.55;
-        }
-
-        .public-video-grid,
-        .auth-cta-grid {
-            display: grid;
-            gap: 18px;
-        }
-
-        .public-video-grid {
-            grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
-            align-items: start;
-        }
-
-        .featured-video,
-        .video-preview-list,
-        .featured-video-copy,
-        .video-preview-copy,
-        .auth-cta-card,
-        .feature-card,
-        .modal-card,
-        .modal-panel {
-            display: grid;
-            gap: 12px;
-        }
-
-        .featured-video-player,
-        .video-preview {
-            width: 100%;
-            border-radius: 22px;
-            background: #0f1418;
-            overflow: hidden;
-            border: 1px solid rgba(23, 33, 38, 0.1);
-            box-shadow: 0 18px 40px rgba(23, 33, 38, 0.14);
-        }
-
-        .featured-video-player video,
-        .video-preview video {
-            display: block;
-            width: 100%;
-            aspect-ratio: 9 / 16;
-            object-fit: cover;
-            background: #101418;
-        }
-
-        .video-preview-card,
-        .auth-cta-card,
-        .feature-card {
-            padding: 18px;
-            border-radius: 22px;
-            background: rgba(255, 255, 255, 0.56);
-            border: 1px solid rgba(23, 33, 38, 0.08);
-        }
-
-        .video-meta,
-        .video-actions,
-        .chip-row,
-        .auth-cta-actions,
-        .auth-tabs,
-        .auth-meta,
-        .modal-header,
-        .password-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .video-meta {
-            color: var(--muted);
-            font-size: 0.92rem;
-        }
-
-        .viewer-note,
-        .inline-note,
-        .auth-message,
-        .modal-status {
-            padding: 12px 14px;
-            border-radius: 18px;
-            font-weight: 600;
-        }
-
-        .viewer-note,
-        .modal-status.success {
-            background: rgba(15, 157, 122, 0.12);
-            color: #0d6a52;
-        }
-
-        .auth-message,
-        .modal-status.error {
-            background: rgba(241, 124, 69, 0.14);
-            color: #9b4520;
-        }
-
-        .inline-note {
-            background: rgba(23, 33, 38, 0.05);
-            color: var(--muted);
-        }
-
-        .chip,
-        .ghost-action,
-        .primary-action,
-        .secondary-action,
-        .auth-tab,
-        .password-toggle,
-        .close-button,
-        button {
-            border-radius: 999px;
-            padding: 12px 16px;
-            border: 1px solid rgba(23, 33, 38, 0.12);
-            font: inherit;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
-        .chip {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff8ef;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .ghost-action,
-        .secondary-action,
-        .auth-tab,
-        .password-toggle,
-        .close-button {
-            background: rgba(23, 33, 38, 0.06);
-            color: var(--ink);
-            white-space: nowrap;
-        }
-
-        .primary-action,
-        button,
-        .auth-tab.active {
-            cursor: pointer;
-            background: linear-gradient(135deg, var(--accent) 0%, #41b691 100%);
-            color: white;
-            border-color: transparent;
-            font-weight: 600;
-        }
-
-        .auth-tab.active {
-            color: #fff;
-        }
-
-        .current-user strong { color: var(--ink); }
-
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border-radius: 16px;
-            border: 1px solid rgba(23, 33, 38, 0.1);
-            background: rgba(255, 255, 255, 0.78);
-        }
-
-        label {
-            color: var(--muted);
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(7, 10, 16, 0.72);
-            backdrop-filter: blur(14px);
-            padding: 20px;
-            z-index: 50;
-        }
-
-        .modal-backdrop.active {
-            display: flex;
-        }
-
-        .modal-card {
-            width: min(520px, 100%);
-            max-height: min(88vh, 820px);
-            overflow: auto;
-            padding: 22px;
-            border-radius: 28px;
-            background: rgba(255, 251, 246, 0.98);
-            box-shadow: 0 24px 60px rgba(23, 33, 38, 0.24);
-            border: 1px solid rgba(23, 33, 38, 0.08);
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .modal-card.dragging {
-            transition: none;
-        }
-
-        .modal-handle {
-            width: 68px;
-            height: 6px;
-            border-radius: 999px;
-            background: rgba(23, 33, 38, 0.14);
-            margin: 0 auto;
-        }
-
-        .modal-header {
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .modal-panel {
-            display: none;
-        }
-
-        .modal-panel.active,
-        .modal-status.visible {
-            display: grid;
-        }
-
-        @media (max-width: 860px) {
-            .public-video-grid,
-            .auth-cta-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-card {
-                width: 100%;
-                border-radius: 26px;
-            }
-        }
-    </style>
+/* ── BOTTOM CTA ── */
+.bottom-cta{background:linear-gradient(135deg,#1a0a2e,#0d1117);padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.bottom-cta h2{font-size:24px;font-weight:900}
+.bottom-cta p{font-size:14px;color:var(--muted);max-width:280px;line-height:1.5}
+.btn-join{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px 36px;border-radius:28px;display:inline-block}
+.site-footer{background:#000;padding:16px 20px;text-align:center;font-size:12px;color:var(--subtle);border-top:1px solid var(--border)}
+</style>
 </head>
 <body>
-    <div class="shell">
-        <section class="hero">
-            <h1>MV Pulse</h1>
-            <p class="hero-copy">Creator OS for trend prediction, AI content generation, analytics, scheduling, and export history. Visitors can now watch public videos immediately. Sign in when you want likes, follows, comments, and voice replies to persist.</p>
-            <div class="chip-row">
-                <a class="chip" href="/dashboard">Open Creator OS</a>
-                <a class="chip" href="/feed">Watch Feed</a>
-                <button class="chip" type="button" data-install-app hidden>Install app</button>
-                <button class="chip" type="button" data-enable-notifications>Enable notifications</button>
-                {% if current_user %}
-                <a class="chip" href="/logout">Log out</a>
-                {% endif %}
-            </div>
-        </section>
+{% if current_user %}
+<script>location.replace('/feed');</script>
+{% endif %}
 
-        {% if auth_message and current_user %}
-        <section class="auth-message">{{ auth_message }}</section>
-        {% endif %}
+<!-- NAV -->
+<nav class="site-nav">
+  <a class="logo" href="/">MV Pulse</a>
+  <div class="nav-auth">
+    <button class="btn-login" onclick="openAuth('login')">Log in</button>
+    <button class="btn-signup-sm" onclick="openAuth('signup')">Sign up</button>
+  </div>
+</nav>
 
-        <section class="panel">
-            <h2>Public Video Feed</h2>
-            <p>Anyone can watch public uploads. Reactions, follows, typed comments, and voice replies unlock after sign-in.</p>
-            {% if featured_public_video %}
-            <div class="public-video-grid">
-                <article class="featured-video">
-                    <a class="featured-video-player" href="/video/{{ featured_public_video.id }}">
-                        <video src="{{ featured_public_video.video_url }}" muted loop playsinline autoplay preload="metadata"></video>
-                    </a>
-                    <div class="featured-video-copy">
-                        <h2><a href="/video/{{ featured_public_video.id }}">{{ featured_public_video.title }}</a></h2>
-                        <p>{{ featured_public_video.caption or featured_public_video.description or 'Watch the latest public thread and open the full conversation.' }}</p>
-                        <div class="video-meta">
-                            <span>@{{ featured_public_video.creator }}</span>
-                            <span>{{ featured_public_video.views }} views</span>
-                            <span>{{ featured_public_video.voice_replies }} voice replies</span>
-                            <span>{{ featured_public_video.text_comments_count }} comments</span>
-                        </div>
-                        <div class="viewer-note">Visitors can watch now. Sign in to react and join the thread.</div>
-                        <div class="video-actions">
-                            <a class="chip" href="/video/{{ featured_public_video.id }}">Watch this video</a>
-                            <a class="chip" href="/feed">Open full feed</a>
-                            {% if not current_user %}
-                            <button class="chip" type="button" data-open-auth-modal data-auth-target="login">Sign in to react</button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </article>
-                <aside class="video-preview-list">
-                    {% for video in public_videos %}
-                    <article class="video-preview-card">
-                        <a class="video-preview" href="/video/{{ video.id }}">
-                            <video src="{{ video.video_url }}" muted loop playsinline preload="metadata"></video>
-                        </a>
-                        <div class="video-preview-copy">
-                            <strong><a href="/video/{{ video.id }}">{{ video.title }}</a></strong>
-                            <div class="video-meta">
-                                <span>@{{ video.creator }}</span>
-                                <span>{{ video.likes }} likes</span>
-                                <span>{{ video.text_comments_count }} comments</span>
-                            </div>
-                        </div>
-                    </article>
-                    {% else %}
-                    <article class="video-preview-card">
-                        <strong>No additional public videos yet</strong>
-                        <p>The next public upload will appear here automatically.</p>
-                    </article>
-                    {% endfor %}
-                </aside>
-            </div>
-            {% else %}
-            <div class="viewer-note">No public videos are live yet. The first public upload will appear here for every visitor, even before they sign in.</div>
-            {% endif %}
-        </section>
-
-        {% if current_user %}
-        <section class="panel current-user">
-            <h2>Signed In</h2>
-            <p><strong>{{ current_user.username }}</strong> is active. Your drafts, exports, and creator profile are now attached to your account.</p>
-            <div class="chip-row">
-                <a class="chip" href="/dashboard#profile">Open Profile</a>
-                <a class="chip" href="/dashboard#create">Create Draft</a>
-            </div>
-        </section>
-        {% else %}
-        <section class="panel auth-cta-grid">
-            <article class="auth-cta-card">
-                <h2>Join without leaving the video flow</h2>
-                <p>Account creation and sign-in now live in a popup instead of taking over the entire screen. Open it, close it, and keep browsing instantly.</p>
-                <div class="auth-cta-actions">
-                    <button class="primary-action" type="button" data-open-auth-modal data-auth-target="signup">Create account</button>
-                    <button class="secondary-action" type="button" data-open-auth-modal data-auth-target="login">Sign in</button>
-                </div>
-                <div class="inline-note">Your likes, follows, comments, and voice replies persist once you sign in, but the public feed stays watchable either way.</div>
-            </article>
-            <article class="feature-card">
-                <h3>What unlocks after sign-in</h3>
-                <div class="auth-meta">
-                    <span class="ghost-action">Like and save videos</span>
-                    <span class="ghost-action">Reply by text or voice</span>
-                    <span class="ghost-action">Follow creators</span>
-                    <span class="ghost-action">Keep your creator profile</span>
-                </div>
-            </article>
-        </section>
-        {% endif %}
-    </div>
-
-    {% if not current_user %}
-    <div class="modal-backdrop" data-auth-modal>
-        <div class="modal-card" data-auth-modal-card>
-            <div class="modal-handle"></div>
-            <div class="modal-header">
-                <div>
-                    <h2>Sign in or create account</h2>
-                    <p>Open auth when you need it, then drop straight back into the feed.</p>
-                </div>
-                <button class="close-button" type="button" data-close-auth-modal aria-label="Close overlay">&times;</button>
-            </div>
-            <div class="auth-tabs">
-                <button class="auth-tab active" type="button" data-auth-tab="login">Sign in</button>
-                <button class="auth-tab" type="button" data-auth-tab="signup">Create account</button>
-            </div>
-            <div class="modal-status {% if auth_message %}visible error{% endif %}" data-auth-status>{% if auth_message %}{{ auth_message }}{% endif %}</div>
-            <form class="modal-panel active" data-auth-panel="login" data-auth-form data-auth-endpoint="/login">
-                <input type="email" name="email" placeholder="Email" required autocomplete="email">
-                <div class="password-row">
-                    <input type="password" name="password" placeholder="Password" required data-password-input autocomplete="current-password">
-                    <button class="password-toggle" type="button" data-toggle-password>Show</button>
-                </div>
-                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
-                <button type="submit">Sign in</button>
-            </form>
-            <form class="modal-panel" data-auth-panel="signup" data-auth-form data-auth-endpoint="/signup">
-                <input type="text" name="username" placeholder="Username" required autocomplete="username">
-                <input type="email" name="email" placeholder="Email" required autocomplete="email">
-                <div class="password-row">
-                    <input type="password" name="password" placeholder="Password" required minlength="8" data-password-input autocomplete="new-password">
-                    <button class="password-toggle" type="button" data-toggle-password>Show</button>
-                </div>
-                <div class="password-row">
-                    <input type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" data-password-input autocomplete="new-password">
-                    <button class="password-toggle" type="button" data-toggle-password>Show</button>
-                </div>
-                <label><input type="checkbox" name="remember_me" checked> Keep me signed in</label>
-                <button type="submit">Create account</button>
-            </form>
-        </div>
-    </div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    {% if featured_public_video and featured_public_video.video_url %}
+    <video src="{{ featured_public_video.video_url }}" autoplay muted loop playsinline></video>
+    {% else %}
+    <div class="hero-bg-static"></div>
     {% endif %}
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="hero-badge-dot"></span> Live from Durban &amp; beyond</div>
+    <h1 class="hero-title">Your view.<br><span>Your voice.</span></h1>
+    <p class="hero-sub">Short videos. Voice replies. Real conversations from across Africa.</p>
+    <div class="cta-group">
+      <button class="btn-primary-cta" onclick="openAuth('signup')">Get started — it's free</button>
+      <button class="btn-google-cta" onclick="location.href='/auth/google'">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+    <p class="sign-in-link">Already have an account? <a href="#" onclick="openAuth('login');return false">Sign in</a></p>
+  </div>
+</section>
 
-    <script>
-        const authModal = document.querySelector('[data-auth-modal]');
-        const authModalCard = document.querySelector('[data-auth-modal-card]');
-        const authStatus = document.querySelector('[data-auth-status]');
-        let authGesture = null;
-        let overlayHistoryDepth = 0;
+<!-- VIDEO PREVIEW STRIP -->
+{% if public_videos %}
+<section class="preview-strip">
+  <h2>Trending now</h2>
+  <div class="video-row">
+    {% for v in public_videos %}
+    <a class="preview-thumb" href="/video/{{ v.id }}">
+      {% if v.thumbnail_url %}
+      <img src="{{ v.thumbnail_url }}" loading="lazy" alt="{{ v.title }}">
+      {% else %}
+      <div class="preview-thumb-ph">🎬</div>
+      {% endif %}
+      <span class="preview-views">▶ {{ v.views }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
-        const setAuthStatus = (message = '', tone = 'error') => {
-            if (!authStatus) {
-                return;
-            }
-            authStatus.textContent = message;
-            authStatus.classList.toggle('visible', Boolean(message));
-            authStatus.classList.toggle('error', tone === 'error');
-            authStatus.classList.toggle('success', tone === 'success');
-        };
+<!-- FEATURES -->
+<section class="features">
+  <p class="feat-title">Why MV Pulse</p>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🎬</div>
+      <p class="feat-label">Full-screen video feed</p>
+      <p class="feat-desc">Swipe through videos that matter to you</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎤</div>
+      <p class="feat-label">Voice replies</p>
+      <p class="feat-desc">Respond with your actual voice — not just text</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔥</div>
+      <p class="feat-label">Hot threads</p>
+      <p class="feat-desc">AI-ranked conversations heating up right now</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📍</div>
+      <p class="feat-label">Local first</p>
+      <p class="feat-desc">Content from Durban, Joburg, Cape Town &amp; more</p>
+    </div>
+  </div>
+</section>
 
-        const showAuthPanel = (target) => {
-            document.querySelectorAll('[data-auth-tab]').forEach((button) => {
-                button.classList.toggle('active', button.dataset.authTab === target);
-            });
-            document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
-                panel.classList.toggle('active', panel.dataset.authPanel === target);
-            });
-            document.querySelector(`[data-auth-panel="${target}"] input`)?.focus({ preventScroll: true });
-        };
+<!-- BOTTOM CTA -->
+<section class="bottom-cta">
+  <h2>Join the conversation</h2>
+  <p>Thousands of creators are sharing their view right now.</p>
+  <button class="btn-join" onclick="openAuth('signup')">Create account</button>
+</section>
 
-        const openAuthModal = (target = 'login') => {
-            if (!authModal) {
-                return;
-            }
-            authModal.classList.add('active');
-            document.body.classList.add('overlay-open');
-            showAuthPanel(target);
-            window.history.pushState({ overlay: true }, '');
-            overlayHistoryDepth += 1;
-        };
+<footer class="site-footer">© 2026 MV Pulse · <a href="/feed" style="color:inherit">Explore videos</a></footer>
 
-        const hardCloseAuthModal = () => {
-            if (!authModal) {
-                return;
-            }
-            authModal.classList.remove('active');
-            document.body.classList.remove('overlay-open');
-        };
+<!-- AUTH PANEL (slide-up) -->
+<div class="auth-overlay" id="auth-overlay" onclick="handleOverlayClick(event)">
+  <div class="auth-panel" id="auth-panel">
+    <div class="auth-handle"></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    {% if auth_message %}<div class="aerr">{{ auth_message }}</div>{% endif %}
+    <a class="gbtn" href="/auth/google">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </a>
+    <div class="adiv">or</div>
+    <!-- Login form -->
+    <form id="login-form" action="/login" method="POST">
+      <input type="hidden" name="remember_me" value="true">
+      <div class="aform-wrap">
+        <input class="ainput" name="email" type="email" placeholder="Email" required autocomplete="email">
+        <input class="ainput" name="password" type="password" placeholder="Password" required autocomplete="current-password">
+        <button class="asub" type="submit">Sign In</button>
+      </div>
+    </form>
+    <!-- Signup form -->
+    <form id="signup-form" action="/signup" method="POST" style="display:none">
+      <div class="aform-wrap">
+        <input class="ainput" name="username" type="text" placeholder="Username" required autocomplete="username">
+        <input class="ainput" name="email" type="email" placeholder="Email" required autocomplete="email">
+        <input class="ainput" name="password" type="password" placeholder="Password (min 8 chars)" required autocomplete="new-password">
+        <input class="ainput" name="password_confirmation" type="password" placeholder="Confirm password" required>
+        <button class="asub" type="submit">Create Account</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-        const closeAuthModal = () => {
-            if (overlayHistoryDepth > 0) {
-                window.history.back();
-                return;
-            }
-            hardCloseAuthModal();
-        };
-
-        const bindPasswordToggles = (root = document) => {
-            root.querySelectorAll('[data-toggle-password]').forEach((button) => {
-                if (button.dataset.bound === 'true') {
-                    return;
-                }
-                button.dataset.bound = 'true';
-                button.addEventListener('click', () => {
-                    const input = button.parentElement.querySelector('[data-password-input]');
-                    if (!input) {
-                        return;
-                    }
-                    const showing = input.type === 'text';
-                    input.type = showing ? 'password' : 'text';
-                    button.textContent = showing ? 'Show' : 'Hide';
-                });
-            });
-        };
-
-        const requestAuth = async (endpoint, form) => {
-            const payload = Object.fromEntries(new FormData(form).entries());
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'fetch',
-                },
-                body: JSON.stringify(payload),
-            });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok || result.ok === false) {
-                throw new Error(result.error || 'Authentication failed.');
-            }
-            return result;
-        };
-
-        document.querySelectorAll('[data-open-auth-modal]').forEach((button) => {
-            button.addEventListener('click', () => openAuthModal(button.dataset.authTarget || 'login'));
-        });
-
-        document.querySelectorAll('[data-close-auth-modal]').forEach((button) => {
-            button.addEventListener('click', closeAuthModal);
-        });
-
-        document.querySelectorAll('[data-auth-tab]').forEach((button) => {
-            button.addEventListener('click', () => showAuthPanel(button.dataset.authTab));
-        });
-
-        document.querySelectorAll('[data-auth-form]').forEach((form) => {
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const submitButton = form.querySelector('button[type="submit"]');
-                if (submitButton?.dataset.pending === 'true') {
-                    return;
-                }
-                if (submitButton) {
-                    submitButton.dataset.pending = 'true';
-                    submitButton.disabled = true;
-                }
-                setAuthStatus('');
-                try {
-                    await requestAuth(form.dataset.authEndpoint, form);
-                    setAuthStatus('Signed in. Reloading your session...', 'success');
-                    window.location.reload();
-                } catch (error) {
-                    setAuthStatus(error.message || 'Authentication failed.', 'error');
-                } finally {
-                    if (submitButton) {
-                        submitButton.dataset.pending = 'false';
-                        submitButton.disabled = false;
-                    }
-                }
-            });
-        });
-
-        authModal?.addEventListener('click', (event) => {
-            if (event.target === authModal) {
-                closeAuthModal();
-            }
-        });
-
-        authModalCard?.addEventListener('pointerdown', (event) => {
-            if (event.target.closest('input, button, label')) {
-                return;
-            }
-            authGesture = { pointerId: event.pointerId, startY: event.clientY };
-        });
-
-        authModalCard?.addEventListener('pointerup', (event) => {
-            if (!authGesture || authGesture.pointerId !== event.pointerId) {
-                return;
-            }
-            const deltaY = event.clientY - authGesture.startY;
-            authGesture = null;
-            if (deltaY > 110) {
-                closeAuthModal();
-            }
-        });
-
-        authModalCard?.addEventListener('pointercancel', () => {
-            authGesture = null;
-        });
-
-        window.addEventListener('popstate', () => {
-            if (overlayHistoryDepth > 0 && authModal?.classList.contains('active')) {
-                overlayHistoryDepth = Math.max(overlayHistoryDepth - 1, 0);
-                hardCloseAuthModal();
-            }
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                closeAuthModal();
-            }
-        });
-
-        if (authModal && authStatus?.textContent.trim()) {
-            openAuthModal('login');
-        }
-
-        bindPasswordToggles();
-    </script>
-    <script src="/static/pwa.js"></script>
+<script>
+function openAuth(tab){
+  switchAuthTab(tab);
+  document.getElementById('auth-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeAuth(){
+  document.getElementById('auth-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function handleOverlayClick(e){if(e.target===document.getElementById('auth-overlay'))closeAuth();}
+function switchAuthTab(tab){
+  document.getElementById('tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('tab-signup').classList.toggle('active',tab==='signup');
+  document.getElementById('login-form').style.display=tab==='login'?'':'none';
+  document.getElementById('signup-form').style.display=tab==='signup'?'':'none';
+}
+{% if auth_message %}setTimeout(()=>openAuth('login'),200);{% endif %}
+</script>
 </body>
 </html>
