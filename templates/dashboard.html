@@ -44,8 +44,14 @@ a{color:inherit;text-decoration:none}
 #feed{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 #feed::-webkit-scrollbar{display:none}
-.vslide{position:relative;height:100dvh;scroll-snap-align:start;background:#111;overflow:hidden}
-.vslide video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vslide{position:relative;height:100dvh;scroll-snap-align:start;background:#000;overflow:hidden}
+/* blurred backdrop fills the black bars for non-9:16 content */
+.vid-bg{position:absolute;inset:-8%;width:116%;height:116%;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  filter:blur(24px) brightness(.3) saturate(1.5);
+  pointer-events:none;z-index:0;will-change:filter}
+/* actual video: contain so it never stretches or crops */
+.slide-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1}
 .grad-top{position:absolute;top:0;left:0;right:0;height:180px;
   background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);pointer-events:none;z-index:2}
 .grad-bot{position:absolute;bottom:0;left:0;right:0;height:340px;
@@ -567,6 +573,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   initSheetGestures();initUploadInput();initAuthTabs();initCommentTabs();
   if(window.ACTIVE_TAB&&window.ACTIVE_TAB!=='home')switchScreen(window.ACTIVE_TAB);
   if(!navigator.share)document.getElementById('native-share-btn')?.classList.add('hidden');
+  // play first video immediately — don't wait for IntersectionObserver's first tick
+  const firstVid=document.querySelector('.vslide[data-idx="0"] video');
+  if(firstVid&&firstVid.src){firstVid.muted=true;firstVid.play().catch(()=>{});startProgress(0,firstVid);}
 });
 
 // ── TOAST ──
@@ -648,8 +657,12 @@ function renderFeed(){
     } else {
       slide.dataset.videoid=item.id;
       const liked=S.liked.has(item.id),saved=S.saved.has(item.id),hasV=item.video_url&&item.video_url!=='null';
+      const bgImg=item.thumbnail_url?`url('${esc(item.thumbnail_url)}')`:'none';
+      // idx 0: eager src + preload=auto so first frame is ready before user scrolls
+      const isFirst=idx===0;
       slide.innerHTML=`
-        ${hasV?`<video class="slide-vid" preload="metadata" playsinline loop muted data-src="${esc(item.video_url)}"></video>`:''}
+        ${hasV?`<div class="vid-bg" style="background-image:${bgImg}"></div>
+        <video class="slide-vid" ${isFirst?'preload="auto"':'preload="metadata"'} playsinline loop muted ${isFirst?`src="${esc(item.video_url)}"` : `data-src="${esc(item.video_url)}"`}></video>`:''}
         ${!hasV?`<div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">${esc(item.title||'Video')}</p><p class="vplaceholder-sub">${esc(item.caption||'')}</p></div>`:''}
         <div class="grad-top"></div><div class="grad-bot"></div>
         <div class="play-flash" id="pf-${idx}"><div class="play-circle">${SVG.play}</div></div>
@@ -723,7 +736,7 @@ function preloadAdj(idx){
   [1,2,-1].forEach(d=>{
     const next=document.querySelector(`.vslide[data-idx="${idx+d}"]`);
     if(!next)return;const vid=next.querySelector('video');
-    if(vid&&!vid.src&&vid.dataset.src){vid.src=vid.dataset.src;vid.load();}
+    if(vid&&!vid.src&&vid.dataset.src){vid.src=vid.dataset.src;vid.preload='auto';vid.load();}
   });
 }
 
