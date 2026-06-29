@@ -13,182 +13,109 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--accent:#fe2c55;--accent2:#25f4ee;--bg:#000;--surface:#161616;--surface2:#2a2a2a;--border:rgba(255,255,255,.12);--text:#fff;--muted:rgba(255,255,255,.65);--subtle:rgba(255,255,255,.35)}
-html,body{height:100%;background:var(--bg);color:var(--text);
+html,body{height:100%;background:#000;color:#fff;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  -webkit-font-smoothing:antialiased;overflow:hidden}
 button,a{cursor:pointer;border:none;background:none;color:inherit;font:inherit;text-decoration:none}
 input{font:inherit;color:inherit;background:none;border:none;outline:none}
 
-/* ── HERO ── */
-.hero{position:relative;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+/* HERO */
+.hero{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
 .hero-bg{position:absolute;inset:0;z-index:0}
-.hero-bg video{width:100%;height:100%;object-fit:cover;opacity:.45}
-.hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.3) 0%,rgba(0,0,0,.1) 40%,rgba(0,0,0,.75) 80%,rgba(0,0,0,.96) 100%)}
-.hero-bg-static{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(254,44,85,.35),transparent 55%),radial-gradient(ellipse at 70% 80%,rgba(37,244,238,.25),transparent 55%),linear-gradient(180deg,#0a0a0a,#000)}
+.hero-bg video{width:100%;height:100%;object-fit:cover;opacity:.5}
+.hero-bg-static{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(254,44,85,.4),transparent 55%),radial-gradient(ellipse at 70% 80%,rgba(37,244,238,.25),transparent 55%),linear-gradient(180deg,#0a0a0a,#000)}
+.hero-bg::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.15) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.6) 70%,rgba(0,0,0,.95) 100%)}
 
-/* ── TOPBAR ── */
-.site-nav{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100}
-.logo{font-size:22px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-auth{display:flex;gap:10px;align-items:center}
-.btn-login{font-size:14px;font-weight:700;color:var(--text);padding:8px 18px;border-radius:8px;border:1px solid var(--border)}
-.btn-signup-sm{font-size:14px;font-weight:800;color:#fff;padding:8px 18px;border-radius:8px;background:var(--accent)}
+/* BRAND — top third */
+.hero-content{position:relative;z-index:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:space-between;height:100%;
+  padding:env(safe-area-inset-top,20px) 0 env(safe-area-inset-bottom,0px)}
+.brand{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:10px;padding-top:32px}
+.logo{font-size:clamp(44px,12vw,72px);font-weight:900;letter-spacing:-2px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1}
+.tagline{font-size:clamp(14px,4vw,18px);font-weight:500;color:rgba(255,255,255,.75);
+  letter-spacing:.5px;text-align:center}
 
-/* ── HERO CONTENT ── */
-.hero-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:100dvh;padding:24px 24px calc(48px + env(safe-area-inset-bottom,0px));text-align:center;gap:20px}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
-.hero-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.hero-title{font-size:clamp(32px,8vw,52px);font-weight:900;line-height:1.1;letter-spacing:-1.5px;max-width:360px}
-.hero-title span{background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero-sub{font-size:16px;color:var(--muted);line-height:1.5;max-width:300px}
-.cta-group{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
-.btn-primary-cta{background:var(--accent);color:#fff;font-size:17px;font-weight:800;padding:17px 24px;border-radius:12px;text-align:center;width:100%;letter-spacing:.2px}
-.btn-google-cta{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;font-size:15px;font-weight:700;padding:15px 24px;border-radius:12px;width:100%}
-.btn-google-cta svg{flex-shrink:0}
-.cta-divider{display:flex;align-items:center;gap:10px;color:var(--subtle);font-size:12px;width:100%;max-width:340px}
-.cta-divider::before,.cta-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.sign-in-link{font-size:14px;color:var(--muted);margin-top:4px}
-.sign-in-link a{color:var(--text);font-weight:700}
+/* CTA STACK — bottom */
+.cta-stack{width:100%;max-width:360px;padding:0 24px calc(32px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;gap:12px}
+.btn-primary{background:var(--accent);color:#fff;font-size:17px;font-weight:800;
+  padding:17px 24px;border-radius:14px;text-align:center;width:100%;
+  transition:transform .1s,opacity .1s}
+.btn-primary:active{transform:scale(.97);opacity:.9}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;
+  background:#fff;color:#333;font-size:15px;font-weight:700;
+  padding:15px 24px;border-radius:14px;width:100%;
+  transition:transform .1s,opacity .1s}
+.btn-google:active{transform:scale(.97);opacity:.9}
+.btn-google svg{flex-shrink:0}
+.signin-row{text-align:center;font-size:14px;color:rgba(255,255,255,.55);padding-top:4px}
+.signin-row button{color:#fff;font-weight:700;font-size:14px}
 
-/* ── AUTH OVERLAY ── */
-.auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+/* AUTH SLIDE-UP */
+.auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  z-index:200;display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s}
 .auth-overlay.open{opacity:1;pointer-events:all}
-.auth-panel{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.auth-panel{background:var(--surface);border-radius:24px 24px 0 0;
+  width:100%;max-width:480px;padding:12px 24px calc(24px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;gap:12px;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
 .auth-overlay.open .auth-panel{transform:translateY(0)}
-.auth-handle{width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 8px}
-.auth-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px}
-.auth-tab{flex:1;text-align:center;padding:11px;font-size:15px;font-weight:800;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
-.auth-tab.active{color:var(--text);border-bottom-color:var(--accent)}
-.aerr{background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ff6b6b}
-.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;font-size:15px;font-weight:700;padding:14px;border-radius:12px;width:100%}
+.auth-handle{width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 4px}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:2px}
+.auth-tab{flex:1;text-align:center;padding:11px;font-size:15px;font-weight:800;
+  color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
+.auth-tab.active{color:#fff;border-bottom-color:var(--accent)}
+.aerr{background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.3);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:#ff6b6b}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;
+  background:#fff;color:#333;font-size:15px;font-weight:700;padding:14px;border-radius:12px}
+.gbtn:active{transform:scale(.97)}
 .adiv{display:flex;align-items:center;gap:10px;color:var(--subtle);font-size:12px}
 .adiv::before,.adiv::after{content:'';flex:1;height:1px;background:var(--border)}
-.ainput{display:block;background:var(--surface2);border-radius:10px;padding:14px 16px;font-size:15px;color:var(--text);width:100%}
+.ainput{display:block;background:var(--surface2);border-radius:10px;
+  padding:14px 16px;font-size:15px;color:#fff;width:100%}
 .ainput::placeholder{color:var(--subtle)}
-.asub{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px;border-radius:12px;width:100%;text-align:center;display:block}
+.asub{background:var(--accent);color:#fff;font-size:16px;font-weight:800;
+  padding:16px;border-radius:12px;width:100%;text-align:center;display:block}
+.asub:active{transform:scale(.97)}
 .aform-wrap{display:flex;flex-direction:column;gap:10px}
-
-/* ── FEATURES STRIP ── */
-.features{background:var(--surface);padding:32px 20px;display:flex;flex-direction:column;gap:20px}
-.feat-title{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--accent);text-transform:uppercase;text-align:center}
-.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.feat-card{background:var(--surface2);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px}
-.feat-icon{font-size:28px}
-.feat-label{font-size:14px;font-weight:800;line-height:1.2}
-.feat-desc{font-size:12px;color:var(--muted);line-height:1.4}
-
-/* ── VIDEO PREVIEW STRIP ── */
-.preview-strip{padding:24px 20px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
-.preview-strip h2{font-size:18px;font-weight:900}
-.video-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
-.video-row::-webkit-scrollbar{display:none}
-.preview-thumb{flex-shrink:0;width:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;aspect-ratio:9/16;background:var(--surface2)}
-.preview-thumb img{width:100%;height:100%;object-fit:cover}
-.preview-thumb-ph{width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:28px}
-.preview-views{position:absolute;bottom:6px;left:6px;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
-
-/* ── BOTTOM CTA ── */
-.bottom-cta{background:linear-gradient(135deg,#1a0a2e,#0d1117);padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
-.bottom-cta h2{font-size:24px;font-weight:900}
-.bottom-cta p{font-size:14px;color:var(--muted);max-width:280px;line-height:1.5}
-.btn-join{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px 36px;border-radius:28px;display:inline-block}
-.site-footer{background:#000;padding:16px 20px;text-align:center;font-size:12px;color:var(--subtle);border-top:1px solid var(--border)}
 </style>
 </head>
 <body>
-{% if current_user %}
-<script>location.replace('/feed');</script>
-{% endif %}
-
-<!-- NAV -->
-<nav class="site-nav">
-  <a class="logo" href="/">MV Pulse</a>
-  <div class="nav-auth">
-    <button class="btn-login" onclick="openAuth('login')">Log in</button>
-    <button class="btn-signup-sm" onclick="openAuth('signup')">Sign up</button>
-  </div>
-</nav>
+{% if current_user %}<script>location.replace('/feed');</script>{% endif %}
 
 <!-- HERO -->
-<section class="hero">
+<div class="hero">
   <div class="hero-bg">
     {% if featured_public_video and featured_public_video.video_url %}
     <video src="{{ featured_public_video.video_url }}" autoplay muted loop playsinline></video>
-    {% else %}
-    <div class="hero-bg-static"></div>
     {% endif %}
+    <div class="hero-bg-static"></div>
   </div>
   <div class="hero-content">
-    <div class="hero-badge"><span class="hero-badge-dot"></span> Live from Durban &amp; beyond</div>
-    <h1 class="hero-title">Your view.<br><span>Your voice.</span></h1>
-    <p class="hero-sub">Short videos. Voice replies. Real conversations from across Africa.</p>
-    <div class="cta-group">
-      <button class="btn-primary-cta" onclick="openAuth('signup')">Get started — it's free</button>
-      <button class="btn-google-cta" onclick="location.href='/auth/google'">
+    <div class="brand">
+      <h1 class="logo">MV Pulse</h1>
+      <p class="tagline">Voice. Video. Africa.</p>
+    </div>
+    <div class="cta-stack">
+      <button class="btn-primary" onclick="openAuth('signup')">Get Started</button>
+      <a class="btn-google" href="/auth/google">
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
         Continue with Google
-      </button>
-    </div>
-    <p class="sign-in-link">Already have an account? <a href="#" onclick="openAuth('login');return false">Sign in</a></p>
-  </div>
-</section>
-
-<!-- VIDEO PREVIEW STRIP -->
-{% if public_videos %}
-<section class="preview-strip">
-  <h2>Trending now</h2>
-  <div class="video-row">
-    {% for v in public_videos %}
-    <a class="preview-thumb" href="/video/{{ v.id }}">
-      {% if v.thumbnail_url %}
-      <img src="{{ v.thumbnail_url }}" loading="lazy" alt="{{ v.title }}">
-      {% else %}
-      <div class="preview-thumb-ph">🎬</div>
-      {% endif %}
-      <span class="preview-views">▶ {{ v.views }}</span>
-    </a>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
-<!-- FEATURES -->
-<section class="features">
-  <p class="feat-title">Why MV Pulse</p>
-  <div class="feat-grid">
-    <div class="feat-card">
-      <div class="feat-icon">🎬</div>
-      <p class="feat-label">Full-screen video feed</p>
-      <p class="feat-desc">Swipe through videos that matter to you</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🎤</div>
-      <p class="feat-label">Voice replies</p>
-      <p class="feat-desc">Respond with your actual voice — not just text</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🔥</div>
-      <p class="feat-label">Hot threads</p>
-      <p class="feat-desc">AI-ranked conversations heating up right now</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">📍</div>
-      <p class="feat-label">Local first</p>
-      <p class="feat-desc">Content from Durban, Joburg, Cape Town &amp; more</p>
+      </a>
+      <p class="signin-row">Already have an account? <button type="button" onclick="openAuth('login')">Log in</button></p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- BOTTOM CTA -->
-<section class="bottom-cta">
-  <h2>Join the conversation</h2>
-  <p>Thousands of creators are sharing their view right now.</p>
-  <button class="btn-join" onclick="openAuth('signup')">Create account</button>
-</section>
-
-<footer class="site-footer">© 2026 MV Pulse · <a href="/feed" style="color:inherit">Explore videos</a></footer>
-
-<!-- AUTH PANEL (slide-up) -->
+<!-- AUTH SLIDE-UP -->
 <div class="auth-overlay" id="auth-overlay" onclick="handleOverlayClick(event)">
   <div class="auth-panel" id="auth-panel">
     <div class="auth-handle"></div>
@@ -202,7 +129,6 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
       Continue with Google
     </a>
     <div class="adiv">or</div>
-    <!-- Login form -->
     <form id="login-form" action="/login" method="POST">
       <input type="hidden" name="remember_me" value="true">
       <div class="aform-wrap">
@@ -211,7 +137,6 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
         <button class="asub" type="submit">Sign In</button>
       </div>
     </form>
-    <!-- Signup form -->
     <form id="signup-form" action="/signup" method="POST" style="display:none">
       <div class="aform-wrap">
         <input class="ainput" name="username" type="text" placeholder="Username" required autocomplete="username">
@@ -228,11 +153,9 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
 function openAuth(tab){
   switchAuthTab(tab);
   document.getElementById('auth-overlay').classList.add('open');
-  document.body.style.overflow='hidden';
 }
 function closeAuth(){
   document.getElementById('auth-overlay').classList.remove('open');
-  document.body.style.overflow='';
 }
 function handleOverlayClick(e){if(e.target===document.getElementById('auth-overlay'))closeAuth();}
 function switchAuthTab(tab){
