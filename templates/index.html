@@ -10,6 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/static/icons/mv-icon.svg" type="image/svg+xml">
 <title>MV Pulse — Voice-first video from Africa</title>
+<script src="/static/pwa.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--accent:#fe2c55;--accent2:#25f4ee;--bg:#000;--surface:#161616;--surface2:#2a2a2a;--border:rgba(255,255,255,.12);--text:#fff;--muted:rgba(255,255,255,.65);--subtle:rgba(255,255,255,.35)}
@@ -55,6 +56,13 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
 .btn-google svg{flex-shrink:0}
 .signin-row{text-align:center;font-size:14px;color:rgba(255,255,255,.55);padding-top:4px}
 .signin-row button{color:#fff;font-weight:700;font-size:14px}
+.btn-install{display:flex;align-items:center;justify-content:center;gap:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;
+  font-size:15px;font-weight:700;padding:15px 24px;border-radius:14px;width:100%;
+  transition:transform .1s,opacity .1s}
+.btn-install:active{transform:scale(.97);opacity:.9}
+.btn-install svg{flex-shrink:0;stroke:var(--accent2)}
+.hidden{display:none!important}
 
 /* AUTH SLIDE-UP */
 .auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);
@@ -105,11 +113,15 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
       <p class="tagline">Voice. Video. Africa.</p>
     </div>
     <div class="cta-stack">
-      <button class="btn-primary" onclick="openAuth('signup')">Get Started</button>
+      <button type="button" class="btn-primary" onclick="openAuth('signup')">Get Started</button>
       <a class="btn-google" href="/auth/google">
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
         Continue with Google
       </a>
+      <button type="button" class="btn-install" data-install-app hidden>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Add to Home Screen
+      </button>
       <p class="signin-row">Already have an account? <button type="button" onclick="openAuth('login')">Log in</button></p>
     </div>
   </div>
@@ -120,8 +132,8 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
   <div class="auth-panel" id="auth-panel">
     <div class="auth-handle"></div>
     <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
-      <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+      <button type="button" class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+      <button type="button" class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
     </div>
     {% if auth_message %}<div class="aerr">{{ auth_message }}</div>{% endif %}
     <a class="gbtn" href="/auth/google">
@@ -137,7 +149,7 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
         <button class="asub" type="submit">Sign In</button>
       </div>
     </form>
-    <form id="signup-form" action="/signup" method="POST" style="display:none">
+    <form id="signup-form" action="/signup" method="POST" class="hidden">
       <div class="aform-wrap">
         <input class="ainput" name="username" type="text" placeholder="Username" required autocomplete="username">
         <input class="ainput" name="email" type="email" placeholder="Email" required autocomplete="email">

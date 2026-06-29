@@ -403,12 +403,36 @@ body.text-xl{font-size:20px}
   text-align:center;transition:all .2s;cursor:pointer}
 .set-chip.active{border-color:var(--accent);color:var(--text);background:rgba(254,44,85,.1)}
 .set-chip:active{transform:scale(.94)}
+/* INSTALL BANNER */
+#install-bar{position:fixed;bottom:calc(var(--nav)+10px);left:12px;right:12px;z-index:299;
+  background:rgba(10,10,10,.96);border:1px solid rgba(37,244,238,.3);border-radius:16px;
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  box-shadow:0 4px 24px rgba(0,0,0,.5);animation:slideUp .35s ease-out}
+#install-bar[hidden]{display:none!important}
+.ib-icon{font-size:22px;flex-shrink:0}
+.ib-text{flex:1;min-width:0}
+.ib-text b{display:block;font-size:13px;font-weight:800;color:var(--text)}
+.ib-text span{font-size:11px;color:var(--muted)}
+.ib-btn{background:var(--accent2);color:#000;font-size:12px;font-weight:900;
+  padding:8px 14px;border-radius:8px;flex-shrink:0;white-space:nowrap;transition:transform .1s}
+.ib-btn:active{transform:scale(.94)}
+.ib-close{color:var(--muted);font-size:17px;line-height:1;padding:4px 8px;flex-shrink:0}
 /* TOAST */
 #toast{position:fixed;bottom:calc(var(--nav)+16px);left:50%;transform:translateX(-50%) translateY(12px);
-  background:rgba(255,255,255,.15);backdrop-filter:blur(10px);color:#fff;font-size:13px;font-weight:700;
+  background:rgba(255,255,255,.15);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font-size:13px;font-weight:700;
   padding:9px 18px;border-radius:20px;z-index:600;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .hidden{display:none!important}
+/* EXTRACTED INLINE STYLES */
+.uzone-icon{font-size:48px}
+#upload-form{display:flex;flex-direction:column;gap:14px}
+.btn-ghost-block{width:100%}
+.set-chip[data-size="normal"]{font-size:13px}
+.set-chip[data-size="large"]{font-size:16px}
+.set-chip[data-size="xlarge"]{font-size:20px}
+.share-icon-wa{background:#25D366;border-color:#25D366}
+.share-icon-x{background:#000;border-color:#333}
 /* MICRO-ANIMATIONS */
 @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .cmt-item{animation:slideUp .22s ease-out both}
@@ -442,15 +466,15 @@ body.text-xl{font-size:20px}
 <header class="topbar">
   <a class="topbar-logo" href="/">MV</a>
   <div id="topbar-home-center" class="feed-tabs">
-    <button class="feed-tab active" data-feed="for_you">For You</button>
-    <button class="feed-tab" data-feed="following">Following</button>
+    <button type="button" class="feed-tab active" data-feed="for_you">For You</button>
+    <button type="button" class="feed-tab" data-feed="following">Following</button>
   </div>
   <span class="topbar-title hidden" id="topbar-screen-title"></span>
   <div class="topbar-actions">
-    <button class="icon-btn hidden" id="topbar-search-btn" onclick="switchScreen('discover')" aria-label="Search">
+    <button type="button" class="icon-btn hidden" id="topbar-search-btn" onclick="switchScreen('discover')" aria-label="Search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
-    <button class="icon-btn" onclick="openSheet('settings-sheet')" aria-label="Settings">
+    <button type="button" class="icon-btn" onclick="openSheet('settings-sheet')" aria-label="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
@@ -474,12 +498,12 @@ body.text-xl{font-size:20px}
 
   <div class="screen hidden" id="screen-notifs">
     <div class="ntabs-bar">
-      <button class="ntab active" data-kind="all">All</button>
-      <button class="ntab" data-kind="like">Likes</button>
-      <button class="ntab" data-kind="text_comment">Comments</button>
-      <button class="ntab" data-kind="voice_reply">Voice</button>
-      <button class="ntab" data-kind="follow">Followers</button>
-      <button class="ntab" data-kind="mention">Mentions</button>
+      <button type="button" class="ntab active" data-kind="all">All</button>
+      <button type="button" class="ntab" data-kind="like">Likes</button>
+      <button type="button" class="ntab" data-kind="text_comment">Comments</button>
+      <button type="button" class="ntab" data-kind="voice_reply">Voice</button>
+      <button type="button" class="ntab" data-kind="follow">Followers</button>
+      <button type="button" class="ntab" data-kind="mention">Mentions</button>
     </div>
     <div id="notifs-list"></div>
   </div>
@@ -489,24 +513,24 @@ body.text-xl{font-size:20px}
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <button class="nav-btn active" data-screen="home">
+  <button type="button" class="nav-btn active" data-screen="home" aria-label="Home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span class="nav-label">Home</span>
   </button>
-  <button class="nav-btn" data-screen="discover">
+  <button type="button" class="nav-btn" data-screen="discover" aria-label="Discover">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <span class="nav-label">Discover</span>
   </button>
-  <button class="nav-btn" id="create-nav-btn">
+  <button type="button" class="nav-btn" id="create-nav-btn" aria-label="Create">
     <div class="create-pill"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="#000" stroke-width="2.5" stroke-linecap="round"/></svg></div>
     <span class="nav-label">Create</span>
   </button>
-  <button class="nav-btn" data-screen="notifs">
+  <button type="button" class="nav-btn" data-screen="notifs" aria-label="Activity">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     <span class="nbadge hidden" id="notif-badge">0</span>
     <span class="nav-label">Activity</span>
   </button>
-  <button class="nav-btn" data-screen="profile">
+  <button type="button" class="nav-btn" data-screen="profile" aria-label="Profile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     <span class="nav-label">Profile</span>
   </button>
@@ -520,11 +544,11 @@ body.text-xl{font-size:20px}
   <div class="shandle"></div>
   <div class="sheader">
     <div class="stabs" id="comment-tabs">
-      <button class="stab active" data-tab="comments">Comments</button>
-      <button class="stab" data-tab="voice">Voice Replies</button>
+      <button type="button" class="stab active" data-tab="comments">Comments</button>
+      <button type="button" class="stab" data-tab="voice">Voice Replies</button>
     </div>
-    <button class="ai-sum-btn" onclick="toggleAiSummary()" title="AI Summary">✨</button>
-    <button class="sclose" onclick="closeSheet('comments-sheet')">✕</button>
+    <button type="button" class="ai-sum-btn" onclick="toggleAiSummary()" title="AI Summary" aria-label="AI Summary">✨</button>
+    <button type="button" class="sclose" onclick="closeSheet('comments-sheet')" aria-label="Close">✕</button>
   </div>
   <div class="ai-summary-card" id="ai-summary-card">
     <p class="ai-sum-label">✨ AI Discussion Summary</p>
@@ -534,52 +558,52 @@ body.text-xl{font-size:20px}
   <div class="sbody" id="comments-body"></div>
   <div class="sinput">
     <input type="text" id="comment-input" placeholder="Add a comment…" maxlength="280">
-    <button class="mic-btn" onclick="openVoicePanel()">
+    <button type="button" class="mic-btn" onclick="openVoicePanel()" aria-label="Voice reply">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
     </button>
-    <button class="post-cmt-btn" onclick="submitComment()">Post</button>
+    <button type="button" class="post-cmt-btn" onclick="submitComment()">Post</button>
   </div>
 </div>
 
 <!-- VOICE PANEL -->
 <div class="sheet" id="voice-panel">
   <div class="shandle"></div>
-  <div class="sheader"><span class="stitle">Voice Reply</span><button class="sclose" onclick="cancelRecording()">✕</button></div>
+  <div class="sheader"><span class="stitle">Voice Reply</span><button type="button" class="sclose" onclick="cancelRecording()" aria-label="Close">✕</button></div>
   <div class="vpbody" id="vpbody" data-state="idle">
 
     <!-- IDLE: prompt to start -->
     <div class="vstate-idle">
-      <button class="rring" onclick="startRecording()">
+      <button type="button" class="rring" onclick="startRecording()" aria-label="Start recording">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
       </button>
       <p class="rstatus">Tap to record</p>
       <p class="rtimer">00:00</p>
-      <button class="btn-ghost" style="width:100%" onclick="closeSheet('voice-panel')">Cancel</button>
+      <button type="button" class="btn-ghost btn-ghost-block" onclick="closeSheet('voice-panel')">Cancel</button>
     </div>
 
     <!-- RECORDING: timer + stop -->
     <div class="vstate-rec">
-      <button class="rring rec" id="record-ring" onclick="stopRecording()">
+      <button type="button" class="rring rec" id="record-ring" onclick="stopRecording()" aria-label="Stop recording">
         <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       </button>
       <p class="rstatus">🎙 Recording…</p>
       <p class="rtimer" id="record-timer">00:00</p>
       <div class="vactions">
-        <button class="btn-ghost" onclick="cancelRecording()">Cancel</button>
-        <button class="btn-stop" onclick="stopRecording()">■ Stop</button>
+        <button type="button" class="btn-ghost" onclick="cancelRecording()">Cancel</button>
+        <button type="button" class="btn-stop" onclick="stopRecording()">■ Stop</button>
       </div>
     </div>
 
     <!-- DONE: preview before sending -->
     <div class="vstate-done">
-      <button class="rring done" id="playback-ring" onclick="togglePlayback()">
+      <button type="button" class="rring done" id="playback-ring" onclick="togglePlayback()" aria-label="Play preview">
         <svg id="pb-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
       </button>
       <p class="rstatus" id="playback-status">Tap to preview</p>
       <p class="rtimer" id="playback-duration">00:00</p>
       <div class="vactions">
-        <button class="btn-ghost" onclick="reRecord()">↺ Re-record</button>
-        <button class="btn-red" id="send-voice-btn" onclick="sendVoiceReply()">Send ↑</button>
+        <button type="button" class="btn-ghost" onclick="reRecord()">↺ Re-record</button>
+        <button type="button" class="btn-red" id="send-voice-btn" onclick="sendVoiceReply()">Send ↑</button>
       </div>
     </div>
 
@@ -589,25 +613,25 @@ body.text-xl{font-size:20px}
 <!-- UPLOAD MODAL -->
 <div class="sheet" id="upload-modal">
   <div class="shandle"></div>
-  <div class="sheader"><span class="stitle">Create Post</span><button class="sclose" onclick="closeSheet('upload-modal')">✕</button></div>
+  <div class="sheader"><span class="stitle">Create Post</span><button type="button" class="sclose" onclick="closeSheet('upload-modal')" aria-label="Close">✕</button></div>
   <div class="ubody">
     <div class="uzone" id="upload-zone">
-      <div style="font-size:48px">📹</div>
+      <div class="uzone-icon">📹</div>
       <p>Add a video to share</p>
-      <button class="btn-sel" onclick="document.getElementById('vid-file').click()">Select Video</button>
+      <button type="button" class="btn-sel" onclick="document.getElementById('vid-file').click()">Select Video</button>
     </div>
-    <div id="upload-form" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+    <div id="upload-form" class="hidden">
       <video class="uprev" id="upload-preview" controls muted playsinline></video>
       <div class="ufield"><label class="ulabel">Title *</label><input class="uinput" id="up-title" placeholder="Give your video a title…"></div>
       <div class="ufield"><label class="ulabel">Caption</label><input class="uinput" id="up-caption" placeholder="Describe your video…"></div>
       <div class="ufield"><label class="ulabel">Topic</label>
-        <select class="usel" id="up-topic"><option value="general">General</option><option value="sports">Sports</option><option value="music">Music</option><option value="comedy">Comedy</option><option value="news">News</option><option value="education">Education</option></select></div>
+        <select class="usel" id="up-topic" aria-label="Topic"><option value="general">General</option><option value="sports">Sports</option><option value="music">Music</option><option value="comedy">Comedy</option><option value="news">News</option><option value="education">Education</option></select></div>
       <div class="ufield"><label class="ulabel">Region</label>
-        <select class="usel" id="up-region"><option value="Durban">Durban</option><option value="Johannesburg">Johannesburg</option><option value="Cape Town">Cape Town</option><option value="Pretoria">Pretoria</option><option value="Other">Other</option></select></div>
-      <button class="btn-post" id="upload-submit" onclick="submitUpload()">Post Video</button>
+        <select class="usel" id="up-region" aria-label="Region"><option value="Durban">Durban</option><option value="Johannesburg">Johannesburg</option><option value="Cape Town">Cape Town</option><option value="Pretoria">Pretoria</option><option value="Other">Other</option></select></div>
+      <button type="button" class="btn-post" id="upload-submit" onclick="submitUpload()">Post Video</button>
     </div>
   </div>
-  <input type="file" id="vid-file" accept="video/*" style="display:none">
+  <input type="file" id="vid-file" accept="video/*" class="hidden">
 </div>
 
 <!-- AUTH MODAL -->
@@ -615,8 +639,8 @@ body.text-xl{font-size:20px}
   <div class="shandle"></div>
   <div class="abody">
     <div class="atabs">
-      <button class="atab active" data-aform="login">Sign In</button>
-      <button class="atab" data-aform="signup">Sign Up</button>
+      <button type="button" class="atab active" data-aform="login">Sign In</button>
+      <button type="button" class="atab" data-aform="signup">Sign Up</button>
     </div>
     {% if auth_message %}<div class="aerr">{{ auth_message }}</div>{% endif %}
     <a class="gbtn" href="/auth/google">
@@ -658,36 +682,36 @@ body.text-xl{font-size:20px}
 <!-- REPORT SHEET -->
 <div class="sheet" id="report-sheet">
   <div class="shandle"></div>
-  <div class="sheader"><span class="stitle">Report video</span><button class="sclose" onclick="closeSheet('report-sheet')">✕</button></div>
+  <div class="sheader"><span class="stitle">Report video</span><button type="button" class="sclose" onclick="closeSheet('report-sheet')" aria-label="Close">✕</button></div>
   <div class="report-chips">
-    <button class="rchip" onclick="submitReport('spam')">Spam or misleading</button>
-    <button class="rchip" onclick="submitReport('inappropriate')">Inappropriate content</button>
-    <button class="rchip" onclick="submitReport('harassment')">Harassment or bullying</button>
-    <button class="rchip" onclick="submitReport('misinformation')">Misinformation</button>
-    <button class="rchip" onclick="submitReport('copyright')">Copyright violation</button>
-    <button class="rchip" onclick="submitReport('other')">Something else</button>
+    <button type="button" class="rchip" onclick="submitReport('spam')">Spam or misleading</button>
+    <button type="button" class="rchip" onclick="submitReport('inappropriate')">Inappropriate content</button>
+    <button type="button" class="rchip" onclick="submitReport('harassment')">Harassment or bullying</button>
+    <button type="button" class="rchip" onclick="submitReport('misinformation')">Misinformation</button>
+    <button type="button" class="rchip" onclick="submitReport('copyright')">Copyright violation</button>
+    <button type="button" class="rchip" onclick="submitReport('other')">Something else</button>
   </div>
 </div>
 
 <!-- SETTINGS SHEET -->
 <div class="sheet" id="settings-sheet">
   <div class="shandle"></div>
-  <div class="sheader"><span class="stitle">Settings</span><button class="sclose" onclick="closeSheet('settings-sheet')">✕</button></div>
+  <div class="sheader"><span class="stitle">Settings</span><button type="button" class="sclose" onclick="closeSheet('settings-sheet')" aria-label="Close">✕</button></div>
   <div class="settings-body">
     <div class="set-section">
       <p class="set-lbl">Theme</p>
       <div class="set-row">
-        <button class="set-chip active" data-theme="dark" onclick="applyTheme('dark')">🌙 Dark</button>
-        <button class="set-chip" data-theme="light" onclick="applyTheme('light')">☀️ Light</button>
-        <button class="set-chip" data-theme="hi-contrast" onclick="applyTheme('hi-contrast')">◐ Contrast</button>
+        <button type="button" class="set-chip active" data-theme="dark" onclick="applyTheme('dark')">🌙 Dark</button>
+        <button type="button" class="set-chip" data-theme="light" onclick="applyTheme('light')">☀️ Light</button>
+        <button type="button" class="set-chip" data-theme="hi-contrast" onclick="applyTheme('hi-contrast')">◐ Contrast</button>
       </div>
     </div>
     <div class="set-section">
       <p class="set-lbl">Text size</p>
       <div class="set-row">
-        <button class="set-chip active" data-size="normal" onclick="applyTextSize('normal')" style="font-size:13px">A</button>
-        <button class="set-chip" data-size="large" onclick="applyTextSize('large')" style="font-size:16px">A</button>
-        <button class="set-chip" data-size="xlarge" onclick="applyTextSize('xlarge')" style="font-size:20px">A</button>
+        <button type="button" class="set-chip active" data-size="normal" onclick="applyTextSize('normal')">A</button>
+        <button type="button" class="set-chip" data-size="large" onclick="applyTextSize('large')">A</button>
+        <button type="button" class="set-chip" data-size="xlarge" onclick="applyTextSize('xlarge')">A</button>
       </div>
     </div>
   </div>
@@ -696,25 +720,36 @@ body.text-xl{font-size:20px}
 <!-- SHARE SHEET -->
 <div class="sheet" id="share-sheet">
   <div class="shandle"></div>
-  <div class="sheader"><span class="stitle">Share</span><button onclick="closeSheet('share-sheet')">✕</button></div>
+  <div class="sheader"><span class="stitle">Share</span><button type="button" onclick="closeSheet('share-sheet')" aria-label="Close">✕</button></div>
   <div class="share-body">
-    <button class="share-opt" onclick="shareOpt('copy')">
+    <button type="button" class="share-opt" onclick="shareOpt('copy')">
       <div class="share-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
       <span>Copy Link</span>
     </button>
-    <button class="share-opt" onclick="shareOpt('whatsapp')">
-      <div class="share-icon" style="background:#25D366;border-color:#25D366"><svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.96 9.96 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg></div>
+    <button type="button" class="share-opt" onclick="shareOpt('whatsapp')">
+      <div class="share-icon share-icon-wa"><svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.96 9.96 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg></div>
       <span>WhatsApp</span>
     </button>
-    <button class="share-opt" onclick="shareOpt('twitter')">
-      <div class="share-icon" style="background:#000;border-color:#333"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+    <button type="button" class="share-opt" onclick="shareOpt('twitter')">
+      <div class="share-icon share-icon-x"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
       <span>Post to X</span>
     </button>
-    <button class="share-opt" id="native-share-btn" onclick="shareOpt('native')">
+    <button type="button" class="share-opt" id="native-share-btn" onclick="shareOpt('native')">
       <div class="share-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
       <span>More</span>
     </button>
   </div>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="install-bar" hidden>
+  <span class="ib-icon">📲</span>
+  <div class="ib-text">
+    <b>Get the App</b>
+    <span>Install MV Pulse for the best experience</span>
+  </div>
+  <button type="button" class="ib-btn" id="pwa-install-btn">Install</button>
+  <button type="button" class="ib-close" onclick="dismissInstall()">✕</button>
 </div>
 
 <div id="toast"></div>
@@ -1554,6 +1589,29 @@ function initAuthTabs(){
   }));
   {% if not current_user and auth_message %}setTimeout(()=>openSheet('auth-modal'),200);{% endif %}
 }
+
+// ── PWA INSTALL ──
+(()=>{
+  let _prompt=null;
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  const bar=document.getElementById('install-bar');
+  const btn=document.getElementById('pwa-install-btn');
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();_prompt=e;
+    if(!sessionStorage.getItem('mvp_no_install')&&bar)bar.removeAttribute('hidden');
+  });
+  window.addEventListener('appinstalled',()=>{_prompt=null;bar?.setAttribute('hidden','');});
+  btn?.addEventListener('click',async()=>{
+    if(!_prompt)return;
+    _prompt.prompt();
+    await _prompt.userChoice.catch(()=>null);
+    _prompt=null;bar?.setAttribute('hidden','');
+  });
+  window.dismissInstall=function(){
+    bar?.setAttribute('hidden','');
+    sessionStorage.setItem('mvp_no_install','1');
+  };
+})();
 </script>
 </body>
 </html>
