@@ -190,6 +190,54 @@ a{color:inherit;text-decoration:none}
 .mic-btn{width:34px;height:34px;border-radius:50%;background:var(--surface2);
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .mic-btn svg{width:16px;height:16px;fill:var(--muted)}
+/* AI SUMMARY */
+.ai-sum-btn{width:30px;height:30px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+  transition:transform .15s}
+.ai-sum-btn:active{transform:scale(.88)}
+.ai-summary-card{margin:0 16px 4px;background:var(--surface2);border-radius:14px;padding:14px 16px;
+  border-left:3px solid var(--accent2);display:none;flex-shrink:0}
+.ai-summary-card.vis{display:block}
+.ai-sum-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+  color:var(--accent2);margin-bottom:8px}
+.ai-sum-text{font-size:13px;line-height:1.6;color:var(--muted)}
+.ai-sum-dots{display:flex;gap:6px;align-items:center;padding:4px 0}
+.ai-sum-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);
+  animation:ai-blink 1.2s ease-in-out infinite}
+.ai-sum-dot:nth-child(2){animation-delay:.22s}
+.ai-sum-dot:nth-child(3){animation-delay:.44s}
+@keyframes ai-blink{0%,100%{opacity:.2}50%{opacity:1}}
+/* VOICE IDENTITY BADGE */
+.voice-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(37,244,238,.12);
+  border:1px solid rgba(37,244,238,.3);border-radius:20px;padding:3px 8px;
+  font-size:10px;font-weight:800;color:var(--accent2)}
+/* CAPTIONS */
+.cc-btn{position:absolute;top:calc(var(--top)+52px);right:12px;z-index:10;
+  width:34px;height:20px;border-radius:4px;background:rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.3);font-size:10px;font-weight:800;color:rgba(255,255,255,.7);
+  display:flex;align-items:center;justify-content:center;letter-spacing:.5px}
+.cc-btn.on{background:var(--accent2);color:#000;border-color:var(--accent2)}
+.cc-bar{position:absolute;bottom:calc(var(--nav)+68px);left:12px;right:80px;z-index:11;
+  background:rgba(0,0,0,.82);border-radius:8px;padding:9px 12px;font-size:13px;
+  line-height:1.5;color:#fff;display:none;pointer-events:none}
+.cc-bar.vis{display:block}
+/* OPTIONS / REPORT */
+#options-sheet{max-height:300px}
+#report-sheet{max-height:440px}
+.opt-list{display:flex;flex-direction:column;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+.opt-item{display:flex;align-items:center;gap:16px;padding:16px 20px;font-size:15px;
+  font-weight:600;cursor:pointer;transition:background .12s}
+.opt-item:active{background:var(--surface2)}
+.opt-icon{font-size:20px;width:28px;text-align:center}
+.opt-item.danger{color:var(--accent)}
+.report-chips{display:flex;flex-direction:column;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+.rchip{padding:16px 20px;font-size:15px;font-weight:600;text-align:left;
+  border-bottom:1px solid var(--border);transition:background .12s;cursor:pointer}
+.rchip:active{background:var(--surface2)}
+.rchip:last-child{border-bottom:none}
+/* OPTIONS DOT BUTTON */
+.options-dot{margin-left:auto;font-size:20px;padding:4px 8px;color:rgba(255,255,255,.65);
+  letter-spacing:2px;line-height:1;flex-shrink:0}
 /* VOICE PANEL */
 #voice-panel{max-height:500px}
 .vpbody{display:flex;flex-direction:column;align-items:center;flex:1}
@@ -475,7 +523,13 @@ body.text-xl{font-size:20px}
       <button class="stab active" data-tab="comments">Comments</button>
       <button class="stab" data-tab="voice">Voice Replies</button>
     </div>
+    <button class="ai-sum-btn" onclick="toggleAiSummary()" title="AI Summary">✨</button>
     <button class="sclose" onclick="closeSheet('comments-sheet')">✕</button>
+  </div>
+  <div class="ai-summary-card" id="ai-summary-card">
+    <p class="ai-sum-label">✨ AI Discussion Summary</p>
+    <div class="ai-sum-dots" id="ai-sum-loading"><div class="ai-sum-dot"></div><div class="ai-sum-dot"></div><div class="ai-sum-dot"></div></div>
+    <p class="ai-sum-text hidden" id="ai-sum-text"></p>
   </div>
   <div class="sbody" id="comments-body"></div>
   <div class="sinput">
@@ -590,6 +644,31 @@ body.text-xl{font-size:20px}
   </div>
 </div>
 
+<!-- OPTIONS SHEET -->
+<div class="sheet" id="options-sheet">
+  <div class="shandle"></div>
+  <div class="opt-list">
+    <div class="opt-item danger" onclick="openReportSheet()"><span class="opt-icon">🚩</span>Report this video</div>
+    <div class="opt-item" onclick="blockCreator()"><span class="opt-icon">🚫</span>Block <span id="opt-creator-name">creator</span></div>
+    <div class="opt-item" onclick="muteCreator()"><span class="opt-icon">🔇</span>Mute <span class="opt-creator-ref">creator</span></div>
+    <div class="opt-item" onclick="notInterested()"><span class="opt-icon">🙈</span>Not interested in this</div>
+  </div>
+</div>
+
+<!-- REPORT SHEET -->
+<div class="sheet" id="report-sheet">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Report video</span><button class="sclose" onclick="closeSheet('report-sheet')">✕</button></div>
+  <div class="report-chips">
+    <button class="rchip" onclick="submitReport('spam')">Spam or misleading</button>
+    <button class="rchip" onclick="submitReport('inappropriate')">Inappropriate content</button>
+    <button class="rchip" onclick="submitReport('harassment')">Harassment or bullying</button>
+    <button class="rchip" onclick="submitReport('misinformation')">Misinformation</button>
+    <button class="rchip" onclick="submitReport('copyright')">Copyright violation</button>
+    <button class="rchip" onclick="submitReport('other')">Something else</button>
+  </div>
+</div>
+
 <!-- SETTINGS SHEET -->
 <div class="sheet" id="settings-sheet">
   <div class="shandle"></div>
@@ -660,7 +739,8 @@ const S={screen:'home',feedTab:'for_you',currentIdx:0,muted:false,openSheet:null
   commentVideoId:null,commentTab:'comments',recording:false,mediaRecorder:null,
   recordedChunks:[],recordTimer:null,recordSeconds:0,progressAF:null,
   liked:new Set(),saved:new Set(),shareVideoId:null,
-  voiceState:'idle',playbackAudio:null,playbackPlaying:false};
+  voiceState:'idle',playbackAudio:null,playbackPlaying:false,
+  optionsVideoId:null,optionsCreator:null};
 
 const FEED=window.FEED_ITEMS||[];
 const ME=window.CURRENT_USER;
@@ -778,14 +858,18 @@ function renderFeed(){
         <div class="play-flash" id="pf-${idx}"><div class="play-circle">${SVG.play}</div></div>
         <div class="heart-burst" id="hb-${idx}"><span>❤️</span></div>
         <button class="sound-btn" onclick="toggleMute(event)">${S.muted?SVG.soundOff:SVG.soundOn}</button>
+        <button class="cc-btn" id="ccb-${idx}" onclick="toggleCaptions(${idx},event)">CC</button>
+        <div class="cc-bar" id="cc-${idx}">🌐 Auto-captions — coming soon</div>
         <div class="creator-info">
           <div class="creator-row">
             <div class="cavatar">${fmtInit(item.creator||'?')}</div>
             <span class="cname">@${esc(item.creator_username||item.creator||'unknown')}</span>
             ${item.can_follow_creator?`<button class="follow-pill${item.creator_is_followed?' following':''}" data-creator="${esc(item.creator_username||'')}" onclick="followUser(this,event)">${item.creator_is_followed?'Following':'+ Follow'}</button>`:''}
+            <button class="options-dot" onclick="openOptionsMenu(${item.id},'${esc(item.creator_username||'')}',event)" aria-label="More options">···</button>
           </div>
           <p class="vcaption" onclick="this.classList.toggle('exp')">${esc(item.caption||item.title||'')}</p>
           ${item.topic?`<span class="vtags">#${esc(item.topic)} #${esc(item.region||'')}</span>`:''}
+          ${item.voice_replies>0?`<span class="voice-badge">🎤 ${fmtNum(item.voice_replies)} voice ${item.voice_replies===1?'reply':'replies'}</span>`:''}
         </div>
         <div class="action-bar">
           <button class="abtn" onclick="likeVideo(${item.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count" id="lc-${item.id}">${fmtNum(item.likes)}</span></button>
@@ -942,6 +1026,87 @@ function setSpeed(r,idx,btn){
   document.querySelectorAll(`#sp-${idx} .spd`).forEach(b=>b.classList.remove('active'));btn.classList.add('active');
 }
 
+// ── TRUST & SAFETY ──
+function openOptionsMenu(videoId,creator,e){
+  e?.stopPropagation();
+  S.optionsVideoId=videoId;S.optionsCreator=creator;
+  const label=`@${creator||'creator'}`;
+  document.getElementById('opt-creator-name').textContent=label;
+  document.querySelectorAll('.opt-creator-ref').forEach(el=>el.textContent=label);
+  openSheet('options-sheet');
+}
+
+function openReportSheet(){
+  closeSheet('options-sheet');
+  setTimeout(()=>openSheet('report-sheet'),320);
+}
+
+function submitReport(reason){
+  api('/api/videos/'+(S.optionsVideoId||0)+'/report','POST',{reason}).catch(()=>{});
+  closeSheet('report-sheet');
+  toast('Report submitted — thank you');
+}
+
+function blockCreator(){
+  if(!S.optionsCreator)return;
+  api('/api/profile/'+S.optionsCreator+'/block','POST').catch(()=>{});
+  closeSheet('options-sheet');
+  toast(`@${S.optionsCreator} blocked`);
+}
+
+function muteCreator(){
+  if(!S.optionsCreator)return;
+  api('/api/profile/'+S.optionsCreator+'/mute','POST').catch(()=>{});
+  closeSheet('options-sheet');
+  toast(`@${S.optionsCreator} muted`);
+}
+
+function notInterested(){
+  const slide=document.querySelector(`.vslide[data-videoid="${S.optionsVideoId}"]`);
+  if(slide)slide.style.opacity='0',setTimeout(()=>slide.style.display='none',300);
+  closeSheet('options-sheet');
+  toast('Got it — fewer like this');
+}
+
+// ── CAPTIONS ──
+function toggleCaptions(idx,e){
+  e?.stopPropagation();
+  const bar=document.getElementById('cc-'+idx);
+  const btn=document.getElementById('ccb-'+idx);
+  if(!bar)return;
+  const on=bar.classList.toggle('vis');
+  btn?.classList.toggle('on',on);
+}
+
+// ── AI SUMMARY ──
+let _aiLoaded=false,_aiVideoId=null;
+function toggleAiSummary(){
+  const card=document.getElementById('ai-summary-card');
+  if(!card)return;
+  const wasOpen=card.classList.contains('vis');
+  card.classList.toggle('vis',!wasOpen);
+  if(wasOpen)return;
+  // only fetch if changed video or not yet loaded
+  if(_aiLoaded&&_aiVideoId===S.commentVideoId)return;
+  _aiLoaded=false;_aiVideoId=S.commentVideoId;
+  const loading=document.getElementById('ai-sum-loading');
+  const text=document.getElementById('ai-sum-text');
+  if(loading)loading.classList.remove('hidden');
+  if(text)text.classList.add('hidden');
+  // stub — replace with real API call when backend is ready
+  setTimeout(()=>{
+    _aiLoaded=true;
+    if(_aiVideoId!==S.commentVideoId)return;
+    const summaries=[
+      'Most commenters love this video. The voice replies add rich personal perspectives — listeners are asking follow-up questions and debating the main points raised.',
+      'This video sparked a lively discussion. People are sharing personal experiences and the voice replies carry a lot of emotion that text comments often miss.',
+      'The discussion is broadly positive with some healthy debate. Several voice replies highlight points the creator didn\'t mention — worth a listen.'
+    ];
+    if(loading)loading.classList.add('hidden');
+    if(text){text.textContent=summaries[Math.floor(Math.random()*summaries.length)];text.classList.remove('hidden');}
+  },1600);
+}
+
 // ── COMMENTS ──
 function initCommentTabs(){
   document.querySelectorAll('#comment-tabs .stab').forEach(t=>{
@@ -957,6 +1122,8 @@ function openComments(id){
   btnFeedback(btn?.querySelector('.abtn-icon'),'tap-pop');
   S.commentVideoId=id;S.commentTab='comments';
   document.querySelectorAll('#comment-tabs .stab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  // reset AI summary
+  document.getElementById('ai-summary-card')?.classList.remove('vis');
   openSheet('comments-sheet');loadComments(id);
 }
 
