@@ -8,3 +8,4 @@ instance/
 static/exports/
 static/uploads/
 static/voices/
+.vercel

@@ -51,6 +51,7 @@ from routes.social_utils import (
 )
 from routes.api_responses import auth_required_response, json_error
 from services.thread_heat import record_reply_listen
+from services.storage import InvalidMediaUpload
 
 social_bp = Blueprint("social", __name__)
 VIDEO_FOLDER = "static/uploads/videos"
@@ -204,7 +205,12 @@ def upload():
         session["auth_message"] = "Video title and file are required."
         return redirect(url_for("social.upload"))
 
-    video_url = save_video_file(video_file, VIDEO_FOLDER)
+    try:
+        video_url = save_video_file(video_file, VIDEO_FOLDER)
+    except InvalidMediaUpload as error:
+        session["auth_message"] = str(error)
+        return redirect(url_for("social.upload"))
+
     video = Video(
         creator_id=user.id,
         title=title,
@@ -432,6 +438,70 @@ def follow_profile(username):
     if request.is_json:
         return jsonify(follow_payload(viewer, profile_user, state))
     return redirect(url_for("social.profile", username=profile_user.username))
+
+
+@social_bp.route("/api/videos/<int:id>/report", methods=["POST"])
+def api_videos_report(id):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to report videos.")
+
+    video = Video.query.get_or_404(id)
+    payload = request.get_json(silent=True) or {}
+    reason = (payload.get("reason") or "other").strip()[:50]
+
+    from models.video_report import VideoReport
+    if VideoReport.query.filter_by(reporter_id=viewer.id, video_id=id).first():
+        return jsonify({"ok": True, "already_reported": True})
+
+    db.session.add(VideoReport(reporter_id=viewer.id, video_id=id, reason=reason))
+    video.report_count = (video.report_count or 0) + 1
+    db.session.commit()
+    return jsonify({"ok": True, "report_count": video.report_count})
+
+
+@social_bp.route("/api/profile/<username>/block", methods=["POST"])
+def api_profile_block(username):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to block users.")
+
+    target = User.query.filter_by(username=username).first_or_404()
+    if viewer.id == target.id:
+        return json_error("cannot block yourself", status=400)
+
+    from models.user_block import UserBlock
+    existing = UserBlock.query.filter_by(blocker_id=viewer.id, blocked_id=target.id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({"ok": True, "blocked": False})
+
+    db.session.add(UserBlock(blocker_id=viewer.id, blocked_id=target.id))
+    db.session.commit()
+    return jsonify({"ok": True, "blocked": True})
+
+
+@social_bp.route("/api/profile/<username>/mute", methods=["POST"])
+def api_profile_mute(username):
+    viewer, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to mute users.")
+
+    target = User.query.filter_by(username=username).first_or_404()
+    if viewer.id == target.id:
+        return json_error("cannot mute yourself", status=400)
+
+    from models.user_mute import UserMute
+    existing = UserMute.query.filter_by(muter_id=viewer.id, muted_id=target.id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({"ok": True, "muted": False})
+
+    db.session.add(UserMute(muter_id=viewer.id, muted_id=target.id))
+    db.session.commit()
+    return jsonify({"ok": True, "muted": True})
 
 
 @social_bp.route("/notifications")

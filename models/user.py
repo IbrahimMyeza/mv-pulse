@@ -5,7 +5,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(200), nullable=True)
+    google_id = db.Column(db.String(120), unique=True, nullable=True, index=True)
+    avatar_url = db.Column(db.String(500), nullable=True)
 
     social_profile = db.relationship(
         "UserSocialProfile",

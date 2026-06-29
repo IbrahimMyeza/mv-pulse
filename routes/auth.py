@@ -1,10 +1,36 @@
+import os
+import re
+
 from flask import Blueprint, redirect, request, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
+from authlib.integrations.flask_client import OAuth
 from models.user import User
 from database import db
 from routes.api_responses import auth_required_response, json_error, json_success, wants_json_response
 
 auth_bp = Blueprint("auth", __name__)
+oauth = OAuth()
+
+
+def init_oauth(app):
+    oauth.init_app(app)
+    oauth.register(
+        name="google",
+        client_id=os.getenv("GOOGLE_CLIENT_ID"),
+        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
+
+
+def _generate_username(name, email):
+    base = re.sub(r"[^a-z0-9]", "", (name or email.split("@")[0]).lower())
+    base = base[:20] or "user"
+    username, n = base, 1
+    while User.query.filter_by(username=username).first():
+        username = f"{base}{n}"
+        n += 1
+    return username
 
 
 def _wants_json_response():
@@ -90,9 +116,12 @@ def login():
 
     user = User.query.filter_by(email=email).first()
 
-    if user and check_password_hash(user.password, password):
+    if user and user.password and check_password_hash(user.password, password):
         _login_user(user, remember_login=remember_login)
         return _auth_success_response("login success", user)
+
+    if user and not user.password:
+        return _auth_error_response("this account uses Google sign-in", 401)
 
     return _auth_error_response("invalid credentials", 401)
 
@@ -105,6 +134,52 @@ def logout():
         return json_success(message="logout success")
 
     return redirect(url_for("home"))
+
+
+@auth_bp.route("/auth/google")
+def google_login():
+    redirect_uri = url_for("auth.google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@auth_bp.route("/auth/google/callback")
+def google_callback():
+    try:
+        token = oauth.google.authorize_access_token()
+    except Exception:
+        session["auth_message"] = "Google sign-in was cancelled or failed."
+        return redirect(url_for("home"))
+
+    info = token.get("userinfo") or {}
+    google_id = info.get("sub")
+    email = (info.get("email") or "").lower().strip()
+    name = info.get("name") or info.get("given_name") or ""
+    avatar_url = info.get("picture")
+
+    if not google_id or not email:
+        session["auth_message"] = "Could not retrieve your Google account details."
+        return redirect(url_for("home"))
+
+    user = User.query.filter_by(google_id=google_id).first()
+    if not user:
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.google_id = google_id
+            if avatar_url and not user.avatar_url:
+                user.avatar_url = avatar_url
+        else:
+            user = User(
+                username=_generate_username(name, email),
+                email=email,
+                password=None,
+                google_id=google_id,
+                avatar_url=avatar_url,
+            )
+            db.session.add(user)
+        db.session.commit()
+
+    _login_user(user)
+    return redirect(url_for("dashboard.dashboard"))
 
 
 @auth_bp.route("/api/auth/session", methods=["GET"])

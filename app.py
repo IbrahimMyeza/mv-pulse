@@ -35,9 +35,12 @@ from models.voice_embedding import VoiceEmbedding
 from models.voice_insight import VoiceInsight
 from models.voice_reply import VoiceReply
 from models.voice_room_participant import VoiceRoomParticipant
+from models.video_report import VideoReport
+from models.user_block import UserBlock
+from models.user_mute import UserMute
 
 from routes.voice import voice_bp
-from routes.auth import auth_bp
+from routes.auth import auth_bp, init_oauth
 from routes.monetization import monetization_bp
 from routes.reels import reels_bp
 from routes.social import social_bp
@@ -213,6 +216,51 @@ def _ensure_database_schema():
     app.logger.warning("database.schema_bootstrap completed")
 
 
+def _apply_schema_patches():
+    """Idempotently add columns that were introduced after initial schema creation."""
+    if not app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("postgresql"):
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(sa.text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS google_id VARCHAR(120)'))
+            conn.execute(sa.text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)'))
+            conn.execute(sa.text('ALTER TABLE "user" ALTER COLUMN password DROP NOT NULL'))
+            conn.execute(sa.text(
+                'CREATE UNIQUE INDEX IF NOT EXISTS uq_user_google_id ON "user" (google_id) '
+                'WHERE google_id IS NOT NULL'
+            ))
+            conn.execute(sa.text('''
+                CREATE TABLE IF NOT EXISTS video_report (
+                    id SERIAL PRIMARY KEY,
+                    reporter_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    video_id INTEGER NOT NULL REFERENCES video(id) ON DELETE CASCADE,
+                    reason VARCHAR(50) NOT NULL DEFAULT \'other\',
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_report_pair UNIQUE (reporter_id, video_id)
+                )
+            '''))
+            conn.execute(sa.text('''
+                CREATE TABLE IF NOT EXISTS user_block (
+                    id SERIAL PRIMARY KEY,
+                    blocker_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    blocked_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_block_pair UNIQUE (blocker_id, blocked_id)
+                )
+            '''))
+            conn.execute(sa.text('''
+                CREATE TABLE IF NOT EXISTS user_mute (
+                    id SERIAL PRIMARY KEY,
+                    muter_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    muted_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_mute_pair UNIQUE (muter_id, muted_id)
+                )
+            '''))
+    except Exception:
+        app.logger.exception("schema_patches.failed")
+
+
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "mv-pulse-dev-secret")
@@ -239,9 +287,11 @@ migrate.init_app(app, db)
 _validate_production_services()
 with app.app_context():
     _ensure_database_schema()
+    _apply_schema_patches()
 
 app.register_blueprint(voice_bp)
 app.register_blueprint(auth_bp)
+init_oauth(app)
 app.register_blueprint(monetization_bp)
 app.register_blueprint(reels_bp)
 app.register_blueprint(social_bp)

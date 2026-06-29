@@ -44,7 +44,7 @@ a{color:inherit;text-decoration:none}
 #feed{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 #feed::-webkit-scrollbar{display:none}
-.vslide{position:relative;height:100dvh;scroll-snap-align:start;background:#000;overflow:hidden}
+.vslide{position:relative;height:100dvh;scroll-snap-align:start;background:#000;overflow:hidden;transition:opacity .3s ease}
 /* blurred backdrop fills the black bars for non-9:16 content */
 .vid-bg{position:absolute;inset:-8%;width:116%;height:116%;
   background-size:cover;background-position:center;background-repeat:no-repeat;
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
   initBadge();renderFeed();initNavigation();initFeedTabs();
   initDiscoverScreen();initNotifScreen();renderProfileScreen();
-  initSheetGestures();initUploadInput();initAuthTabs();initCommentTabs();
+  initSheetGestures();initUploadInput();initAuthTabs();initCommentTabs();initCommentInput();
   if(window.ACTIVE_TAB&&window.ACTIVE_TAB!=='home')switchScreen(window.ACTIVE_TAB);
   if(!navigator.share)document.getElementById('native-share-btn')?.classList.add('hidden');
   // play first video immediately — don't wait for IntersectionObserver's first tick
@@ -873,9 +873,9 @@ function renderFeed(){
         </div>
         <div class="action-bar">
           <button class="abtn" onclick="likeVideo(${item.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count" id="lc-${item.id}">${fmtNum(item.likes)}</span></button>
-          <button class="abtn" onclick="openComments(${item.id})"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((item.text_comments_count||0)+(item.voice_replies||0))}</span></button>
+          <button class="abtn" onclick="openComments(${item.id},this)"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((item.text_comments_count||0)+(item.voice_replies||0))}</span></button>
           <button class="abtn" onclick="shareVideo(${item.id})"><div class="abtn-icon">${SVG.share}</div><span class="abtn-count">${fmtNum(item.shares_count)}</span></button>
-          <button class="abtn" onclick="openVoicePanelForVideo(${item.id})"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(item.voice_replies)}</span></button>
+          <button class="abtn" onclick="openVoicePanelForVideo(${item.id},this)"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(item.voice_replies)}</span></button>
           <button class="abtn" onclick="saveVideo(${item.id},this)"><div class="abtn-icon${saved?' saved':''}">${SVG.bookmark}</div><span class="abtn-count">${fmtNum(item.saves_count)}</span></button>
         </div>
         <div class="vprogress"><div class="vprogress-fill" id="progfill-${idx}"></div></div>
@@ -901,7 +901,7 @@ function attachGestures(slide,item,idx){
     if(longTimer){clearTimeout(longTimer);longTimer=null;}
     const sp=document.getElementById('sp-'+idx);
     if(sp?.classList.contains('open')){sp.classList.remove('open');return;}
-    if(e.target.closest('.action-bar,.sound-btn,.follow-pill'))return;
+    if(e.target.closest('.action-bar,.sound-btn,.follow-pill,.options-dot,.cc-btn,.vcaption,.cavatar'))return;
     tapCount++;
     if(tapCount===1){tapTimer=setTimeout(()=>{tapCount=0;togglePlay(idx);},250);}
     else if(tapCount>=2){clearTimeout(tapTimer);tapCount=0;doubleTapLike(item.id,idx);}
@@ -914,7 +914,16 @@ function initIntersectionObserver(){
       const slide=entry.target,idx=parseInt(slide.dataset.idx),vid=slide.querySelector('video');
       if(entry.isIntersecting&&entry.intersectionRatio>=0.6){
         S.currentIdx=idx;
-        if(vid&&!vid.src&&vid.dataset.src){vid.src=vid.dataset.src;vid.load();}
+        if(vid&&!vid.src&&vid.dataset.src){
+          vid.src=vid.dataset.src;vid.load();
+          vid.onerror=()=>{
+            if(!slide.querySelector('.vplaceholder')){
+              const ph=document.createElement('div');ph.className='vplaceholder';
+              ph.innerHTML='<div class="vplaceholder-icon">📹</div><p class="vplaceholder-title">Video unavailable</p>';
+              slide.insertBefore(ph,slide.querySelector('.grad-top'));
+            }
+          };
+        }
         if(vid){vid.muted=S.muted;vid.play().catch(()=>{});}
         startProgress(idx,vid);preloadAdj(idx);
       } else {
@@ -959,8 +968,15 @@ function toggleMute(e){
 function initFeedTabs(){
   document.querySelectorAll('.feed-tab').forEach(b=>{
     b.addEventListener('click',()=>{
+      const tab=b.dataset.feed;
+      if(tab===S.feedTab)return;
       document.querySelectorAll('.feed-tab').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');S.feedTab=b.dataset.feed;
+      b.classList.add('active');S.feedTab=tab;
+      if(tab==='following'){
+        if(!ME){openAuthModal();return;}
+        const has=FEED.some(i=>i.kind==='video'&&i.creator_is_followed);
+        if(!has)toast('Follow creators to see their videos here');
+      }
     });
   });
 }
@@ -999,11 +1015,21 @@ function shareVideo(id){
   api('/api/videos/'+id+'/share','POST').catch(()=>{});
 }
 
+function _fallbackCopy(txt){
+  const ta=document.createElement('textarea');ta.value=txt;
+  ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');toast('Link copied!');}catch(e){toast('Could not copy link');}
+  ta.remove();
+}
+
 function shareOpt(method){
   const url=location.origin+'/video/'+(S.shareVideoId||'');
   closeSheet('share-sheet');
   if(method==='copy'){
-    navigator.clipboard.writeText(url).then(()=>toast('Link copied!')).catch(()=>toast('Link copied!'));
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(()=>toast('Link copied!')).catch(()=>_fallbackCopy(url));
+    } else {_fallbackCopy(url);}
   } else if(method==='whatsapp'){
     window.open('https://wa.me/?text='+encodeURIComponent('Watch this on MV Pulse: '+url),'_blank');
   } else if(method==='twitter'){
@@ -1037,8 +1063,12 @@ function openOptionsMenu(videoId,creator,e){
 }
 
 function openReportSheet(){
-  closeSheet('options-sheet');
-  setTimeout(()=>openSheet('report-sheet'),320);
+  document.getElementById('options-sheet')?.classList.remove('open');
+  S.openSheet=null;
+  setTimeout(()=>{
+    document.getElementById('report-sheet')?.classList.add('open');
+    S.openSheet='report-sheet';
+  },320);
 }
 
 function submitReport(reason){
@@ -1063,7 +1093,7 @@ function muteCreator(){
 
 function notInterested(){
   const slide=document.querySelector(`.vslide[data-videoid="${S.optionsVideoId}"]`);
-  if(slide)slide.style.opacity='0',setTimeout(()=>slide.style.display='none',300);
+  if(slide){slide.style.opacity='0';setTimeout(()=>slide.remove(),350);}
   closeSheet('options-sheet');
   toast('Got it — fewer like this');
 }
@@ -1086,25 +1116,33 @@ function toggleAiSummary(){
   const wasOpen=card.classList.contains('vis');
   card.classList.toggle('vis',!wasOpen);
   if(wasOpen)return;
-  // only fetch if changed video or not yet loaded
+  if(!S.commentVideoId)return;
   if(_aiLoaded&&_aiVideoId===S.commentVideoId)return;
   _aiLoaded=false;_aiVideoId=S.commentVideoId;
   const loading=document.getElementById('ai-sum-loading');
   const text=document.getElementById('ai-sum-text');
   if(loading)loading.classList.remove('hidden');
   if(text)text.classList.add('hidden');
-  // stub — replace with real API call when backend is ready
-  setTimeout(()=>{
-    _aiLoaded=true;
-    if(_aiVideoId!==S.commentVideoId)return;
-    const summaries=[
-      'Most commenters love this video. The voice replies add rich personal perspectives — listeners are asking follow-up questions and debating the main points raised.',
-      'This video sparked a lively discussion. People are sharing personal experiences and the voice replies carry a lot of emotion that text comments often miss.',
-      'The discussion is broadly positive with some healthy debate. Several voice replies highlight points the creator didn\'t mention — worth a listen.'
-    ];
-    if(loading)loading.classList.add('hidden');
-    if(text){text.textContent=summaries[Math.floor(Math.random()*summaries.length)];text.classList.remove('hidden');}
-  },1600);
+  api('/api/thread/'+S.commentVideoId+'/summary')
+    .then(r=>{
+      if(_aiVideoId!==S.commentVideoId)return;
+      _aiLoaded=true;
+      if(loading)loading.classList.add('hidden');
+      if(text){
+        text.textContent=r.summary_text||'No discussion summary yet — check back after more replies.';
+        text.classList.remove('hidden');
+      }
+    })
+    .catch(()=>{
+      if(loading)loading.classList.add('hidden');
+      if(text){text.textContent='Could not load summary — try again.';text.classList.remove('hidden');}
+    });
+}
+
+function initCommentInput(){
+  const el=document.getElementById('comment-input');
+  if(!el)return;
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitComment();}});
 }
 
 // ── COMMENTS ──
@@ -1117,8 +1155,7 @@ function initCommentTabs(){
   });
 }
 
-function openComments(id){
-  const btn=document.querySelector(`[onclick="openComments(${id})"]`);
+function openComments(id,btn){
   btnFeedback(btn?.querySelector('.abtn-icon'),'tap-pop');
   S.commentVideoId=id;S.commentTab='comments';
   document.querySelectorAll('#comment-tabs .stab').forEach((b,i)=>b.classList.toggle('active',i===0));
@@ -1152,19 +1189,34 @@ async function submitComment(){
   catch(e){toast('Could not post comment');}
 }
 
-let vrAudio=null;
+let vrAudio=null,vrActiveBtn=null;
+const VR_PLAY='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg>';
+const VR_PAUSE='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="white"/><rect x="14" y="4" width="4" height="16" fill="white"/></svg>';
 function playVoiceReply(url,btn){
-  if(vrAudio){vrAudio.pause();vrAudio=null;if(btn)btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg>';return;}
-  if(!url)return;vrAudio=new Audio(url);vrAudio.play();
-  if(btn)btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="white"/><rect x="14" y="4" width="4" height="16" fill="white"/></svg>';
-  vrAudio.onended=()=>{vrAudio=null;if(btn)btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg>';};
+  const isSame=btn===vrActiveBtn;
+  if(vrAudio){
+    vrAudio.pause();vrAudio=null;
+    if(vrActiveBtn){vrActiveBtn.innerHTML=VR_PLAY;vrActiveBtn=null;}
+    if(isSame)return;
+  }
+  if(!url)return;
+  vrAudio=new Audio(url);vrActiveBtn=btn;
+  vrAudio.play().catch(()=>{});
+  if(btn)btn.innerHTML=VR_PAUSE;
+  vrAudio.onended=()=>{
+    vrAudio=null;
+    if(vrActiveBtn){vrActiveBtn.innerHTML=VR_PLAY;vrActiveBtn=null;}
+  };
 }
 
 // ── VOICE RECORDING ──
-function openVoicePanel(){closeSheet('comments-sheet');setTimeout(()=>openVoicePanelForVideo(S.commentVideoId),300);}
-function openVoicePanelForVideo(id){
+function openVoicePanel(){
+  document.getElementById('comments-sheet')?.classList.remove('open');
+  S.openSheet=null;
+  setTimeout(()=>openVoicePanelForVideo(S.commentVideoId),300);
+}
+function openVoicePanelForVideo(id,btn){
   if(!ME){openAuthModal();return;}
-  const btn=document.querySelector(`[onclick="openVoicePanelForVideo(${id})"]`);
   btnFeedback(btn?.querySelector('.abtn-icon'),'tap-pop');
   S.commentVideoId=id;resetRecording();openSheet('voice-panel');
 }
@@ -1224,7 +1276,12 @@ async function startRecording(){
       const t=document.getElementById('record-timer');if(t)t.textContent=m+':'+s;
       if(S.recordSeconds>=60)stopRecording();
     },1000);
-  }catch(e){toast('Microphone access denied');}
+  }catch(err){
+    const msg=err.name==='NotAllowedError'?'Microphone access denied — enable it in browser settings':
+              err.name==='NotFoundError'?'No microphone found on this device':
+              'Could not start recording';
+    toast(msg);
+  }
 }
 
 function stopRecording(){
@@ -1235,7 +1292,9 @@ function stopRecording(){
 
 function reRecord(){
   if(S.playbackAudio){S.playbackAudio.pause();S.playbackAudio=null;}
-  S.playbackPlaying=false;S.recordedChunks=[];S.recording=false;clearInterval(S.recordTimer);
+  S.playbackPlaying=false;S.recordedChunks=[];S.recording=false;
+  S.mediaRecorder=null;
+  clearInterval(S.recordTimer);
   const t=document.getElementById('record-timer');if(t)t.textContent='00:00';
   setVoiceState('idle');
 }
@@ -1261,8 +1320,10 @@ function togglePlayback(){
 async function sendVoiceReply(){
   if(!S.recordedChunks.length||!S.commentVideoId)return;
   const btn=document.getElementById('send-voice-btn');btn.disabled=true;btn.textContent='Sending…';
-  const blob=new Blob(S.recordedChunks,{type:'audio/webm'});
-  const fd=new FormData();fd.append('audio',blob,'voice_reply.webm');fd.append('video_id',S.commentVideoId);fd.append('duration',S.recordSeconds);fd.append('language_code','en');
+  const mimeType=(S.mediaRecorder&&S.mediaRecorder.mimeType)||'audio/webm';
+  const ext=mimeType.includes('mp4')?'mp4':mimeType.includes('ogg')?'ogg':'webm';
+  const blob=new Blob(S.recordedChunks,{type:mimeType});
+  const fd=new FormData();fd.append('audio',blob,'voice_reply.'+ext);fd.append('video_id',S.commentVideoId);fd.append('duration',S.recordSeconds);fd.append('language_code','en');
   try{
     const r=await fetch('/voice/reply',{method:'POST',body:fd,credentials:'same-origin'});
     if(r.ok){toast('Voice reply sent!');cancelRecording();}
@@ -1426,16 +1487,22 @@ function openSheet(id){
   document.getElementById('backdrop').classList.add('vis');
   S.openSheet=id;
 }
-function closeSheet(id){document.getElementById(id)?.classList.remove('open');document.getElementById('backdrop').classList.remove('vis');if(S.openSheet===id)S.openSheet=null;}
+function closeSheet(id){
+  document.getElementById(id)?.classList.remove('open');
+  document.getElementById('backdrop').classList.remove('vis');
+  if(S.openSheet===id)S.openSheet=null;
+  if(id==='comments-sheet'&&vrAudio){vrAudio.pause();vrAudio=null;if(vrActiveBtn){vrActiveBtn.innerHTML=VR_PLAY;vrActiveBtn=null;}}
+}
 function closeAllSheets(){document.querySelectorAll('.sheet.open').forEach(s=>s.classList.remove('open'));document.getElementById('backdrop').classList.remove('vis');S.openSheet=null;}
 
 function initSheetGestures(){
   document.querySelectorAll('.sheet').forEach(sheet=>{
     let startY=0,dragging=false;
     const h=sheet.querySelector('.shandle');if(!h)return;
-    h.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;dragging=true;},{passive:true});
-    h.addEventListener('touchmove',e=>{if(!dragging)return;const dy=e.touches[0].clientY-startY;if(dy>0)sheet.style.transform=`translateY(${dy}px)`;},{passive:true});
-    h.addEventListener('touchend',e=>{const dy=e.changedTouches[0].clientY-startY;sheet.style.transform='';if(dy>80)closeSheet(sheet.id);dragging=false;},{passive:true});
+    const trigger=sheet.querySelector('.sheader')||h;
+    trigger.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;dragging=true;sheet.style.transition='none';},{passive:true});
+    trigger.addEventListener('touchmove',e=>{if(!dragging)return;const dy=e.touches[0].clientY-startY;if(dy>0)sheet.style.transform=`translateY(${dy}px)`;},{passive:true});
+    trigger.addEventListener('touchend',e=>{const dy=e.changedTouches[0].clientY-startY;sheet.style.transition='';sheet.style.transform='';if(dy>80)closeSheet(sheet.id);dragging=false;},{passive:true});
   });
 }
 

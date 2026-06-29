@@ -25,6 +25,10 @@ class StoredMedia:
     storage_kind: str
 
 
+class InvalidMediaUpload(ValueError):
+    pass
+
+
 def cloud_storage_configured() -> bool:
     return bool((os.getenv("CLOUDINARY_URL") or "").strip())
 
@@ -65,6 +69,54 @@ def _build_filename(file_storage) -> str:
     return f"{name[:80] or 'upload'}-{unique_prefix}{extension[:12]}"
 
 
+def _peek_stream_header(file_storage, size: int = 32) -> tuple[bytes, int | None]:
+    stream = getattr(file_storage, "stream", file_storage)
+    current_position = None
+    try:
+        if hasattr(stream, "tell"):
+            current_position = stream.tell()
+        if hasattr(stream, "seek"):
+            stream.seek(0)
+        header = stream.read(size)
+        total_size = None
+        if hasattr(stream, "seek") and hasattr(stream, "tell"):
+            stream.seek(0, os.SEEK_END)
+            total_size = stream.tell()
+    finally:
+        if hasattr(stream, "seek"):
+            stream.seek(0 if current_position is None else current_position)
+    return header or b"", total_size
+
+
+def _looks_like_supported_video(header: bytes) -> bool:
+    if len(header) >= 12 and header[4:8] == b"ftyp":
+        return True
+    if header.startswith(b"\x1a\x45\xdf\xa3"):
+        return True
+    if header.startswith(b"OggS"):
+        return True
+    return False
+
+
+def validate_video_upload(file_storage) -> None:
+    header, total_size = _peek_stream_header(file_storage)
+    filename = (getattr(file_storage, "filename", "") or "").strip() or "upload"
+    extension = Path(filename).suffix.lower()
+    mimetype = (getattr(file_storage, "mimetype", "") or "").lower()
+
+    if total_size is not None and total_size < 1024:
+        raise InvalidMediaUpload("Uploaded video is too small to be a playable file.")
+
+    if extension not in {".mp4", ".mov", ".m4v", ".webm", ".ogg", ".ogv"}:
+        raise InvalidMediaUpload("Upload a supported video file: mp4, mov, m4v, webm, or ogg.")
+
+    if mimetype and not mimetype.startswith("video/"):
+        raise InvalidMediaUpload("The selected file was not sent as a video upload.")
+
+    if not _looks_like_supported_video(header):
+        raise InvalidMediaUpload("Uploaded file is not a recognized playable video container.")
+
+
 def _configure_cloudinary() -> bool:
     if not cloud_storage_configured():
         return False
@@ -97,6 +149,7 @@ def _upload_to_cloudinary(file_storage, target_folder: str, filename: str) -> St
 
 
 def save_uploaded_file(file_storage, target_folder: str) -> StoredMedia:
+    validate_video_upload(file_storage)
     filename = _build_filename(file_storage)
     relative_folder = _relative_target_folder(target_folder)
     relative_path = Path(relative_folder) / filename if relative_folder else Path(filename)

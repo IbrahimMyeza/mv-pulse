@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, redirect, request, url_for
 from database import db
 from models.video import Video
 from routes.social_utils import save_video_file
+from services.storage import InvalidMediaUpload
 
 reels_bp = Blueprint("reels", __name__)
 VIDEO_FOLDER = "static/uploads/videos"
@@ -16,7 +17,11 @@ def upload_reel():
     if not title or not video:
         return jsonify({"error": "title and video required"}), 400
 
-    video_url = save_video_file(video, VIDEO_FOLDER)
+    try:
+        video_url = save_video_file(video, VIDEO_FOLDER)
+    except InvalidMediaUpload as error:
+        return jsonify({"error": str(error)}), 400
+
     video_row = Video(title=title, caption=title, description=title, video_path=video_url)
     db.session.add(video_row)
     db.session.commit()
