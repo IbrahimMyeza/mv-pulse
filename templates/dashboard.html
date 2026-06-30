@@ -76,23 +76,24 @@ a{color:inherit;text-decoration:none}
   width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.5);
   border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
 .sound-btn svg{width:16px;height:16px;fill:#fff}
-.creator-info{position:absolute;bottom:calc(var(--nav)+20px);left:12px;right:84px;z-index:10;
-  display:flex;flex-direction:column;gap:6px}
+.creator-info{position:absolute;bottom:calc(var(--nav)+16px);left:12px;right:64px;z-index:10;
+  display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:hidden}
 .creator-row{display:flex;align-items:center;gap:8px}
 .cavatar{width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:var(--surface2);
   display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;
   flex-shrink:0;overflow:hidden;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
 .cavatar:active{transform:scale(1.22) rotate(-6deg)}
 .cavatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.cname{font-size:13px;font-weight:800}
+.cname{font-size:13px;font-weight:800;flex-shrink:0}
 .follow-pill{font-size:11px;font-weight:700;border:1.5px solid #fff;border-radius:4px;
   padding:2px 8px;flex-shrink:0;transition:all .2s}
 .follow-pill.following{background:var(--accent);border-color:var(--accent)}
 .vcaption{font-size:13px;color:rgba(255,255,255,.95);line-height:1.4;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
-.vcaption.exp{-webkit-line-clamp:unset}
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vcaption[data-state="full"]{-webkit-line-clamp:unset;overflow:visible}
+.vcap-more{color:var(--muted);font-weight:700;cursor:pointer}
 .vtags{font-size:12px;color:var(--accent2)}
-.action-bar{position:absolute;right:8px;bottom:calc(var(--nav)+80px);z-index:10;
+.action-bar{position:absolute;right:8px;bottom:calc(var(--nav)+16px);z-index:10;
   display:flex;flex-direction:column;align-items:center;gap:16px}
 .abtn{display:flex;flex-direction:column;align-items:center;gap:3px}
 .abtn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.38);
@@ -108,14 +109,6 @@ a{color:inherit;text-decoration:none}
 .vprogress{position:absolute;bottom:var(--nav);left:0;right:0;height:3px;
   background:rgba(255,255,255,.18);z-index:10}
 .vprogress-fill{height:100%;background:var(--accent);width:0%;transition:width .1s linear}
-.speed-picker{position:absolute;bottom:calc(var(--nav)+72px);left:50%;transform:translateX(-50%);
-  background:rgba(20,20,20,.95);border:1px solid var(--border);border-radius:12px;
-  display:none;z-index:20;overflow:hidden}
-.speed-picker.open{display:flex}
-.spd{padding:10px 15px;font-size:13px;font-weight:700;color:var(--muted);
-  border-right:1px solid var(--border)}
-.spd:last-child{border-right:none}
-.spd.active{color:var(--accent)}
 .ht-slide{background:linear-gradient(135deg,#1a0a2e,#0d1117);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:32px 24px;gap:16px;position:absolute;inset:0}
@@ -124,11 +117,14 @@ a{color:inherit;text-decoration:none}
 .ht-meta{font-size:13px;color:var(--muted);text-align:center}
 .ht-cta{background:var(--accent);color:#fff;font-weight:800;padding:14px 28px;
   border-radius:28px;font-size:15px;margin-top:8px}
-/* VIDEO OVERLAY — in-page single video view, replaces legacy /video/<id> page */
+/* VIDEO OVERLAY — in-page swipeable multi-video feed, replaces legacy /video/<id> page */
 #vo{position:fixed;inset:0;z-index:320;background:#000;display:none}
 #vo.open{display:block}
-#vo .vslide{height:100dvh}
-.vo-back{position:absolute;top:calc(var(--top)+10px);left:12px;z-index:10;
+#vo-feed{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+#vo-feed::-webkit-scrollbar{display:none}
+#vo-feed .vslide{height:100dvh;scroll-snap-align:start}
+.vo-back{position:absolute;top:calc(var(--top)+10px);left:12px;z-index:21;
   width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.5);
   border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
 .vo-back svg{width:18px;height:18px;fill:#fff}
@@ -219,16 +215,6 @@ a{color:inherit;text-decoration:none}
 .voice-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(37,244,238,.12);
   border:1px solid rgba(37,244,238,.3);border-radius:20px;padding:3px 8px;
   font-size:10px;font-weight:800;color:var(--accent2)}
-/* CAPTIONS */
-.cc-btn{position:absolute;top:calc(var(--top)+52px);right:12px;z-index:10;
-  width:34px;height:20px;border-radius:4px;background:rgba(0,0,0,.55);
-  border:1px solid rgba(255,255,255,.3);font-size:10px;font-weight:800;color:rgba(255,255,255,.7);
-  display:flex;align-items:center;justify-content:center;letter-spacing:.5px}
-.cc-btn.on{background:var(--accent2);color:#000;border-color:var(--accent2)}
-.cc-bar{position:absolute;bottom:calc(var(--nav)+68px);left:12px;right:80px;z-index:11;
-  background:rgba(0,0,0,.82);border-radius:8px;padding:9px 12px;font-size:13px;
-  line-height:1.5;color:#fff;display:none;pointer-events:none}
-.cc-bar.vis{display:block}
 /* OPTIONS / REPORT */
 #options-sheet{max-height:300px}
 #report-sheet{max-height:440px}
@@ -752,12 +738,12 @@ body.text-xl{font-size:20px}
   </div>
 </div>
 
-<!-- VIDEO OVERLAY (single video view, replaces legacy /video/<id> page) -->
+<!-- VIDEO OVERLAY (swipeable multi-video feed, replaces legacy /video/<id> page) -->
 <div id="vo">
   <button type="button" class="vo-back" onclick="closeVideoOverlay()" aria-label="Back">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
-  <div class="vslide" id="vo-slide"></div>
+  <div id="vo-feed"></div>
 </div>
 
 <!-- INSTALL BANNER -->
@@ -904,7 +890,7 @@ function renderFeed(){
       slide.innerHTML=`<div class="ht-slide"><span class="ht-label">🔥 Hot Thread</span><h2 class="ht-title">${esc(item.title||'')}</h2><p class="ht-meta">${fmtNum(item.reply_count)} replies · ${esc(item.creator||'')}</p><p class="ht-meta">${esc(item.caption||'')}</p><a class="ht-cta" href="${esc(item.target_url||'#')}">${esc(item.cta_text||'Join Discussion')}</a></div>`;
     } else {
       slide.dataset.videoid=item.id;
-      const liked=S.liked.has(item.id),saved=S.saved.has(item.id),hasV=item.video_url&&item.video_url!=='null';
+      const hasV=item.video_url&&item.video_url!=='null';
       const bgImg=item.thumbnail_url?`url('${esc(item.thumbnail_url)}')`:'none';
       // idx 0: eager src + preload=auto so first frame is ready before user scrolls
       const isFirst=idx===0;
@@ -916,33 +902,9 @@ function renderFeed(){
         <div class="play-flash" id="pf-${idx}"><div class="play-circle">${SVG.play}</div></div>
         <div class="heart-burst" id="hb-${idx}"><span>❤️</span></div>
         <button class="sound-btn" onclick="toggleMute(event)">${S.muted?SVG.soundOff:SVG.soundOn}</button>
-        <button class="cc-btn" id="ccb-${idx}" onclick="toggleCaptions(${idx},event)">CC</button>
-        <div class="cc-bar" id="cc-${idx}">🌐 Auto-captions — coming soon</div>
-        <div class="creator-info">
-          <div class="creator-row">
-            <div class="cavatar">${fmtInit(item.creator||'?')}</div>
-            <span class="cname">@${esc(item.creator_username||item.creator||'unknown')}</span>
-            ${item.can_follow_creator?`<button class="follow-pill${item.creator_is_followed?' following':''}" data-creator="${esc(item.creator_username||'')}" onclick="followUser(this,event)">${item.creator_is_followed?'Following':'+ Follow'}</button>`:''}
-            <button class="options-dot" onclick="openOptionsMenu(${item.id},'${esc(item.creator_username||'')}',event)" aria-label="More options">···</button>
-          </div>
-          <p class="vcaption" onclick="this.classList.toggle('exp')">${esc(item.caption||item.title||'')}</p>
-          ${item.topic?`<span class="vtags">#${esc(item.topic)} #${esc(item.region||'')}</span>`:''}
-          ${item.voice_replies>0?`<span class="voice-badge">🎤 ${fmtNum(item.voice_replies)} voice ${item.voice_replies===1?'reply':'replies'}</span>`:''}
-        </div>
-        <div class="action-bar">
-          <button class="abtn" onclick="likeVideo(${item.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count" id="lc-${item.id}">${fmtNum(item.likes)}</span></button>
-          <button class="abtn" onclick="openComments(${item.id},this)"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((item.text_comments_count||0)+(item.voice_replies||0))}</span></button>
-          <button class="abtn" onclick="shareVideo(${item.id})"><div class="abtn-icon">${SVG.share}</div><span class="abtn-count">${fmtNum(item.shares_count)}</span></button>
-          <button class="abtn" onclick="openVoicePanelForVideo(${item.id},this)"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(item.voice_replies)}</span></button>
-          <button class="abtn" onclick="saveVideo(${item.id},this)"><div class="abtn-icon${saved?' saved':''}">${SVG.bookmark}</div><span class="abtn-count">${fmtNum(item.saves_count)}</span></button>
-        </div>
-        <div class="vprogress"><div class="vprogress-fill" id="progfill-${idx}"></div></div>
-        <div class="speed-picker" id="sp-${idx}">
-          <button class="spd" onclick="setSpeed(.5,${idx},this)">0.5x</button>
-          <button class="spd active" onclick="setSpeed(1,${idx},this)">1x</button>
-          <button class="spd" onclick="setSpeed(1.5,${idx},this)">1.5x</button>
-          <button class="spd" onclick="setSpeed(2,${idx},this)">2x</button>
-        </div>`;
+        ${creatorInfoBlock(item)}
+        ${actionBarBlock(item)}
+        <div class="vprogress"><div class="vprogress-fill" id="progfill-${idx}"></div></div>`;
       attachGestures(slide,item,idx);
     }
     feed.appendChild(slide);
@@ -950,16 +912,63 @@ function renderFeed(){
   initIntersectionObserver();
 }
 
+function goToProfile(username,e){
+  if(e)e.stopPropagation();
+  if(!username)return;
+  location.href='/profile/'+encodeURIComponent(username);
+}
+
+function captionBlock(v){
+  const full=v.caption||v.title||'';
+  if(!full)return '';
+  if(full.length<=90)return `<p class="vcaption">${esc(full)}</p>`;
+  const short=esc(full.slice(0,90).trimEnd());
+  return `<p class="vcaption" data-full="${esc(full)}" data-state="short">${short}… <span class="vcap-more" onclick="toggleCaption(this,event)">more</span></p>`;
+}
+
+function toggleCaption(el,e){
+  e.stopPropagation();
+  const p=el.parentElement;
+  const full=p.dataset.full||'';
+  if(p.dataset.state==='short'){
+    p.innerHTML=`${esc(full)} <span class="vcap-more" onclick="toggleCaption(this,event)">less</span>`;
+    p.dataset.state='full';
+  } else {
+    p.innerHTML=`${esc(full.slice(0,90).trimEnd())}… <span class="vcap-more" onclick="toggleCaption(this,event)">more</span>`;
+    p.dataset.state='short';
+  }
+}
+
+function creatorInfoBlock(v){
+  const username=v.creator_username||v.creator||'';
+  return `<div class="creator-info">
+      <div class="creator-row">
+        <button type="button" class="cavatar" onclick="goToProfile('${esc(username)}',event)" aria-label="Open profile">${fmtInit(v.creator||'?')}</button>
+        <button type="button" class="cname" onclick="goToProfile('${esc(username)}',event)">@${esc(username||'unknown')}</button>
+        ${v.can_follow_creator?`<button type="button" class="follow-pill${v.creator_is_followed?' following':''}" data-creator="${esc(username)}" onclick="followUser(this,event)">${v.creator_is_followed?'Following':'Follow'}</button>`:''}
+        <button type="button" class="options-dot" onclick="openOptionsMenu(${v.id},'${esc(username)}',event)" aria-label="More options">···</button>
+      </div>
+      ${captionBlock(v)}
+      ${v.topic?`<span class="vtags">#${esc(v.topic)} #${esc(v.region||'')}</span>`:''}
+      ${v.voice_replies>0?`<span class="voice-badge">🎤 ${fmtNum(v.voice_replies)} voice ${v.voice_replies===1?'reply':'replies'}</span>`:''}
+    </div>`;
+}
+
+function actionBarBlock(v){
+  const liked=S.liked.has(v.id),saved=S.saved.has(v.id);
+  return `<div class="action-bar">
+      <button type="button" class="abtn" onclick="likeVideo(${v.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count">${fmtNum(v.likes)}</span></button>
+      <button type="button" class="abtn" onclick="openComments(${v.id},this)"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((v.text_comments_count||0)+(v.voice_replies||0))}</span></button>
+      <button type="button" class="abtn" onclick="shareVideo(${v.id})"><div class="abtn-icon">${SVG.share}</div><span class="abtn-count">${fmtNum(v.shares_count)}</span></button>
+      <button type="button" class="abtn" onclick="openVoicePanelForVideo(${v.id},this)"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(v.voice_replies)}</span></button>
+      <button type="button" class="abtn" onclick="saveVideo(${v.id},this)"><div class="abtn-icon${saved?' saved':''}">${SVG.bookmark}</div><span class="abtn-count">${fmtNum(v.saves_count)}</span></button>
+    </div>`;
+}
+
 function attachGestures(slide,item,idx){
-  let tapTimer=null,tapCount=0,longTimer=null;
-  slide.addEventListener('touchstart',()=>{
-    longTimer=setTimeout(()=>{document.getElementById('sp-'+idx)?.classList.add('open');longTimer=null;},500);
-  },{passive:true});
+  let tapTimer=null,tapCount=0;
   slide.addEventListener('touchend',e=>{
-    if(longTimer){clearTimeout(longTimer);longTimer=null;}
-    const sp=document.getElementById('sp-'+idx);
-    if(sp?.classList.contains('open')){sp.classList.remove('open');return;}
-    if(e.target.closest('.action-bar,.sound-btn,.follow-pill,.options-dot,.cc-btn,.vcaption,.cavatar'))return;
+    if(e.target.closest('.action-bar,.sound-btn,.follow-pill,.options-dot,.vcaption,.vcap-more,.cavatar,.cname'))return;
     tapCount++;
     if(tapCount===1){tapTimer=setTimeout(()=>{tapCount=0;togglePlay(idx);},250);}
     else if(tapCount>=2){clearTimeout(tapTimer);tapCount=0;doubleTapLike(item.id,idx);}
@@ -1023,50 +1032,123 @@ function toggleMute(e){
   document.querySelectorAll('.sound-btn').forEach(b=>b.innerHTML=S.muted?SVG.soundOff:SVG.soundOn);
 }
 
-// ── VIDEO OVERLAY (in-page single video view — never navigates to the legacy /video/<id> page) ──
-function openVideoOverlay(v){
-  if(!v)return;
-  pauseCurrentVideo();
-  const liked=S.liked.has(v.id),saved=S.saved.has(v.id),hasV=v.video_url&&v.video_url!=='null';
+// ── VIDEO OVERLAY (in-page swipeable multi-video feed — never navigates to the legacy /video/<id> page) ──
+function videoSlideInner(v){
+  const hasV=v.video_url&&v.video_url!=='null';
   const bgImg=v.thumbnail_url?`url('${esc(v.thumbnail_url)}')`:'none';
-  const slide=document.getElementById('vo-slide');
-  slide.innerHTML=`
+  return `
     ${hasV?`<div class="vid-bg" style="background-image:${bgImg}"></div>
-    <video class="slide-vid" id="vo-vid" preload="auto" playsinline loop ${S.muted?'muted':''} src="${esc(v.video_url)}"></video>`:''}
+    <video class="slide-vid" preload="metadata" playsinline loop ${S.muted?'muted':''} data-src="${esc(v.video_url)}"></video>`:''}
     ${!hasV?`<div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">${esc(v.title||'Video')}</p><p class="vplaceholder-sub">${esc(v.caption||'')}</p></div>`:''}
     <div class="grad-top"></div><div class="grad-bot"></div>
+    <div class="play-flash"><div class="play-circle">${SVG.play}</div></div>
+    <div class="heart-burst"><span>❤️</span></div>
     <button type="button" class="sound-btn" onclick="toggleMute(event)" aria-label="Toggle sound">${S.muted?SVG.soundOff:SVG.soundOn}</button>
-    <div class="creator-info">
-      <div class="creator-row">
-        <div class="cavatar">${fmtInit(v.creator||'?')}</div>
-        <span class="cname">@${esc(v.creator_username||v.creator||'unknown')}</span>
-        ${v.can_follow_creator?`<button type="button" class="follow-pill${v.creator_is_followed?' following':''}" data-creator="${esc(v.creator_username||'')}" onclick="followUser(this,event)">${v.creator_is_followed?'Following':'+ Follow'}</button>`:''}
-      </div>
-      <p class="vcaption" onclick="this.classList.toggle('exp')">${esc(v.caption||v.title||'')}</p>
-      ${v.topic?`<span class="vtags">#${esc(v.topic)} #${esc(v.region||'')}</span>`:''}
-    </div>
-    <div class="action-bar">
-      <button type="button" class="abtn" onclick="likeVideo(${v.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count">${fmtNum(v.likes)}</span></button>
-      <button type="button" class="abtn" onclick="openComments(${v.id},this)"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((v.text_comments_count||0)+(v.voice_replies||0))}</span></button>
-      <button type="button" class="abtn" onclick="shareVideo(${v.id})"><div class="abtn-icon">${SVG.share}</div><span class="abtn-count">${fmtNum(v.shares_count)}</span></button>
-      <button type="button" class="abtn" onclick="openVoicePanelForVideo(${v.id},this)"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(v.voice_replies)}</span></button>
-      <button type="button" class="abtn" onclick="saveVideo(${v.id},this)"><div class="abtn-icon${saved?' saved':''}">${SVG.bookmark}</div><span class="abtn-count">${fmtNum(v.saves_count)}</span></button>
-    </div>`;
-  _pvgCache[v.id]=v;
-  document.getElementById('vo').classList.add('open');
-  const vid=document.getElementById('vo-vid');
-  if(vid)vid.play().catch(()=>{});
+    ${creatorInfoBlock(v)}
+    ${actionBarBlock(v)}
+    <div class="vprogress"><div class="vprogress-fill"></div></div>`;
 }
+
+async function resolveVideoEntry(entry){
+  if(entry&&typeof entry==='object')return entry.id!=null?entry:null;
+  const id=entry;
+  if(id==null)return null;
+  if(_pvgCache[id])return _pvgCache[id];
+  try{return await api('/api/videos/'+id);}catch(e){return null;}
+}
+
+async function openVideoFeed(list,startId){
+  const resolved=(await Promise.all((list||[]).map(resolveVideoEntry))).filter(Boolean);
+  if(!resolved.length){toast('Could not load video');return;}
+  resolved.forEach(v=>_pvgCache[v.id]=v);
+  let startIdx=resolved.findIndex(v=>v.id===startId);
+  if(startIdx<0)startIdx=0;
+  renderVideoFeedOverlay(resolved,startIdx);
+}
+
+let _voObserver=null,_voProgressAF=null,_voProgressSlide=null;
+
+function renderVideoFeedOverlay(videos,startIdx){
+  pauseCurrentVideo();
+  const wrap=document.getElementById('vo-feed');
+  if(_voObserver){_voObserver.disconnect();_voObserver=null;}
+  wrap.innerHTML='';
+  document.getElementById('vo').classList.add('open');
+  videos.forEach(v=>{
+    const slide=document.createElement('div');
+    slide.className='vslide';
+    slide.dataset.voId=v.id;
+    slide.innerHTML=videoSlideInner(v);
+    attachVoGestures(slide,v);
+    wrap.appendChild(slide);
+  });
+  const slides=[...wrap.children];
+  wrap.scrollTop=startIdx*wrap.clientHeight;
+  _voObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      const vid=entry.target.querySelector('video');
+      if(vid&&!vid.src&&vid.dataset.src){vid.src=vid.dataset.src;vid.load();}
+      if(entry.isIntersecting&&entry.intersectionRatio>=0.6){
+        if(vid){vid.muted=S.muted;vid.play().catch(()=>{});}
+        _voStartProgress(entry.target,vid);
+      } else {
+        if(vid){vid.pause();}
+        _voStopProgress(entry.target);
+      }
+    });
+  },{root:wrap,threshold:[0.6]});
+  slides.forEach(s=>_voObserver.observe(s));
+}
+
+function _voStartProgress(slideEl,vid){
+  if(!vid)return;
+  _voStopProgress(null);
+  _voProgressSlide=slideEl;
+  const fill=slideEl.querySelector('.vprogress-fill');
+  function tick(){
+    if(fill&&vid.duration)fill.style.width=(vid.currentTime/vid.duration*100)+'%';
+    _voProgressAF=requestAnimationFrame(tick);
+  }
+  _voProgressAF=requestAnimationFrame(tick);
+}
+function _voStopProgress(slideEl){
+  if(slideEl&&_voProgressSlide!==slideEl)return;
+  if(_voProgressAF)cancelAnimationFrame(_voProgressAF);
+  _voProgressAF=null;_voProgressSlide=null;
+}
+
+function attachVoGestures(slideEl,v){
+  let lastTap=0,tapTimer=null;
+  slideEl.addEventListener('click',e=>{
+    if(e.target.closest('.action-bar,.sound-btn,.follow-pill,.options-dot,.vcaption,.vcap-more,.cavatar,.cname,.vo-back'))return;
+    const now=Date.now();
+    if(now-lastTap<300){
+      clearTimeout(tapTimer);lastTap=0;
+      const burst=slideEl.querySelector('.heart-burst');
+      if(burst){burst.classList.remove('fire');void burst.offsetWidth;burst.classList.add('fire');}
+      if(ME&&!S.liked.has(v.id)){
+        const btn=slideEl.querySelector('.abtn');
+        if(btn)likeVideo(v.id,btn);
+      }
+    } else {
+      lastTap=now;
+      tapTimer=setTimeout(()=>{
+        const vid=slideEl.querySelector('video');if(!vid)return;
+        const flash=slideEl.querySelector('.play-flash');
+        if(vid.paused){vid.play();}else{vid.pause();flash?.classList.add('show');setTimeout(()=>flash?.classList.remove('show'),600);}
+      },300);
+    }
+  });
+}
+
 function closeVideoOverlay(){
   document.getElementById('vo').classList.remove('open');
-  const vid=document.getElementById('vo-vid');if(vid)vid.pause();
-  document.getElementById('vo-slide').innerHTML='';
+  if(_voObserver){_voObserver.disconnect();_voObserver=null;}
+  _voStopProgress(null);
+  const wrap=document.getElementById('vo-feed');
+  wrap.querySelectorAll('video').forEach(v=>v.pause());
+  wrap.innerHTML='';
   if(S.screen==='home')resumeCurrentVideo();
-}
-async function openVideoOverlayById(id){
-  if(_pvgCache[id]){openVideoOverlay(_pvgCache[id]);return;}
-  try{openVideoOverlay(await api('/api/videos/'+id));}
-  catch(e){toast('Could not load video');}
 }
 
 function initFeedTabs(){
@@ -1088,7 +1170,7 @@ function initFeedTabs(){
 // ── ACTIONS ──
 async function likeVideo(id,btn){
   if(!ME){openAuthModal();return;}
-  const icon=btn.querySelector('.abtn-icon'),count=document.getElementById('lc-'+id),isLiked=S.liked.has(id);
+  const icon=btn.querySelector('.abtn-icon'),count=btn.querySelector('.abtn-count'),isLiked=S.liked.has(id);
   isLiked?S.liked.delete(id):S.liked.add(id);
   icon.classList.toggle('liked',!isLiked);
   btnFeedback(icon,'like-pop');
@@ -1151,11 +1233,6 @@ async function followUser(btn,e){
   catch(e){btn.textContent=following?'Following':'+ Follow';btn.classList.toggle('following',following);}
 }
 
-function setSpeed(r,idx,btn){
-  const vid=document.querySelector(`.vslide[data-idx="${idx}"] video`);if(vid)vid.playbackRate=r;
-  document.querySelectorAll(`#sp-${idx} .spd`).forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-}
-
 // ── TRUST & SAFETY ──
 function openOptionsMenu(videoId,creator,e){
   e?.stopPropagation();
@@ -1200,16 +1277,6 @@ function notInterested(){
   if(slide){slide.style.opacity='0';setTimeout(()=>slide.remove(),350);}
   closeSheet('options-sheet');
   toast('Got it — fewer like this');
-}
-
-// ── CAPTIONS ──
-function toggleCaptions(idx,e){
-  e?.stopPropagation();
-  const bar=document.getElementById('cc-'+idx);
-  const btn=document.getElementById('ccb-'+idx);
-  if(!bar)return;
-  const on=bar.classList.toggle('vis');
-  btn?.classList.toggle('on',on);
 }
 
 // ── AI SUMMARY ──
@@ -1471,11 +1538,13 @@ function initDiscoverScreen(){
   renderDiscoverGrid();
 }
 
+let _gridVideos=[];
 function renderDiscoverGrid(){
   const grid=document.getElementById('discover-grid');
   const videos=FEED.filter(i=>i.kind==='video').slice(0,18);
   videos.forEach(v=>_pvgCache[v.id]=v);
-  grid.innerHTML=videos.map(v=>`<div class="dgrid-thumb" onclick="openVideoOverlayById(${v.id})">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:'<div class="dgrid-placeholder"></div>'}<span class="dgrid-views">▶ ${fmtNum(v.views)}</span></div>`).join('');
+  _gridVideos=videos;
+  grid.innerHTML=videos.map(v=>`<div class="dgrid-thumb" onclick="openVideoFeed(_gridVideos,${v.id})">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:'<div class="dgrid-placeholder"></div>'}<span class="dgrid-views">▶ ${fmtNum(v.views)}</span></div>`).join('');
 }
 
 function showDefaultDiscover(){document.getElementById('search-results-sec').classList.add('hidden');document.getElementById('topic-section').classList.remove('hidden');}
@@ -1488,7 +1557,8 @@ async function searchVideos(q){
   try{
     const r=await api('/api/discovery?q='+encodeURIComponent(q));const items=r.items||[];
     if(!items.length){el.innerHTML='<div class="empty-msg">No results found</div>';return;}
-    el.innerHTML=items.map(it=>`<div class="dres-item" onclick="openVideoOverlayById(${it.video_id||it.id||0})">${it.thumbnail_url?`<div class="dres-thumb"><img src="${esc(it.thumbnail_url)}" loading="lazy" alt=""></div>`:'<div class="dres-thumb dres-thumb-empty"></div>'}<div><p class="dres-title">${esc(it.title||it.query||'')}</p><p class="dres-meta">${esc(it.creator||'')} · ${fmtNum(it.views||0)} views</p></div></div>`).join('');
+    _gridVideos=items.map(it=>Object.assign({},it,{id:it.id||it.video_id}));
+    el.innerHTML=items.map(it=>`<div class="dres-item" onclick="openVideoFeed(_gridVideos,${it.id||it.video_id||0})">${it.thumbnail_url?`<div class="dres-thumb"><img src="${esc(it.thumbnail_url)}" loading="lazy" alt=""></div>`:'<div class="dres-thumb dres-thumb-empty"></div>'}<div><p class="dres-title">${esc(it.title||it.query||'')}</p><p class="dres-meta">${esc(it.creator||'')} · ${fmtNum(it.views||0)} views</p></div></div>`).join('');
   }catch(e){el.innerHTML='<div class="empty-msg">Search failed</div>';}
 }
 
@@ -1503,7 +1573,7 @@ function renderNotifs(kind){
   const filtered=kind==='all'?NOTIFS:NOTIFS.filter(n=>n.kind===kind);
   if(!filtered.length){list.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">🔔</div>No notifications here yet</div>';return;}
   const icons={like:'❤️',text_comment:'💬',voice_reply:'🎤',follow:'👤',mention:'@'};
-  list.innerHTML=filtered.map((n,i)=>`<div class="notif-item${n.is_read===false?' unread':''}" style="animation-delay:${i*35}ms"><div class="nav2">${icons[n.kind]||'🔔'}</div><div class="ni-body"><p class="ni-msg">${esc(n.message||n.body||'')}</p><span class="ni-time">${timeAgo(n.created_at)}</span></div>${n.video_id?`<div class="ni-thumb" onclick="openVideoOverlayById(${n.video_id})">🎬</div>`:''}</div>`).join('');
+  list.innerHTML=filtered.map((n,i)=>`<div class="notif-item${n.is_read===false?' unread':''}" style="animation-delay:${i*35}ms"><div class="nav2">${icons[n.kind]||'🔔'}</div><div class="ni-body"><p class="ni-msg">${esc(n.message||n.body||'')}</p><span class="ni-time">${timeAgo(n.created_at)}</span></div>${n.video_id?`<div class="ni-thumb" onclick="openVideoFeed([${n.video_id}],${n.video_id})">🎬</div>`:''}</div>`).join('');
   if(NOTIFS_UNREAD>0)api('/api/notifications/read','POST').then(()=>document.getElementById('notif-badge').classList.add('hidden')).catch(()=>{});
 }
 
@@ -1554,7 +1624,8 @@ function renderPVGrid(videos){
   const grid=document.getElementById('pvgrid');if(!grid)return;
   if(!videos.length){grid.innerHTML='<div class="empty-msg pvgrid-empty">No videos yet</div>';return;}
   videos.forEach(v=>_pvgCache[v.id]=v);
-  grid.innerHTML=videos.map(v=>`<div class="pvthumb" onclick="openVideoOverlayById(${v.id})">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:`<div class="pvph">🎬</div>`}<span class="pvviews">▶ ${fmtNum(v.views)}</span></div>`).join('');
+  _gridVideos=videos;
+  grid.innerHTML=videos.map(v=>`<div class="pvthumb" onclick="openVideoFeed(_gridVideos,${v.id})">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:`<div class="pvph">🎬</div>`}<span class="pvviews">▶ ${fmtNum(v.views)}</span></div>`).join('');
 }
 
 async function loadLiked(){

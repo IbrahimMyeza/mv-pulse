@@ -394,7 +394,7 @@ def api_voice_replies_save(id):
 @social_bp.route("/profile/<username>")
 def profile(username):
     profile_user = User.query.filter_by(username=username).first_or_404()
-    return render_template("profile.html", **social_context(active_tab="profile", profile_user=profile_user))
+    return render_template("dashboard.html", **social_context(active_tab="profile", profile_user=profile_user))
 
 
 @social_bp.route("/api/profile/<username>/voice-identity")
@@ -412,13 +412,20 @@ def api_thread_summary(video_id):
 
 @social_bp.route("/api/discovery")
 def api_discovery():
-    return jsonify({
-        "items": search_discovery(
-            query=request.args.get("q", "").strip() or None,
-            topic=request.args.get("topic", "").strip() or None,
-            tone=request.args.get("tone", "").strip() or None,
-        )
-    })
+    results = search_discovery(
+        query=request.args.get("q", "").strip() or None,
+        topic=request.args.get("topic", "").strip() or None,
+        tone=request.args.get("tone", "").strip() or None,
+    )
+    video_ids = [item["video_id"] for item in results if item.get("video_id")]
+    videos_by_id = {}
+    if video_ids:
+        videos = Video.query.filter(Video.id.in_(video_ids)).all()
+        hydrate_videos(videos, viewer=current_user())
+        videos_by_id = {video.id: serialize_video(video) for video in videos}
+    for item in results:
+        item.update(videos_by_id.get(item.get("video_id"), {}))
+    return jsonify({"items": results})
 
 
 @social_bp.route("/api/videos/<int:id>/clip-suggestions")
