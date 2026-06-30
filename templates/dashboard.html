@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
   width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.5);
   border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
 .sound-btn svg{width:16px;height:16px;fill:#fff}
-.creator-info{position:absolute;bottom:calc(var(--nav)+68px);left:12px;right:72px;z-index:10;
+.creator-info{position:absolute;bottom:calc(var(--nav)+20px);left:12px;right:84px;z-index:10;
   display:flex;flex-direction:column;gap:6px}
 .creator-row{display:flex;align-items:center;gap:8px}
 .cavatar{width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:var(--surface2);
@@ -92,9 +92,9 @@ a{color:inherit;text-decoration:none}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .vcaption.exp{-webkit-line-clamp:unset}
 .vtags{font-size:12px;color:var(--accent2)}
-.action-bar{position:absolute;bottom:calc(var(--nav)+2px);left:0;right:0;z-index:10;
-  display:flex;align-items:center;justify-content:space-around;padding:6px 12px;height:58px}
-.abtn{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px}
+.action-bar{position:absolute;right:8px;bottom:calc(var(--nav)+80px);z-index:10;
+  display:flex;flex-direction:column;align-items:center;gap:16px}
+.abtn{display:flex;flex-direction:column;align-items:center;gap:3px}
 .abtn-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.38);
   border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;
   transition:transform .12s,background .15s}
@@ -124,6 +124,14 @@ a{color:inherit;text-decoration:none}
 .ht-meta{font-size:13px;color:var(--muted);text-align:center}
 .ht-cta{background:var(--accent);color:#fff;font-weight:800;padding:14px 28px;
   border-radius:28px;font-size:15px;margin-top:8px}
+/* VIDEO OVERLAY — in-page single video view, replaces legacy /video/<id> page */
+#vo{position:fixed;inset:0;z-index:320;background:#000;display:none}
+#vo.open{display:block}
+#vo .vslide{height:100dvh}
+.vo-back{position:absolute;top:calc(var(--top)+10px);left:12px;z-index:10;
+  width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
+.vo-back svg{width:18px;height:18px;fill:#fff}
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);
   background:rgba(0,0,0,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
@@ -318,10 +326,12 @@ a{color:inherit;text-decoration:none}
 .dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .dgrid-thumb{aspect-ratio:9/16;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative;cursor:pointer}
 .dgrid-thumb img{width:100%;height:100%;object-fit:cover}
+.dgrid-placeholder{width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e)}
 .dgrid-views{position:absolute;bottom:4px;left:4px;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 .dres-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .dres-thumb{width:56px;height:72px;border-radius:6px;background:var(--surface2);overflow:hidden;flex-shrink:0}
 .dres-thumb img{width:100%;height:100%;object-fit:cover}
+.dres-thumb-empty{background:#1a1a2e}
 .dres-title{font-size:14px;font-weight:700;line-height:1.3}
 .dres-meta{font-size:12px;color:var(--muted);margin-top:4px}
 /* NOTIFICATIONS */
@@ -369,6 +379,7 @@ a{color:inherit;text-decoration:none}
 .ptab.active{color:var(--text);border-bottom-color:var(--text)}
 .ptab svg{width:18px;height:18px;fill:currentColor;display:block;margin:0 auto}
 .pvgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px}
+.pvgrid-empty{grid-column:span 3}
 .pvthumb{aspect-ratio:9/16;background:var(--surface2);position:relative;cursor:pointer;overflow:hidden}
 .pvthumb img{width:100%;height:100%;object-fit:cover}
 .pvph{background:linear-gradient(135deg,#1a1a2e,#16213e);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px}
@@ -741,6 +752,14 @@ body.text-xl{font-size:20px}
   </div>
 </div>
 
+<!-- VIDEO OVERLAY (single video view, replaces legacy /video/<id> page) -->
+<div id="vo">
+  <button type="button" class="vo-back" onclick="closeVideoOverlay()" aria-label="Back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="vslide" id="vo-slide"></div>
+</div>
+
 <!-- INSTALL BANNER -->
 <div id="install-bar" hidden>
   <span class="ib-icon">📲</span>
@@ -789,6 +808,10 @@ const NOTIFS_UNREAD=window.NOTIFS_UNREAD||0;
 const IS_FOLLOWING=window.IS_FOLLOWING||false;
 
 FEED.forEach(i=>{if(i.kind==='video'){if(i.is_liked)S.liked.add(i.id);if(i.is_saved)S.saved.add(i.id);}});
+
+// ── VIDEO OVERLAY CACHE ── id -> full video payload, populated whenever a grid/list renders
+const _pvgCache={};
+FEED.forEach(i=>{if(i.kind==='video')_pvgCache[i.id]=i;});
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded',()=>{
@@ -998,6 +1021,52 @@ function toggleMute(e){
   e.stopPropagation();S.muted=!S.muted;
   document.querySelectorAll('video').forEach(v=>v.muted=S.muted);
   document.querySelectorAll('.sound-btn').forEach(b=>b.innerHTML=S.muted?SVG.soundOff:SVG.soundOn);
+}
+
+// ── VIDEO OVERLAY (in-page single video view — never navigates to the legacy /video/<id> page) ──
+function openVideoOverlay(v){
+  if(!v)return;
+  pauseCurrentVideo();
+  const liked=S.liked.has(v.id),saved=S.saved.has(v.id),hasV=v.video_url&&v.video_url!=='null';
+  const bgImg=v.thumbnail_url?`url('${esc(v.thumbnail_url)}')`:'none';
+  const slide=document.getElementById('vo-slide');
+  slide.innerHTML=`
+    ${hasV?`<div class="vid-bg" style="background-image:${bgImg}"></div>
+    <video class="slide-vid" id="vo-vid" preload="auto" playsinline loop ${S.muted?'muted':''} src="${esc(v.video_url)}"></video>`:''}
+    ${!hasV?`<div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">${esc(v.title||'Video')}</p><p class="vplaceholder-sub">${esc(v.caption||'')}</p></div>`:''}
+    <div class="grad-top"></div><div class="grad-bot"></div>
+    <button type="button" class="sound-btn" onclick="toggleMute(event)" aria-label="Toggle sound">${S.muted?SVG.soundOff:SVG.soundOn}</button>
+    <div class="creator-info">
+      <div class="creator-row">
+        <div class="cavatar">${fmtInit(v.creator||'?')}</div>
+        <span class="cname">@${esc(v.creator_username||v.creator||'unknown')}</span>
+        ${v.can_follow_creator?`<button type="button" class="follow-pill${v.creator_is_followed?' following':''}" data-creator="${esc(v.creator_username||'')}" onclick="followUser(this,event)">${v.creator_is_followed?'Following':'+ Follow'}</button>`:''}
+      </div>
+      <p class="vcaption" onclick="this.classList.toggle('exp')">${esc(v.caption||v.title||'')}</p>
+      ${v.topic?`<span class="vtags">#${esc(v.topic)} #${esc(v.region||'')}</span>`:''}
+    </div>
+    <div class="action-bar">
+      <button type="button" class="abtn" onclick="likeVideo(${v.id},this)"><div class="abtn-icon${liked?' liked':''}">${SVG.heart}</div><span class="abtn-count">${fmtNum(v.likes)}</span></button>
+      <button type="button" class="abtn" onclick="openComments(${v.id},this)"><div class="abtn-icon">${SVG.comment}</div><span class="abtn-count">${fmtNum((v.text_comments_count||0)+(v.voice_replies||0))}</span></button>
+      <button type="button" class="abtn" onclick="shareVideo(${v.id})"><div class="abtn-icon">${SVG.share}</div><span class="abtn-count">${fmtNum(v.shares_count)}</span></button>
+      <button type="button" class="abtn" onclick="openVoicePanelForVideo(${v.id},this)"><div class="abtn-icon">${SVG.mic}</div><span class="abtn-count">${fmtNum(v.voice_replies)}</span></button>
+      <button type="button" class="abtn" onclick="saveVideo(${v.id},this)"><div class="abtn-icon${saved?' saved':''}">${SVG.bookmark}</div><span class="abtn-count">${fmtNum(v.saves_count)}</span></button>
+    </div>`;
+  _pvgCache[v.id]=v;
+  document.getElementById('vo').classList.add('open');
+  const vid=document.getElementById('vo-vid');
+  if(vid)vid.play().catch(()=>{});
+}
+function closeVideoOverlay(){
+  document.getElementById('vo').classList.remove('open');
+  const vid=document.getElementById('vo-vid');if(vid)vid.pause();
+  document.getElementById('vo-slide').innerHTML='';
+  if(S.screen==='home')resumeCurrentVideo();
+}
+async function openVideoOverlayById(id){
+  if(_pvgCache[id]){openVideoOverlay(_pvgCache[id]);return;}
+  try{openVideoOverlay(await api('/api/videos/'+id));}
+  catch(e){toast('Could not load video');}
 }
 
 function initFeedTabs(){
@@ -1405,7 +1474,8 @@ function initDiscoverScreen(){
 function renderDiscoverGrid(){
   const grid=document.getElementById('discover-grid');
   const videos=FEED.filter(i=>i.kind==='video').slice(0,18);
-  grid.innerHTML=videos.map(v=>`<div class="dgrid-thumb" onclick="location.href='/video/${v.id}'">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:'<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e)"></div>'}<span class="dgrid-views">▶ ${fmtNum(v.views)}</span></div>`).join('');
+  videos.forEach(v=>_pvgCache[v.id]=v);
+  grid.innerHTML=videos.map(v=>`<div class="dgrid-thumb" onclick="openVideoOverlayById(${v.id})">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:'<div class="dgrid-placeholder"></div>'}<span class="dgrid-views">▶ ${fmtNum(v.views)}</span></div>`).join('');
 }
 
 function showDefaultDiscover(){document.getElementById('search-results-sec').classList.add('hidden');document.getElementById('topic-section').classList.remove('hidden');}
@@ -1418,7 +1488,7 @@ async function searchVideos(q){
   try{
     const r=await api('/api/discovery?q='+encodeURIComponent(q));const items=r.items||[];
     if(!items.length){el.innerHTML='<div class="empty-msg">No results found</div>';return;}
-    el.innerHTML=items.map(it=>`<div class="dres-item" onclick="location.href='/video/${it.video_id||it.id||0}'">${it.thumbnail_url?`<div class="dres-thumb"><img src="${esc(it.thumbnail_url)}" loading="lazy" alt=""></div>`:'<div class="dres-thumb" style="background:#1a1a2e"></div>'}<div><p class="dres-title">${esc(it.title||it.query||'')}</p><p class="dres-meta">${esc(it.creator||'')} · ${fmtNum(it.views||0)} views</p></div></div>`).join('');
+    el.innerHTML=items.map(it=>`<div class="dres-item" onclick="openVideoOverlayById(${it.video_id||it.id||0})">${it.thumbnail_url?`<div class="dres-thumb"><img src="${esc(it.thumbnail_url)}" loading="lazy" alt=""></div>`:'<div class="dres-thumb dres-thumb-empty"></div>'}<div><p class="dres-title">${esc(it.title||it.query||'')}</p><p class="dres-meta">${esc(it.creator||'')} · ${fmtNum(it.views||0)} views</p></div></div>`).join('');
   }catch(e){el.innerHTML='<div class="empty-msg">Search failed</div>';}
 }
 
@@ -1433,7 +1503,7 @@ function renderNotifs(kind){
   const filtered=kind==='all'?NOTIFS:NOTIFS.filter(n=>n.kind===kind);
   if(!filtered.length){list.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">🔔</div>No notifications here yet</div>';return;}
   const icons={like:'❤️',text_comment:'💬',voice_reply:'🎤',follow:'👤',mention:'@'};
-  list.innerHTML=filtered.map((n,i)=>`<div class="notif-item${n.is_read===false?' unread':''}" style="animation-delay:${i*35}ms"><div class="nav2">${icons[n.kind]||'🔔'}</div><div class="ni-body"><p class="ni-msg">${esc(n.message||n.body||'')}</p><span class="ni-time">${timeAgo(n.created_at)}</span></div>${n.video_id?`<div class="ni-thumb" onclick="location.href='/video/${n.video_id}'">🎬</div>`:''}</div>`).join('');
+  list.innerHTML=filtered.map((n,i)=>`<div class="notif-item${n.is_read===false?' unread':''}" style="animation-delay:${i*35}ms"><div class="nav2">${icons[n.kind]||'🔔'}</div><div class="ni-body"><p class="ni-msg">${esc(n.message||n.body||'')}</p><span class="ni-time">${timeAgo(n.created_at)}</span></div>${n.video_id?`<div class="ni-thumb" onclick="openVideoOverlayById(${n.video_id})">🎬</div>`:''}</div>`).join('');
   if(NOTIFS_UNREAD>0)api('/api/notifications/read','POST').then(()=>document.getElementById('notif-badge').classList.add('hidden')).catch(()=>{});
 }
 
@@ -1482,22 +1552,23 @@ function renderProfileScreen(){
 
 function renderPVGrid(videos){
   const grid=document.getElementById('pvgrid');if(!grid)return;
-  if(!videos.length){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">No videos yet</div>';return;}
-  grid.innerHTML=videos.map(v=>`<div class="pvthumb" onclick="location.href='/video/${v.id}'">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:`<div class="pvph">🎬</div>`}<span class="pvviews">▶ ${fmtNum(v.views)}</span></div>`).join('');
+  if(!videos.length){grid.innerHTML='<div class="empty-msg pvgrid-empty">No videos yet</div>';return;}
+  videos.forEach(v=>_pvgCache[v.id]=v);
+  grid.innerHTML=videos.map(v=>`<div class="pvthumb" onclick="openVideoOverlayById(${v.id})">${v.thumbnail_url?`<img src="${esc(v.thumbnail_url)}" loading="lazy" alt="">`:`<div class="pvph">🎬</div>`}<span class="pvviews">▶ ${fmtNum(v.views)}</span></div>`).join('');
 }
 
 async function loadLiked(){
   const grid=document.getElementById('pvgrid');if(!grid)return;
-  if(!ME){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Sign in to see liked videos</div>';return;}
-  grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Loading…</div>';
-  try{const r=await api('/api/me/likes');renderPVGrid(r.items||[]);}catch(e){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Could not load</div>';}
+  if(!ME){grid.innerHTML='<div class="empty-msg pvgrid-empty">Sign in to see liked videos</div>';return;}
+  grid.innerHTML='<div class="empty-msg pvgrid-empty">Loading…</div>';
+  try{const r=await api('/api/me/likes');renderPVGrid(r.items||[]);}catch(e){grid.innerHTML='<div class="empty-msg pvgrid-empty">Could not load</div>';}
 }
 
 async function loadSaved(){
   const grid=document.getElementById('pvgrid');if(!grid)return;
-  if(!ME){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Sign in to see saved videos</div>';return;}
-  grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Loading…</div>';
-  try{const r=await api('/api/me/saved/videos');renderPVGrid(r.items||[]);}catch(e){grid.innerHTML='<div class="empty-msg" style="grid-column:span 3">Could not load</div>';}
+  if(!ME){grid.innerHTML='<div class="empty-msg pvgrid-empty">Sign in to see saved videos</div>';return;}
+  grid.innerHTML='<div class="empty-msg pvgrid-empty">Loading…</div>';
+  try{const r=await api('/api/me/saved/videos');renderPVGrid(r.items||[]);}catch(e){grid.innerHTML='<div class="empty-msg pvgrid-empty">Could not load</div>';}
 }
 
 async function toggleProfileFollow(){

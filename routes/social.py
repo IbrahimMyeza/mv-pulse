@@ -229,6 +229,13 @@ def upload():
     return redirect(url_for("social.video_detail", id=video.id))
 
 
+@social_bp.route("/api/videos/<int:id>")
+def api_video_detail(id):
+    video = Video.query.get_or_404(id)
+    hydrate_videos([video], viewer=current_user())
+    return jsonify(serialize_video(video))
+
+
 @social_bp.route("/video/<int:id>")
 def video_detail(id):
     ensure_social_seed()
