@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -22,7 +22,7 @@
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+  -webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none}
 button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
 input,textarea,select{font:inherit;color:inherit;background:none;border:none;outline:none}
 a{color:inherit;text-decoration:none}
@@ -49,12 +49,11 @@ a{color:inherit;text-decoration:none}
 .screen.active{opacity:1;pointer-events:all}
 /* FEED */
 #feed{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  scrollbar-width:none}
 #feed::-webkit-scrollbar{display:none}
 .vslide{position:relative;height:100dvh;scroll-snap-align:start;background:#000;overflow:hidden;transition:opacity .3s ease}
 /* blurred backdrop fills the black bars for non-9:16 content */
-.vid-bg{position:absolute;inset:-8%;width:116%;height:116%;
-  background-size:cover;background-position:center;background-repeat:no-repeat;
+.vid-bg{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;
   filter:blur(24px) brightness(.3) saturate(1.5);
   pointer-events:none;z-index:0;will-change:filter}
 /* actual video: contain so it never stretches or crops */
@@ -140,7 +139,7 @@ a{color:inherit;text-decoration:none}
 #vo{position:fixed;inset:0;z-index:320;background:#000;display:none}
 #vo.open{display:block}
 #vo-feed{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  scrollbar-width:none}
 #vo-feed::-webkit-scrollbar{display:none}
 #vo-feed .vslide{height:100dvh;scroll-snap-align:start}
 .vo-back{position:absolute;top:calc(var(--top) + 10px);left:12px;z-index:21;
@@ -149,7 +148,7 @@ a{color:inherit;text-decoration:none}
 .vo-back svg{width:18px;height:18px;fill:#fff}
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);
-  background:rgba(0,0,0,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  background:rgba(0,0,0,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
   border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;
   z-index:300;padding-bottom:env(safe-area-inset-bottom,0px)}
 .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -186,7 +185,7 @@ a{color:inherit;text-decoration:none}
 .stab{flex:1;text-align:center;padding:6px 0;font-size:14px;font-weight:700;
   color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
 .stab.active{color:var(--text);border-bottom-color:var(--text)}
-.sbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sbody{flex:1;overflow-y:auto}
 .sbody::-webkit-scrollbar{display:none}
 .cmt-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
 .cmt-av{width:32px;height:32px;border-radius:50%;background:var(--surface2);
@@ -286,6 +285,7 @@ a{color:inherit;text-decoration:none}
 .rstatus{font-size:14px;font-weight:600;color:var(--muted);text-align:center}
 .rstatus.rstatus-strong{font-size:16px;font-weight:800;color:var(--text)}
 .rtimer{font-size:44px;font-weight:200;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.rtimer-sm{font-size:32px}
 .vactions{display:flex;gap:12px;width:100%}
 .btn-ghost{flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);
   font-size:14px;font-weight:700;color:var(--muted);text-align:center}
@@ -318,7 +318,7 @@ a{color:inherit;text-decoration:none}
 .ulabel{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .uinput{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:14px;width:100%}
 .uinput::placeholder{color:var(--subtle)}
-.usel{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:14px;width:100%;-webkit-appearance:none}
+.usel{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:14px;width:100%;-webkit-appearance:none;appearance:none}
 .usel option{background:var(--surface)}
 .btn-post{background:var(--accent);color:#fff;font-size:16px;font-weight:800;padding:16px;border-radius:12px;width:100%;text-align:center;margin-top:4px}
 .btn-post:disabled{background:var(--surface2);color:var(--subtle)}
@@ -689,7 +689,7 @@ body.text-xl{font-size:20px}
     <div class="vstate-draft-conflict">
       <p class="rstatus rstatus-strong">You have an unfinished voice reply</p>
       <p class="rstatus" id="dc-video-title">Video</p>
-      <p class="rtimer" id="dc-duration" style="font-size:32px">00:00</p>
+      <p class="rtimer rtimer-sm" id="dc-duration">00:00</p>
       <div class="vactions">
         <button type="button" class="btn-ghost" onclick="discardDraftAndStartNew()">Discard & Start New</button>
         <button type="button" class="btn-stop" onclick="resumeFromDraftConflict()">Resume Draft</button>
@@ -896,19 +896,26 @@ body.text-xl{font-size:20px}
 
 <div id="toast"></div>
 
-<!-- SERVER DATA -->
+<!-- SERVER DATA — JSON data island; Jinja2 renders server-side, browser reads as plain text -->
+<script id="app-data" type="application/x-data">
+{"feedItems":{{ feed_items | tojson }},"currentUser":{{ current_user_payload | tojson }},"profileStats":{{ profile_stats | tojson }},"profileVideos":{{ profile_videos | tojson }},"profileUser":{{ (profile_user.username if profile_user else '') | tojson }},"profileAvatar":{{ (profile_user.avatar_url if profile_user else '') | tojson }},"profileIsOwner":{{ profile_is_owner | tojson }},"notifications":{{ notifications | tojson }},"notifsUnread":{{ notifications_unread_count | default(0) }},"isFollowing":{{ is_following_profile | tojson }},"activeTab":{{ active_tab | tojson }},"authMessage":{{ (auth_message or '') | tojson }}}
+</script>
 <script>
-window.FEED_ITEMS = {{ feed_items | tojson }};
-window.CURRENT_USER = {{ current_user_payload | tojson }};
-window.PROFILE_STATS = {{ profile_stats | tojson }};
-window.PROFILE_VIDEOS = {{ profile_videos | tojson }};
-window.PROFILE_USER = {{ (profile_user.username if profile_user else '') | tojson }};
-window.PROFILE_AVATAR = {{ (profile_user.avatar_url if profile_user else '') | tojson }};
-window.PROFILE_IS_OWNER = {{ profile_is_owner | tojson }};
-window.NOTIFICATIONS = {{ notifications | tojson }};
-window.NOTIFS_UNREAD = {{ notifications_unread_count | default(0) }};
-window.IS_FOLLOWING = {{ is_following_profile | tojson }};
-window.ACTIVE_TAB = {{ active_tab | tojson }};
+(function(){
+  var d=JSON.parse(document.getElementById('app-data').textContent);
+  window.FEED_ITEMS=d.feedItems;
+  window.CURRENT_USER=d.currentUser;
+  window.PROFILE_STATS=d.profileStats;
+  window.PROFILE_VIDEOS=d.profileVideos;
+  window.PROFILE_USER=d.profileUser;
+  window.PROFILE_AVATAR=d.profileAvatar;
+  window.PROFILE_IS_OWNER=d.profileIsOwner;
+  window.NOTIFICATIONS=d.notifications;
+  window.NOTIFS_UNREAD=d.notifsUnread;
+  window.IS_FOLLOWING=d.isFollowing;
+  window.ACTIVE_TAB=d.activeTab;
+  window.AUTH_MESSAGE=d.authMessage;
+})();
 </script>
 <script>
 // ── STATE ──
@@ -1032,11 +1039,11 @@ function renderFeed(){
     } else {
       slide.dataset.videoid=item.id;
       const hasV=item.video_url&&item.video_url!=='null';
-      const bgImg=item.thumbnail_url?`url('${esc(item.thumbnail_url)}')`:'none';
       // idx 0: eager src + preload=auto so first frame is ready before user scrolls
       const isFirst=idx===0;
       slide.innerHTML=`
-        ${hasV?`<div class="vid-bg" style="background-image:${bgImg}"></div>
+        ${hasV&&item.thumbnail_url?`<img class="vid-bg" src="${esc(item.thumbnail_url)}" alt="" aria-hidden="true">`:''}
+        ${hasV?`
         <video class="slide-vid" ${isFirst?'preload="auto"':'preload="metadata"'} playsinline loop muted ${isFirst?`src="${esc(item.video_url)}"` : `data-src="${esc(item.video_url)}"`}></video>`:''}
         ${!hasV?`<div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">${esc(item.title||'Video')}</p><p class="vplaceholder-sub">${esc(item.caption||'')}</p></div>`:''}
         <div class="grad-top"></div><div class="grad-bot"></div>
@@ -1183,9 +1190,9 @@ function toggleMute(e){
 // ── VIDEO OVERLAY (in-page swipeable multi-video feed — never navigates to the legacy /video/<id> page) ──
 function videoSlideInner(v){
   const hasV=v.video_url&&v.video_url!=='null';
-  const bgImg=v.thumbnail_url?`url('${esc(v.thumbnail_url)}')`:'none';
   return `
-    ${hasV?`<div class="vid-bg" style="background-image:${bgImg}"></div>
+    ${hasV&&v.thumbnail_url?`<img class="vid-bg" src="${esc(v.thumbnail_url)}" alt="" aria-hidden="true">`:''}
+    ${hasV?`
     <video class="slide-vid" preload="metadata" playsinline loop ${S.muted?'muted':''} data-src="${esc(v.video_url)}"></video>`:''}
     ${!hasV?`<div class="vplaceholder"><div class="vplaceholder-icon">🎬</div><p class="vplaceholder-title">${esc(v.title||'Video')}</p><p class="vplaceholder-sub">${esc(v.caption||'')}</p></div>`:''}
     <div class="grad-top"></div><div class="grad-bot"></div>
@@ -1494,11 +1501,11 @@ async function loadComments(id){
     if(S.commentTab==='comments'){
       const r=await api('/api/videos/'+id+'/comments');const items=r.items||[];
       if(!items.length){body.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">💬</div>No comments yet. Be first!</div>';return;}
-      body.innerHTML=items.map((c,i)=>`<div class="cmt-item" style="animation-delay:${i*38}ms"><div class="cmt-av">${fmtInit(c.username)}</div><div class="cmt-body"><span class="cmt-user">${esc(c.username)}</span><p class="cmt-text">${esc(c.content)}</p><span class="cmt-time">${timeAgo(c.created_at)}</span></div></div>`).join('');
+      body.innerHTML=items.map(c=>`<div class="cmt-item"><div class="cmt-av">${fmtInit(c.username)}</div><div class="cmt-body"><span class="cmt-user">${esc(c.username)}</span><p class="cmt-text">${esc(c.content)}</p><span class="cmt-time">${timeAgo(c.created_at)}</span></div></div>`).join('');
     } else {
       const r=await api('/api/video/'+id+'/replies');const items=r.replies||[];
       if(!items.length){body.innerHTML='<div class="empty-msg"><div class="empty-msg-icon">🎤</div>No voice replies yet</div>';return;}
-      body.innerHTML=items.map((vr,i)=>`<div class="vr-item" style="animation-delay:${i*38}ms"><button class="vr-play" onclick="playVoiceReply('${esc(vr.audio_url||'')}',this)"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg></button><div class="vr-meta"><span class="vr-user">${esc(vr.username)}</span><p class="vr-trans">${esc(vr.transcript||'(voice reply)')}</p><span class="vr-dur">${vr.duration?(vr.duration|0)+'s':''}</span></div></div>`).join('');
+      body.innerHTML=items.map(vr=>`<div class="vr-item"><button class="vr-play" onclick="playVoiceReply('${esc(vr.audio_url||'')}',this)"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21" fill="white"/></svg></button><div class="vr-meta"><span class="vr-user">${esc(vr.username)}</span><p class="vr-trans">${esc(vr.transcript||'(voice reply)')}</p><span class="vr-dur">${vr.duration?(vr.duration|0)+'s':''}</span></div></div>`).join('');
     }
   }catch(e){body.innerHTML='<div class="empty-msg">Failed to load. Try again.</div>';}
 }
@@ -2291,7 +2298,7 @@ function _setSizeClass(size){
 
 // ── AUTH ──
 function openAuthModal(){
-  {% if current_user %}return;{% endif %}
+  if(window.CURRENT_USER)return;
   openSheet('auth-modal');
 }
 
@@ -2302,7 +2309,7 @@ function initAuthTabs(){
     document.getElementById('login-form').classList.toggle('hidden',form!=='login');
     document.getElementById('signup-form').classList.toggle('hidden',form!=='signup');
   }));
-  {% if not current_user and auth_message %}setTimeout(()=>openSheet('auth-modal'),200);{% endif %}
+  if(!window.CURRENT_USER&&window.AUTH_MESSAGE)setTimeout(()=>openSheet('auth-modal'),200);
 }
 
 // ── PWA INSTALL ──
