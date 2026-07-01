@@ -40,6 +40,7 @@ def serialize_notification_timeline_item(notification):
         "video_id": notification.video_id,
         "voice_reply_id": notification.voice_reply_id,
         "target_url": notification_target_url(notification),
+        "thumbnail_url": notification.video.thumbnail_url if notification.video else None,
     }
 
 

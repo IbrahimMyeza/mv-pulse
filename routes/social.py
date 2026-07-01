@@ -148,6 +148,26 @@ def api_me_likes():
     return jsonify({"items": load_liked_videos(user)})
 
 
+@social_bp.route("/api/notifications")
+def api_notifications():
+    user, error = _auth_required_json()
+    if error:
+        return _auth_response("Sign in to see notifications.")
+    from models.notification import Notification
+    notifications = (
+        Notification.query
+        .filter_by(recipient_user_id=user.id)
+        .order_by(Notification.created_at.desc())
+        .limit(60)
+        .all()
+    )
+    from routes.social_utils import serialize_notification
+    return jsonify({
+        "items": [serialize_notification(n) for n in notifications],
+        "unread_count": Notification.query.filter_by(recipient_user_id=user.id, is_read=False).count(),
+    })
+
+
 @social_bp.route("/api/notifications/read", methods=["POST"])
 def api_notifications_read():
     user, error = _auth_required_json()
@@ -357,6 +377,16 @@ def api_videos_save(id):
 @social_bp.route("/api/videos/<int:id>/share", methods=["POST"])
 def api_videos_share(id):
     video = Video.query.get_or_404(id)
+    viewer = current_user()
+    if viewer and video.creator_id and video.creator_id != viewer.id:
+        from routes.social_utils import create_notification
+        create_notification(
+            recipient_id=video.creator_id,
+            actor_id=viewer.id,
+            video_id=video.id,
+            kind="share",
+            message=f"{viewer.username} shared your video",
+        )
     return jsonify(track_video_share(video))
 
 
