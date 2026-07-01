@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="MV Pulse">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/static/icons/mv-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icons/mv-icon-192.png">
 <title>MV Pulse — Voice-first video from Africa</title>
 <script src="/static/pwa.js" defer></script>
 <style>
@@ -118,9 +119,17 @@ input{font:inherit;color:inherit;background:none;border:none;outline:none}
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
         Continue with Google
       </a>
-      <button type="button" class="btn-install" data-install-app hidden>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Add to Home Screen
+      <button type="button" class="btn-install" id="install-cta" data-install-app hidden>
+        <svg width="22" height="22" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="idx-m-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#25f4ee"/>
+              <stop offset="100%" stop-color="#fe2c55"/>
+            </linearGradient>
+          </defs>
+          <path d="M120 360V152h56l80 122 80-122h56v208h-54V246l-66 101h-32l-66-100v113z" fill="url(#idx-m-grad)"/>
+        </svg>
+        <span id="install-cta-label">Add to Home Screen</span>
       </button>
       <p class="signin-row">Already have an account? <button type="button" onclick="openAuth('login')">Log in</button></p>
     </div>
@@ -177,6 +186,16 @@ function switchAuthTab(tab){
   document.getElementById('signup-form').style.display=tab==='signup'?'':'none';
 }
 {% if auth_message %}setTimeout(()=>openAuth('login'),200);{% endif %}
+
+// iOS: show Add to Home Screen button with instructions in label
+const _isIos=/iPhone|iPad|iPod/i.test(navigator.userAgent)&&!('MSStream' in window);
+const _isStandalone=window.navigator.standalone===true;
+const _installCta=document.getElementById('install-cta');
+const _installLabel=document.getElementById('install-cta-label');
+if(_isIos&&!_isStandalone&&_installCta){
+  if(_installLabel)_installLabel.textContent='Tap Share ↑ → Add to Home Screen';
+  _installCta.hidden=false;
+}
 </script>
 </body>
 </html>
