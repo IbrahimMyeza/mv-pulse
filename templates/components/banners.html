@@ -1,0 +1,33 @@
+<!-- VOICE DRAFT BANNER -->
+<div id="voice-draft-bar" hidden>
+  <span class="ib-icon">🎙️</span>
+  <div class="ib-text">
+    <b id="vdb-title">Voice Reply Draft</b>
+    <span id="vdb-sub">Saved a moment ago</span>
+  </div>
+  <button type="button" class="ib-btn ib-btn-ghost" onclick="resumeDraftFromBanner()">Resume</button>
+  <button type="button" class="ib-btn" onclick="sendDraftFromBanner()">Send</button>
+  <button type="button" class="ib-close" onclick="deleteDraftFromBanner()" aria-label="Delete draft">✕</button>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="install-bar" hidden>
+  <svg class="ib-icon" width="32" height="32" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="mvp-m-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#25f4ee"/>
+        <stop offset="100%" stop-color="#fe2c55"/>
+      </linearGradient>
+    </defs>
+    <rect width="512" height="512" rx="110" fill="rgba(255,255,255,.06)"/>
+    <path d="M120 360V152h56l80 122 80-122h56v208h-54V246l-66 101h-32l-66-100v113z" fill="url(#mvp-m-grad)"/>
+  </svg>
+  <div class="ib-text">
+    <b id="ib-title">Get the App</b>
+    <span id="ib-sub">Install MV Pulse for the best experience</span>
+  </div>
+  <button type="button" class="ib-btn" id="pwa-install-btn">Install</button>
+  <button type="button" class="ib-close" onclick="dismissInstall()" aria-label="Dismiss">✕</button>
+</div>
+
+<div id="toast"></div>

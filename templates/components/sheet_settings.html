@@ -1,0 +1,22 @@
+<div class="sheet" id="settings-sheet">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Settings</span><button type="button" class="sclose" onclick="closeSheet('settings-sheet')" aria-label="Close">✕</button></div>
+  <div class="settings-body">
+    <div class="set-section">
+      <p class="set-lbl">Theme</p>
+      <div class="set-row">
+        <button type="button" class="set-chip active" data-theme="dark" onclick="applyTheme('dark')">🌙 Dark</button>
+        <button type="button" class="set-chip" data-theme="light" onclick="applyTheme('light')">☀️ Light</button>
+        <button type="button" class="set-chip" data-theme="hi-contrast" onclick="applyTheme('hi-contrast')">◐ Contrast</button>
+      </div>
+    </div>
+    <div class="set-section">
+      <p class="set-lbl">Text size</p>
+      <div class="set-row">
+        <button type="button" class="set-chip active" data-size="normal" onclick="applyTextSize('normal')">A</button>
+        <button type="button" class="set-chip" data-size="large" onclick="applyTextSize('large')">A</button>
+        <button type="button" class="set-chip" data-size="xlarge" onclick="applyTextSize('xlarge')">A</button>
+      </div>
+    </div>
+  </div>
+</div>

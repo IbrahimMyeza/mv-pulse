@@ -1,0 +1,22 @@
+<div class="sheet" id="upload-modal">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Create Post</span><button type="button" class="sclose" onclick="closeSheet('upload-modal')" aria-label="Close">✕</button></div>
+  <div class="ubody">
+    <div class="uzone" id="upload-zone">
+      <div class="uzone-icon">📹</div>
+      <p>Add a video to share</p>
+      <button type="button" class="btn-sel" onclick="document.getElementById('vid-file').click()">Select Video</button>
+    </div>
+    <div id="upload-form" class="hidden">
+      <video class="uprev" id="upload-preview" controls muted></video>
+      <div class="ufield"><label class="ulabel">Title *</label><input class="uinput" id="up-title" placeholder="Give your video a title…"></div>
+      <div class="ufield"><label class="ulabel">Caption</label><input class="uinput" id="up-caption" placeholder="Describe your video…"></div>
+      <div class="ufield"><label class="ulabel">Topic</label>
+        <select class="usel" id="up-topic" aria-label="Topic"><option value="general">General</option><option value="sports">Sports</option><option value="music">Music</option><option value="comedy">Comedy</option><option value="news">News</option><option value="education">Education</option></select></div>
+      <div class="ufield"><label class="ulabel">Region</label>
+        <select class="usel" id="up-region" aria-label="Region"><option value="Durban">Durban</option><option value="Johannesburg">Johannesburg</option><option value="Cape Town">Cape Town</option><option value="Pretoria">Pretoria</option><option value="Other">Other</option></select></div>
+      <button type="button" class="btn-post" id="upload-submit" onclick="submitUpload()">Post Video</button>
+    </div>
+  </div>
+  <input type="file" id="vid-file" accept="video/*" class="hidden">
+</div>

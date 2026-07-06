@@ -1,0 +1,114 @@
+<div class="sheet" id="voice-panel">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Voice Reply</span><span class="vp-status" id="vp-status-badge"></span><button type="button" class="sclose" onclick="cancelRecording()" aria-label="Close">✕</button></div>
+  <div class="vpbody" id="vpbody" data-state="idle">
+
+    <!-- IDLE: mic permission pending / retry -->
+    <div class="vstate-idle">
+      <button type="button" class="rring" onclick="startRecording()" aria-label="Start recording">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      </button>
+      <p class="rstatus" id="idle-status">Preparing microphone…</p>
+      <p class="rtimer">00:00</p>
+      <button type="button" class="btn-ghost btn-ghost-block" onclick="cancelRecording()">Cancel</button>
+    </div>
+
+    <!-- RECORDING: timer + pause/stop -->
+    <div class="vstate-rec">
+      <button type="button" class="rring rec" id="record-ring" onclick="pauseRecording()" aria-label="Pause recording">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      </button>
+      <p class="rstatus">🎙 Recording…</p>
+      <p class="rtimer" id="record-timer">00:00</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="cancelRecording()">Cancel</button>
+        <button type="button" class="btn-stop" onclick="stopRecording()">■ Stop</button>
+      </div>
+    </div>
+
+    <!-- PAUSED: interrupted recording -->
+    <div class="vstate-paused">
+      <button type="button" class="rring paused" onclick="resumeRecording()" aria-label="Resume recording">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+      </button>
+      <p class="rstatus">⏸ Recording Paused</p>
+      <p class="rtimer" id="paused-timer">00:00</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="cancelRecording()">Discard</button>
+        <button type="button" class="btn-stop" onclick="resumeRecording()">Resume</button>
+      </div>
+      <button type="button" class="btn-red btn-ghost-block" onclick="requestSend()">Send ↑</button>
+    </div>
+
+    <!-- DONE: preview before sending -->
+    <div class="vstate-done">
+      <button type="button" class="rring done" id="playback-ring" onclick="togglePlayback()" aria-label="Play preview">
+        <svg id="pb-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+      </button>
+      <p class="rstatus" id="playback-status">Tap to preview</p>
+      <p class="rtimer" id="playback-duration">00:00</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="reRecord()">↺ Re-record</button>
+        <button type="button" class="btn-ghost" onclick="cancelRecording()">🗑 Delete</button>
+      </div>
+      <button type="button" class="btn-red btn-ghost-block" id="send-voice-btn" onclick="sendVoiceReply()">Send ↑</button>
+    </div>
+
+    <!-- DISCARD CONFIRM -->
+    <div class="vstate-discard-confirm">
+      <p class="rstatus rstatus-strong">Discard this voice recording?</p>
+      <p class="rstatus">You have an unsent voice reply.</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="resumeFromConfirm()">Resume</button>
+        <button type="button" class="btn-stop" onclick="saveDraftAndCloseFromConfirm()">Save Draft</button>
+      </div>
+      <button type="button" class="btn-red btn-ghost-block" onclick="discardRecordingNow()">Discard</button>
+    </div>
+
+    <!-- SWITCH CONFIRM: tapping mic on a different video while one is in progress -->
+    <div class="vstate-switch-confirm">
+      <p class="rstatus rstatus-strong">You already have an unfinished voice reply.</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="resumeFromSwitchConfirm()">Resume current</button>
+        <button type="button" class="btn-stop" onclick="saveDraftAndSwitch()">Save as draft</button>
+      </div>
+      <button type="button" class="btn-red btn-ghost-block" onclick="discardAndSwitch()">Discard &amp; start new</button>
+    </div>
+
+    <!-- DRAFT CONFLICT: a draft persisted from a previous session collides with a new video -->
+    <div class="vstate-draft-conflict">
+      <p class="rstatus rstatus-strong">You have an unfinished voice reply</p>
+      <p class="rstatus" id="dc-video-title">Video</p>
+      <p class="rtimer rtimer-sm" id="dc-duration">00:00</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="discardDraftAndStartNew()">Discard &amp; Start New</button>
+        <button type="button" class="btn-stop" onclick="resumeFromDraftConflict()">Resume Draft</button>
+      </div>
+    </div>
+
+    <!-- SENDING: upload in progress -->
+    <div class="vstate-sending">
+      <p class="rstatus rstatus-strong">Uploading…</p>
+      <div class="upload-bar"><div class="upload-bar-fill" id="upload-bar-fill"></div></div>
+      <p class="rstatus" id="upload-pct">0%</p>
+    </div>
+
+    <!-- SENT: confirmation -->
+    <div class="vstate-sent">
+      <div class="check-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <p class="rstatus rstatus-strong">✓ Voice Reply Sent</p>
+    </div>
+
+    <!-- SEND FAILED -->
+    <div class="vstate-send-failed">
+      <p class="rstatus rstatus-strong">Upload Failed</p>
+      <p class="rstatus">Check your connection and try again.</p>
+      <div class="vactions">
+        <button type="button" class="btn-ghost" onclick="saveDraftAndCloseFromFailed()">Save Draft</button>
+        <button type="button" class="btn-stop" onclick="retrySend()">Retry</button>
+      </div>
+      <button type="button" class="btn-red btn-ghost-block" onclick="discardRecordingNow()">Discard</button>
+    </div>
+
+  </div>
+</div>

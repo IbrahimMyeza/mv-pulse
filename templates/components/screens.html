@@ -1,0 +1,33 @@
+<div class="screens">
+  <!-- HOME -->
+  <div class="screen active" id="screen-home"><div id="feed"></div></div>
+
+  <!-- DISCOVER -->
+  <div class="screen hidden" id="screen-discover">
+    <div class="discover-inner">
+      <div class="sbar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" placeholder="Search videos, people, topics…" autocomplete="off">
+      </div>
+      <div class="dsec" id="topic-section"><h3>Trending Topics</h3><div class="chip-wrap" id="topic-chips"></div></div>
+      <div class="dsec hidden" id="search-results-sec"><h3 id="search-results-title">Results</h3><div id="search-results"></div></div>
+      <div class="dsec"><h3>Videos</h3><div class="dgrid" id="discover-grid"></div></div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="screen hidden" id="screen-notifs">
+    <div class="ntabs-bar">
+      <button type="button" class="ntab active" data-kind="all">All</button>
+      <button type="button" class="ntab" data-kind="video_like">Likes</button>
+      <button type="button" class="ntab" data-kind="text_comment">Comments</button>
+      <button type="button" class="ntab" data-kind="voice_reply">Voice</button>
+      <button type="button" class="ntab" data-kind="follow">Followers</button>
+      <button type="button" class="ntab" data-kind="mention">Mentions</button>
+    </div>
+    <div id="notifs-list"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen hidden" id="screen-profile"><div id="profile-content"></div></div>
+</div>

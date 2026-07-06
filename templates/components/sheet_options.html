@@ -1,0 +1,22 @@
+<div class="sheet" id="options-sheet">
+  <div class="shandle"></div>
+  <div class="opt-list">
+    <div class="opt-item danger" onclick="openReportSheet()"><span class="opt-icon">🚩</span>Report this video</div>
+    <div class="opt-item" onclick="blockCreator()"><span class="opt-icon">🚫</span>Block <span id="opt-creator-name">creator</span></div>
+    <div class="opt-item" onclick="muteCreator()"><span class="opt-icon">🔇</span>Mute <span class="opt-creator-ref">creator</span></div>
+    <div class="opt-item" onclick="notInterested()"><span class="opt-icon">🙈</span>Not interested in this</div>
+  </div>
+</div>
+
+<div class="sheet" id="report-sheet">
+  <div class="shandle"></div>
+  <div class="sheader"><span class="stitle">Report video</span><button type="button" class="sclose" onclick="closeSheet('report-sheet')" aria-label="Close">✕</button></div>
+  <div class="report-chips">
+    <button type="button" class="rchip" onclick="submitReport('spam')">Spam or misleading</button>
+    <button type="button" class="rchip" onclick="submitReport('inappropriate')">Inappropriate content</button>
+    <button type="button" class="rchip" onclick="submitReport('harassment')">Harassment or bullying</button>
+    <button type="button" class="rchip" onclick="submitReport('misinformation')">Misinformation</button>
+    <button type="button" class="rchip" onclick="submitReport('copyright')">Copyright violation</button>
+    <button type="button" class="rchip" onclick="submitReport('other')">Something else</button>
+  </div>
+</div>

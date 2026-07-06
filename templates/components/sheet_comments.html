@@ -1,0 +1,24 @@
+<div class="sheet" id="comments-sheet">
+  <div class="shandle"></div>
+  <div class="sheader">
+    <div class="stabs" id="comment-tabs">
+      <button type="button" class="stab active" data-tab="comments">Comments</button>
+      <button type="button" class="stab" data-tab="voice">Voice Replies</button>
+    </div>
+    <button type="button" class="ai-sum-btn" onclick="toggleAiSummary()" title="AI Summary" aria-label="AI Summary">✨</button>
+    <button type="button" class="sclose" onclick="closeSheet('comments-sheet')" aria-label="Close">✕</button>
+  </div>
+  <div class="ai-summary-card" id="ai-summary-card">
+    <p class="ai-sum-label">✨ AI Discussion Summary</p>
+    <div class="ai-sum-dots" id="ai-sum-loading"><div class="ai-sum-dot"></div><div class="ai-sum-dot"></div><div class="ai-sum-dot"></div></div>
+    <p class="ai-sum-text hidden" id="ai-sum-text"></p>
+  </div>
+  <div class="sbody" id="comments-body"></div>
+  <div class="sinput">
+    <input type="text" id="comment-input" placeholder="Add a comment…" maxlength="280">
+    <button type="button" class="mic-btn" onclick="openVoicePanel()" aria-label="Voice reply">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <button type="button" class="post-cmt-btn" onclick="submitComment()">Post</button>
+  </div>
+</div>
